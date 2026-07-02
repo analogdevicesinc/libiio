@@ -72,6 +72,7 @@ enum iio_attr_type {
 	IIO_ATTR_TYPE_BUFFER,
 	IIO_ATTR_TYPE_CHANNEL,
 	IIO_ATTR_TYPE_CHANNEL_EVENT,
+	IIO_ATTR_TYPE_SCAN_ELEMENT,
 	IIO_ATTR_TYPE_CONTEXT,
 };
 
@@ -82,6 +83,7 @@ union iio_pointer {
 	const struct iio_device *dev;
 	const struct iio_channel *chn;
 	const struct iio_buffer *buf;
+	const struct iio_scan_element *se;
 };
 
 struct iio_attr {
@@ -189,6 +191,9 @@ __api int iio_buffer_add_scan_element(
 
 __api int iio_channel_add_attr(struct iio_channel *chn, const char *name, enum iio_attr_type type,
 		const char *filename);
+
+__api int iio_scan_element_add_attr(
+		struct iio_scan_element *se, const char *name, const char *filename);
 
 __api struct iio_context_pdata *iio_context_get_pdata(const struct iio_context *ctx);
 

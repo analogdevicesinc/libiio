@@ -162,7 +162,12 @@ struct iio_buffer_stream {
 
 struct iio_scan_element {
 	const struct iio_channel *chn;
+	const struct iio_buffer *buf;
 	char *en_path;
+	long index;
+	struct iio_data_format format;
+	struct iio_attr_list attrlist;
+	char **values;
 };
 
 struct iio_buffer {

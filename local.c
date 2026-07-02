@@ -811,10 +811,47 @@ static int add_attr_to_device(struct iio_device *dev, const char *attr)
 	return iio_device_add_attr(dev, attr, IIO_ATTR_TYPE_DEVICE);
 }
 
+/* Update scan_element fields directly (for multi-buffer support) */
+static int update_scan_element_attr(struct iio_scan_element *se, const char *name, const char *path)
+{
+	struct iio_device *dev = se->chn->dev;
+	char buf[128];
+	int ret;
+
+	if (!strcmp(name, "index")) {
+		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
+		if (ret > 0) {
+			char *end;
+			long long value;
+
+			errno = 0;
+			value = strtoll(buf, &end, 0);
+			if (end == buf || value < 0 || errno == ERANGE)
+				return -EINVAL;
+
+			se->index = (long)value;
+		}
+	} else if (!strcmp(name, "type")) {
+		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
+		if (ret > 0) {
+			ret = iio_parse_format_string(buf, &se->format);
+			if (ret < 0)
+				return ret;
+			/* Additional check for fully_defined based on bits==length */
+			if (se->format.bits == se->format.length)
+				se->format.is_fully_defined = true;
+		}
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int handle_scan_element_attr(struct iio_channel *chn, const char *name, const char *path)
 {
 	struct iio_device *dev = chn->dev;
-	char buf[1024];
+	char buf[128];
 	int ret;
 
 	if (!strcmp(name, "index")) {
@@ -1138,26 +1175,58 @@ static int add_scan_element(void *d, const char *path)
 		free(channel_id);
 	}
 
-	/* A scan element fundamentlly has _en, _index and _type attributes but we just want to
-	 * add it once to the buffer (as the channel is only one) and we also need to save the
-	 * _en path for when enabling/disabling the scan element. Hence, let's only add it
-	 * when we see the _en attribute.
+	/* A scan element fundamentally has _en, _index and _type attributes.
+	 * Create the scan element when we encounter any of these.
+	 * Save the _en path when we see it for enable/disable operations.
 	 */
-	if (string_ends_with(attr, "_en"))
-		return iio_buffer_add_scan_element(buffer, chn, attr_path);
+	if (string_ends_with(attr, "_en") || string_ends_with(attr, "_index") ||
+			string_ends_with(attr, "_type")) {
+		struct iio_scan_element *se;
+		const char *en_path = NULL;
 
-	/* _index and _type are very much constant for the channel (even if the channel is
-	 * present in multiple buffers). Hence, if the channel is already marked as a scan, don't
-	 * bother in getting those attributes again.
-	 *
-	 * !\FIXME: In fact, the above is not quite true for _type as we can have multiple scan
-	 * types for the same channel (that can change at runtime). But that is not currently
-	 * supported anyways.
-	 */
-	if (string_ends_with(attr, "_index"))
-		return handle_scan_element_attr(chn, "index", attr_path);
+		/* Use _en path if this is the _en attribute */
+		if (string_ends_with(attr, "_en"))
+			en_path = attr_path;
 
-	return handle_scan_element_attr(chn, "type", attr_path);
+		/* Find or create scan element */
+		se = channel_find_scan_element(chn, buffer->idx);
+		if (!se) {
+			ret = iio_buffer_add_scan_element(buffer, chn, en_path);
+			if (ret < 0)
+				return ret;
+			se = channel_find_scan_element(chn, buffer->idx);
+		} else if (en_path) {
+			/* Update _en path if this is the _en attribute and SE already exists */
+			free(se->en_path);
+			se->en_path = iio_strdup(en_path);
+			if (!se->en_path)
+				return -ENOMEM;
+		}
+
+		/* Update scan element properties */
+		if (string_ends_with(attr, "_index") || string_ends_with(attr, "_type")) {
+			const char *name = string_ends_with(attr, "_index") ? "index" : "type";
+
+			ret = update_scan_element_attr(se, name, attr_path);
+			if (ret < 0)
+				return ret;
+
+			/* Add "type" attribute to scan_element's attrlist (expose in API) */
+			if (!strcmp(name, "type")) {
+				ret = iio_scan_element_add_attr(se, "type", attr_path);
+				if (ret < 0)
+					return ret;
+			}
+
+			/* For backward compat: first buffer's values go to channel too */
+			if (buffer->idx == 0 || chn->index < 0)
+				return handle_scan_element_attr(chn, name, attr_path);
+		}
+
+		return 0;
+	}
+
+	return 0;
 }
 
 static bool is_scan_element_attr(const char *name)
@@ -1530,6 +1599,10 @@ static ssize_t local_read_attr(const struct iio_attr *attr, char *dst, size_t le
 
 	if (type == IIO_ATTR_TYPE_BUFFER)
 		buf_id = attr->iio.buf->idx;
+	else if (type == IIO_ATTR_TYPE_SCAN_ELEMENT) {
+		/* For scan_element attributes, filename is the full path from sysfs */
+		return local_read_dev_attr(dev, 0, filename, dst, len, IIO_ATTR_TYPE_DEVICE);
+	}
 
 	return local_read_dev_attr(dev, buf_id, filename, dst, len, type);
 }
@@ -1543,6 +1616,10 @@ static ssize_t local_write_attr(const struct iio_attr *attr, const char *src, si
 
 	if (type == IIO_ATTR_TYPE_BUFFER)
 		buf_id = attr->iio.buf->idx;
+	else if (type == IIO_ATTR_TYPE_SCAN_ELEMENT) {
+		/* For scan_element attributes, filename is the full path from sysfs */
+		return local_write_dev_attr(dev, 0, filename, src, len, IIO_ATTR_TYPE_DEVICE);
+	}
 
 	return local_write_dev_attr(dev, buf_id, filename, src, len, type);
 }

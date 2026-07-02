@@ -295,6 +295,22 @@ int iio_buffer_add_attr(struct iio_buffer *buf, const char *name)
 	return 0;
 }
 
+int iio_scan_element_add_attr(struct iio_scan_element *se, const char *name, const char *filename)
+{
+	union iio_pointer p = {
+		.se = se,
+	};
+	int ret;
+
+	ret = iio_add_attr(p, &se->attrlist, name, filename, IIO_ATTR_TYPE_SCAN_ELEMENT);
+	if (ret < 0)
+		return ret;
+
+	dev_dbg(se->buf->dev, "Added scan_element attr \'%s\' to channel \'%s\'\n", name,
+			se->chn->id);
+	return 0;
+}
+
 int iio_context_add_attr(struct iio_context *ctx, const char *key, const char *value)
 {
 	char **values, *new_val;
