@@ -329,6 +329,94 @@ static ssize_t write_buffer_attr(xmlDoc *doc, const char *device_id, unsigned in
 	return (ssize_t)len;
 }
 
+static xmlNode *find_scan_element_node(xmlNode *buf_node, const char *channel_id, bool ch_out)
+{
+	xmlNode *n;
+	const char *dir = ch_out ? "output" : "input";
+
+	for (n = buf_node->children; n; n = n->next) {
+		xmlNode *chn_node;
+
+		if (strcmp((char *)n->name, "channel"))
+			continue;
+
+		/* Check if this is the right channel */
+		for (chn_node = n; chn_node; chn_node = chn_node->next) {
+			xmlAttr *prop;
+			const char *id = NULL, *type = NULL;
+
+			if (strcmp((char *)chn_node->name, "channel"))
+				continue;
+
+			for (prop = chn_node->properties; prop; prop = prop->next) {
+				if (strcmp((char *)prop->name, "id") == 0)
+					id = (const char *)prop->children->content;
+				else if (strcmp((char *)prop->name, "type") == 0)
+					type = (const char *)prop->children->content;
+			}
+
+			if (id && strcmp(id, channel_id) == 0 && type && strcmp(type, dir) == 0) {
+				/* Found the channel, now find scan-element child */
+				xmlNode *se_node = getNode(chn_node, "scan-element", NULL, NULL);
+				return se_node;
+			}
+		}
+	}
+
+	return NULL;
+}
+
+static xmlNode *find_scan_element_attribute(xmlDoc *doc, const char *device_id,
+		unsigned int buf_idx, const char *channel_id, bool ch_out, const char *attr)
+{
+	xmlNode *root, *node_device, *buf_node, *se_node;
+
+	root = xmlDocGetRootElement(doc);
+	node_device = getNode(root, "device", "id", device_id);
+	if (!node_device)
+		return NULL;
+
+	buf_node = find_buffer_node_by_idx(node_device, buf_idx);
+	if (!buf_node)
+		return NULL;
+
+	se_node = find_scan_element_node(buf_node, channel_id, ch_out);
+	if (!se_node)
+		return NULL;
+
+	return getNode(se_node, "attribute", "name", attr);
+}
+
+static ssize_t read_scan_element_attr(xmlDoc *doc, const char *device_id, unsigned int buf_idx,
+		const char *channel_id, bool ch_out, const char *attr, char *buf, size_t len)
+{
+	char *value;
+	xmlNode *attr_node = find_scan_element_attribute(
+			doc, device_id, buf_idx, channel_id, ch_out, attr);
+	if (!attr_node)
+		return -ENOENT;
+
+	value = (char *)xmlGetProp(attr_node, (const xmlChar *)"value");
+	if (!value)
+		return -ENOENT;
+
+	iio_strlcpy(buf, value, len);
+	xmlFree(value);
+	return (ssize_t)strnlen(buf, len) + 1;
+}
+
+static ssize_t write_scan_element_attr(xmlDoc *doc, const char *device_id, unsigned int buf_idx,
+		const char *channel_id, bool ch_out, const char *attr, const char *src, size_t len)
+{
+	xmlNode *attr_node = find_scan_element_attribute(
+			doc, device_id, buf_idx, channel_id, ch_out, attr);
+	if (!attr_node)
+		return -ENOENT;
+
+	xmlSetProp(attr_node, (const xmlChar *)"value", (const xmlChar *)src);
+	return (ssize_t)len;
+}
+
 static ssize_t read_channel_event_attr(xmlDoc *doc, const char *device_id, const char *channel_id,
 		bool ch_out, const char *attr, char *buf, size_t len)
 {
@@ -419,12 +507,19 @@ static int add_attr_to_buffer(struct iio_buffer *buf, xmlNode *n)
 	return iio_buffer_add_attr(buf, name);
 }
 
+/* Forward declaration */
+static int setup_scan_element(
+		const struct iio_device *dev, xmlNode *n, long *index, struct iio_data_format *fmt);
+
 static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer *buf, xmlNode *node)
 {
 	char *chan_id = NULL, *type = NULL;
 	struct iio_channel *chn;
+	struct iio_scan_element *se;
 	bool output = false;
 	xmlAttr *attr;
+	xmlNode *n;
+	int err;
 
 	for (attr = node->properties; attr; attr = attr->next) {
 		if (!strcmp((const char *)attr->name, "id"))
@@ -447,7 +542,83 @@ static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer 
 	if (!chn)
 		return -ENOENT;
 
-	return iio_buffer_add_scan_element(buf, chn, NULL);
+	err = iio_buffer_add_scan_element(buf, chn, NULL);
+	if (err < 0)
+		return err;
+
+	/* Parse per-buffer scan-element if present (multi-buffer support) */
+	for (n = node->children; n; n = n->next) {
+		if (!strcmp((const char *)n->name, "scan-element")) {
+			long index = -ENOENT;
+			struct iio_data_format format = { 0 };
+			xmlNode *attr_node;
+
+			err = setup_scan_element(dev, n, &index, &format);
+			if (err < 0)
+				return err;
+
+			/* Update the scan_element we just created */
+			se = buf->scans[buf->nb_scans - 1];
+			se->index = index;
+			se->format = format;
+
+			/* Parse scan-element attributes */
+			for (attr_node = n->children; attr_node; attr_node = attr_node->next) {
+				if (!strcmp((const char *)attr_node->name, "attribute")) {
+					const char *attr_name = NULL, *attr_value = NULL;
+					xmlAttr *a;
+
+					for (a = attr_node->properties; a; a = a->next) {
+						if (!strcmp((const char *)a->name, "name"))
+							attr_name = (const char *)a->children
+										    ->content;
+						else if (!strcmp((const char *)a->name, "value"))
+							attr_value = (const char *)a->children
+										     ->content;
+					}
+
+					if (attr_name) {
+						unsigned int attr_idx;
+
+						err = iio_scan_element_add_attr(
+								se, attr_name, attr_name);
+						if (err < 0)
+							return err;
+
+						/* Store the value if present (for emu backend) */
+						if (attr_value) {
+							attr_idx = se->attrlist.num - 1;
+
+							if (!se->values) {
+								se->values = calloc(
+										se->attrlist.num,
+										sizeof(char *));
+								if (!se->values)
+									return -ENOMEM;
+							} else {
+								char **tmp = realloc(se->values,
+										se->attrlist.num *
+												sizeof(char *));
+								if (!tmp)
+									return -ENOMEM;
+								se->values = tmp;
+								se->values[attr_idx] = NULL;
+							}
+
+							se->values[attr_idx] =
+									iio_strdup(attr_value);
+							if (!se->values[attr_idx])
+								return -ENOMEM;
+						}
+					}
+				}
+			}
+
+			break;
+		}
+	}
+
+	return 0;
 }
 
 static int create_buffers(struct iio_device *dev, xmlNode *node)
@@ -775,7 +946,7 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			for (c = 0; c < iio_device_get_channels_count(dev); c++) {
 				struct iio_channel *chn = iio_device_get_channel(dev, c);
 
-				if (!iio_channel_is_scan_element(chn))
+				if (!iio_channel_is_scan_element(chn, buf))
 					continue;
 
 				err = iio_buffer_add_scan_element(buf, chn, NULL);
@@ -945,6 +1116,25 @@ static ssize_t emu_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 				iio_channel_is_output(chn), attr_name, dst, len);
 	}
 
+	if (attr->type == IIO_ATTR_TYPE_SCAN_ELEMENT) {
+		const struct iio_scan_element *se = attr->iio.se;
+		const struct iio_channel *chn;
+		const struct iio_buffer *buf;
+
+		if (!se)
+			return -EINVAL;
+
+		chn = iio_scan_element_get_channel(se);
+		buf = iio_scan_element_get_buffer(se);
+
+		if (!chn || !buf)
+			return -EINVAL;
+
+		return read_scan_element_attr(pdata->doc, device_id, buf->idx,
+				iio_channel_get_id(chn), iio_channel_is_output(chn), attr_name, dst,
+				len);
+	}
+
 	return read_device_attr(pdata->doc, device_id, attr->type, attr_name, dst, len);
 }
 
@@ -1008,6 +1198,9 @@ static int check_available(const struct iio_attr *attr, const char *src)
 	case IIO_ATTR_TYPE_DEVICE_EVENT:
 		avail_attr = iio_device_find_event_attr(attr->iio.dev, avail_name);
 		break;
+	case IIO_ATTR_TYPE_SCAN_ELEMENT:
+		avail_attr = iio_scan_element_find_attr(attr->iio.se, avail_name);
+		break;
 	default:
 		return 0;
 	}
@@ -1061,6 +1254,25 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 
 		return write_channel_event_attr(pdata->doc, device_id, iio_channel_get_id(chn),
 				iio_channel_is_output(chn), attr_name, src, len);
+	}
+
+	if (attr->type == IIO_ATTR_TYPE_SCAN_ELEMENT) {
+		const struct iio_scan_element *se = attr->iio.se;
+		const struct iio_channel *chn;
+		const struct iio_buffer *buf;
+
+		if (!se)
+			return -EINVAL;
+
+		chn = iio_scan_element_get_channel(se);
+		buf = iio_scan_element_get_buffer(se);
+
+		if (!chn || !buf)
+			return -EINVAL;
+
+		return write_scan_element_attr(pdata->doc, device_id, buf->idx,
+				iio_channel_get_id(chn), iio_channel_is_output(chn), attr_name, src,
+				len);
 	}
 
 	return write_device_attr(pdata->doc, device_id, attr_name, src, len, attr->type);
