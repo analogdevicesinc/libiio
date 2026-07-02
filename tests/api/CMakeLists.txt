@@ -62,12 +62,14 @@ if(WITH_VITA49_2_BACKEND)
     add_test(NAME test_vita49_2_packets COMMAND test_vita49_2_packets)
 
     add_executable(simulator vita49_2/simulator.c)
-    set_target_properties(simulator PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+    add_executable(command_sequence vita49_2/command_sequence.c)
+    set_target_properties(command_sequence simulator PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/vita49_2"
         C_STANDARD 99
         C_STANDARD_REQUIRED ON
         C_EXTENSIONS OFF
     )
+    target_link_libraries(command_sequence PRIVATE vita49_2 iio)
     target_link_libraries(simulator PRIVATE vita49_2 iio)
 endif()
 
