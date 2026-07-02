@@ -134,6 +134,7 @@ int iio_thrd_join_and_destroy(struct iio_thrd *thrd)
 
 	WaitForSingleObject(thrd->thid, INFINITE);
 	GetExitCodeThread(thrd->thid, &ret);
+	CloseHandle(thrd->thid);
 	free(thrd);
 
 	return (int)ret;
