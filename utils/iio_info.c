@@ -53,7 +53,7 @@ static int dev_is_buffer_capable(const struct iio_device *dev)
 	for (i = 0; i < iio_device_get_channels_count(dev); i++) {
 		chn = iio_device_get_channel(dev, i);
 
-		if (iio_channel_is_scan_element(chn))
+		if (iio_channel_is_scan_element(chn, NULL))
 			return true;
 	}
 
@@ -155,7 +155,7 @@ static void print_attr(const struct iio_attr *attr, unsigned int level, unsigned
 static void print_buffer(const struct iio_buffer *buf, unsigned int buf_idx, bool read_sysfs_attr,
 		bool read_debug_attr)
 {
-	unsigned int nb_scans, nb_attrs, i;
+	unsigned int nb_scans, nb_attrs, i, k;
 	const char *type_name;
 
 	if (iio_buffer_is_output(buf))
@@ -175,10 +175,46 @@ static void print_buffer(const struct iio_buffer *buf, unsigned int buf_idx, boo
 	nb_scans = iio_buffer_get_scan_elements_count(buf);
 	printf("\t\t\t%u scan elements found:\n", nb_scans);
 	for (i = 0; i < nb_scans; i++) {
-		const struct iio_channel *se = iio_buffer_get_scan_element(buf, i);
+		const struct iio_scan_element *se = iio_buffer_get_scan_element_by_index(buf, i);
+		const struct iio_channel *chn = iio_scan_element_get_channel(se);
+		const struct iio_data_format *format = iio_channel_get_data_format(chn, buf);
+		long index = iio_channel_get_index(chn, buf);
+		unsigned int nb_se_attrs = iio_scan_element_get_attrs_count(se);
+		char sign = format->is_signed ? 's' : 'u';
+		char repeat[12] = "";
 
-		printf("\t\t\t\tScan element %u: %s (%s)\n", i, iio_channel_get_id(se),
-				iio_channel_is_output(se) ? "output" : "input");
+		if (format->is_fully_defined)
+			sign += 'A' - 'a';
+
+		if (format->repeat > 1)
+			snprintf(repeat, sizeof(repeat), "X%u", format->repeat);
+
+		if (colors) {
+			char se_num[16];
+			snprintf(se_num, sizeof(se_num), "%u", i);
+			printf("\t\t\t\t");
+			print_fmt(FMT_BUF " " FMT_BUF ": " FMT_BUF, "Scan element", se_num,
+					iio_channel_get_id(chn));
+			print_fmt(" (" FMT_BUF, iio_channel_is_output(chn) ? "output" : "input");
+			printf(", index: %ld, format: %ce:%c%u/%u%s>>%u)\n", index,
+					format->is_be ? 'b' : 'l', sign, format->bits,
+					format->length, repeat, format->shift);
+		} else {
+			printf("\t\t\t\tScan element %u: %s (%s, index: %ld, format: %ce:%c%u/%u%s>>%u)\n",
+					i, iio_channel_get_id(chn),
+					iio_channel_is_output(chn) ? "output" : "input", index,
+					format->is_be ? 'b' : 'l', sign, format->bits,
+					format->length, repeat, format->shift);
+		}
+
+		if (nb_se_attrs > 0) {
+			printf("\t\t\t\t%u scan element attributes found:\n", nb_se_attrs);
+			for (k = 0; k < nb_se_attrs; k++) {
+				const struct iio_attr *attr = iio_scan_element_get_attr(se, k);
+
+				print_attr(attr, 5, k, read_sysfs_attr, read_debug_attr);
+			}
+		}
 	}
 
 	nb_attrs = iio_buffer_get_attrs_count(buf);
@@ -225,24 +261,15 @@ static void print_channel(const struct iio_channel *chn)
 			printf(", ERROR: iio_channel_get_type() = UNKNOWN");
 	}
 
-	if (iio_channel_is_scan_element(chn)) {
-		format = iio_channel_get_data_format(chn);
-		sign = format->is_signed ? 's' : 'u';
-
-		repeat[0] = '\0';
-
-		if (format->is_fully_defined)
-			sign += 'A' - 'a';
-
-		if (format->repeat > 1)
-			snprintf(repeat, sizeof(repeat), "X%u", format->repeat);
-
-		printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)\n", iio_channel_get_index(chn),
-				format->is_be ? 'b' : 'l', sign, format->bits, format->length,
-				repeat, format->shift);
-	} else {
-		printf(")\n");
+	/* Indicate if this channel is a scan element */
+	if (iio_channel_is_scan_element(chn, NULL)) {
+		if (colors)
+			print_fmt(", " FMT_CHN, "scan element");
+		else
+			printf(", scan element");
 	}
+
+	printf(")\n");
 }
 
 int main(int argc, char **argv)

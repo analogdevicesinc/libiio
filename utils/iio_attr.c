@@ -812,7 +812,7 @@ int main(int argc, char **argv)
 							out++;
 						else
 							in++;
-						if (iio_channel_is_scan_element(ch))
+						if (iio_channel_is_scan_element(ch, NULL))
 							scan++;
 					}
 					printf("found ");
@@ -877,7 +877,7 @@ int main(int argc, char **argv)
 					continue;
 				if (output_only && !iio_channel_is_output(ch))
 					continue;
-				if (scan_only && !iio_channel_is_scan_element(ch))
+				if (scan_only && !iio_channel_is_scan_element(ch, NULL))
 					continue;
 
 				if (iio_channel_is_output(ch))
@@ -902,7 +902,8 @@ int main(int argc, char **argv)
 				if (search_channel &&
 						((!scan_only && !channel_index) ||
 								(scan_only && iio_channel_is_scan_element(
-											      ch)))) {
+											      ch,
+											      NULL)))) {
 					printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 					printf("'%s', ", label_or_name_or_id);
 
@@ -915,9 +916,10 @@ int main(int argc, char **argv)
 
 					printf(" (%s", type_name);
 
-					if (iio_channel_is_scan_element(ch)) {
+					if (iio_channel_is_scan_element(ch, NULL)) {
 						const struct iio_data_format *format =
-								iio_channel_get_data_format(ch);
+								iio_channel_get_data_format(
+										ch, NULL);
 						char sign = format->is_signed ? 's' : 'u';
 						char repeat[12] = "";
 
@@ -928,7 +930,7 @@ int main(int argc, char **argv)
 							snprintf(repeat, sizeof(repeat), "X%u",
 									format->repeat);
 						printf(", index: %lu, format: %ce:%c%u/%u%s>>%u)",
-								iio_channel_get_index(ch),
+								iio_channel_get_index(ch, NULL),
 								format->is_be ? 'b' : 'l', sign,
 								format->bits, format->length,
 								repeat, format->shift);

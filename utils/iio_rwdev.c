@@ -410,7 +410,7 @@ int main(int argc, char **argv)
 			for (j = 0; j < nb_channels; j++) {
 				ch = iio_device_get_channel(dev, j);
 
-				if (!iio_channel_is_scan_element(ch) ||
+				if (!iio_channel_is_scan_element(ch, NULL) ||
 						is_write ^ iio_channel_is_output(ch))
 					continue;
 
@@ -528,7 +528,7 @@ int main(int argc, char **argv)
 		}
 	}
 
-	sample_size = iio_device_get_sample_size(dev, mask);
+	sample_size = iio_buffer_get_sample_size(iio_device_get_buffer(dev, 0), mask);
 	/* Zero isn't normally an error code, but in this case it is an error */
 	if (sample_size == 0) {
 		fprintf(stderr, "Unable to get sample size, returned 0\n");
@@ -552,7 +552,7 @@ int main(int argc, char **argv)
 		goto err_free_mask;
 	}
 
-	hw_sample_size = iio_device_get_sample_size(dev, mask);
+	hw_sample_size = iio_buffer_get_sample_size(iio_device_get_buffer(dev, 0), mask);
 
 #ifdef _WIN32
 	/*
