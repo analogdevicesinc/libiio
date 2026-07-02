@@ -25,7 +25,7 @@ static const char xml_header[] =
 		"<!ELEMENT channel (scan-element?, attribute*, event-attribute*)>"
 		"<!ELEMENT buffer (attribute*, channel+)>"
 		"<!ELEMENT attribute EMPTY>"
-		"<!ELEMENT scan-element EMPTY>"
+		"<!ELEMENT scan-element (attribute*)>"
 		"<!ELEMENT debug-attribute EMPTY>"
 		"<!ELEMENT event-attribute EMPTY>"
 		"<!ELEMENT buffer-attribute EMPTY>"
@@ -282,47 +282,104 @@ out_free_buf:
 	return err;
 }
 
-static int read_buffer_attrs(struct iio_buffer *buf)
+static int read_scan_element_attrs(struct iio_scan_element *se)
 {
 	unsigned int i;
 	ssize_t ret;
 	int err = 0;
 	char *tmp;
 
-	if (buf->attrlist.num == 0)
+	if (se->attrlist.num == 0)
 		return 0;
 
 	tmp = malloc(MAX_ATTR_VALUE);
 	if (!tmp)
 		return -ENOMEM;
 
-	if (!buf->values) {
-		buf->values = calloc(buf->attrlist.num, sizeof(char *));
-		if (!buf->values) {
+	if (!se->values) {
+		se->values = calloc(se->attrlist.num, sizeof(char *));
+		if (!se->values) {
 			err = -ENOMEM;
-			goto out_free_buf;
+			goto out_free_tmp;
 		}
 	}
 
-	for (i = 0; i < buf->attrlist.num; i++) {
-		free(buf->values[i]);
-		buf->values[i] = NULL;
+	for (i = 0; i < se->attrlist.num; i++) {
+		free(se->values[i]);
+		se->values[i] = NULL;
 
-		ret = iio_attr_read_raw(&buf->attrlist.attrs[i], tmp, MAX_ATTR_VALUE);
+		ret = iio_attr_read_raw(&se->attrlist.attrs[i], tmp, MAX_ATTR_VALUE);
 		if (ret >= 0) {
-			buf->values[i] = iio_strdup(tmp);
-			if (!buf->values[i]) {
+			se->values[i] = iio_strdup(tmp);
+			if (!se->values[i]) {
 				err = -ENOMEM;
-				goto out_free_buf;
+				goto out_free_tmp;
 			}
 		} else {
 			snprintf(tmp, MAX_ATTR_VALUE, "ERROR:%d", (int)ret);
-			buf->values[i] = iio_strdup(tmp);
-			if (!buf->values[i]) {
+			se->values[i] = iio_strdup(tmp);
+			if (!se->values[i]) {
+				err = -ENOMEM;
+				goto out_free_tmp;
+			}
+		}
+	}
+
+out_free_tmp:
+	free(tmp);
+	return err;
+}
+
+static int read_buffer_attrs(struct iio_buffer *buf)
+{
+	unsigned int i, j;
+	ssize_t ret;
+	int err = 0;
+	char *tmp;
+
+	if (buf->attrlist.num == 0 && buf->nb_scans == 0)
+		return 0;
+
+	tmp = malloc(MAX_ATTR_VALUE);
+	if (!tmp)
+		return -ENOMEM;
+
+	if (buf->attrlist.num > 0) {
+		if (!buf->values) {
+			buf->values = calloc(buf->attrlist.num, sizeof(char *));
+			if (!buf->values) {
 				err = -ENOMEM;
 				goto out_free_buf;
 			}
 		}
+
+		for (i = 0; i < buf->attrlist.num; i++) {
+			free(buf->values[i]);
+			buf->values[i] = NULL;
+
+			ret = iio_attr_read_raw(&buf->attrlist.attrs[i], tmp, MAX_ATTR_VALUE);
+			if (ret >= 0) {
+				buf->values[i] = iio_strdup(tmp);
+				if (!buf->values[i]) {
+					err = -ENOMEM;
+					goto out_free_buf;
+				}
+			} else {
+				snprintf(tmp, MAX_ATTR_VALUE, "ERROR:%d", (int)ret);
+				buf->values[i] = iio_strdup(tmp);
+				if (!buf->values[i]) {
+					err = -ENOMEM;
+					goto out_free_buf;
+				}
+			}
+		}
+	}
+
+	/* Read scan element attribute values */
+	for (j = 0; j < buf->nb_scans; j++) {
+		err = read_scan_element_attrs(buf->scans[j]);
+		if (err < 0)
+			goto out_free_buf;
 	}
 
 out_free_buf:
