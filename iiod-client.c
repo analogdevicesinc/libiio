@@ -628,6 +628,33 @@ static ssize_t iiod_client_read_attr_new(
 		arg1 = (uint16_t)i;
 		arg2 = (uint16_t)buf->idx;
 		break;
+	case IIO_ATTR_TYPE_SCAN_ELEMENT: {
+		const struct iio_scan_element *se = attr->iio.se;
+		buf = (struct iio_buffer *)iio_scan_element_get_buffer(se);
+		dev = iio_buffer_get_device(buf);
+		cmd.op = IIOD_OP_READ_SCAN_ELEMENT_ATTR;
+
+		for (i = 0; i < iio_scan_element_get_attrs_count(se); i++)
+			if (iio_scan_element_get_attr(se, i) == attr)
+				break;
+
+		if (i == iio_scan_element_get_attrs_count(se))
+			return -ENOENT;
+
+		/* arg1 = attribute index, arg2 = scan element index */
+		arg1 = (uint16_t)i;
+
+		/* Find scan element index in buffer */
+		for (i = 0; i < iio_buffer_get_scan_elements_count(buf); i++)
+			if (iio_buffer_get_scan_element_by_index(buf, i) == se)
+				break;
+
+		if (i == iio_buffer_get_scan_elements_count(buf))
+			return -ENOENT;
+
+		arg2 = (uint16_t)i | ((uint16_t)buf->idx << 8);
+		break;
+	}
 	default:
 		return -EINVAL;
 	}
@@ -685,6 +712,9 @@ ssize_t iiod_client_attr_read(
 	case IIO_ATTR_TYPE_BUFFER:
 		iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n", id, attr->name);
 		break;
+	case IIO_ATTR_TYPE_SCAN_ELEMENT:
+		/* Scan element attributes not supported in legacy text protocol */
+		return -ENOSYS;
 	case IIO_ATTR_TYPE_CONTEXT:
 		return -EINVAL;
 	}
@@ -828,6 +858,33 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client, const stru
 		arg1 = (uint16_t)i;
 		arg2 = (uint16_t)buf->idx;
 		break;
+	case IIO_ATTR_TYPE_SCAN_ELEMENT: {
+		const struct iio_scan_element *se = attr->iio.se;
+		buf = (struct iio_buffer *)iio_scan_element_get_buffer(se);
+		dev = iio_buffer_get_device(buf);
+		cmd.op = IIOD_OP_WRITE_SCAN_ELEMENT_ATTR;
+
+		for (i = 0; i < iio_scan_element_get_attrs_count(se); i++)
+			if (iio_scan_element_get_attr(se, i) == attr)
+				break;
+
+		if (i == iio_scan_element_get_attrs_count(se))
+			return -ENOENT;
+
+		/* arg1 = attribute index, arg2 = scan element index */
+		arg1 = (uint16_t)i;
+
+		/* Find scan element index in buffer */
+		for (i = 0; i < iio_buffer_get_scan_elements_count(buf); i++)
+			if (iio_buffer_get_scan_element_by_index(buf, i) == se)
+				break;
+
+		if (i == iio_buffer_get_scan_elements_count(buf))
+			return -ENOENT;
+
+		arg2 = (uint16_t)i | ((uint16_t)buf->idx << 8);
+		break;
+	}
 	default:
 		return -EINVAL;
 	}
@@ -899,6 +956,9 @@ ssize_t iiod_client_attr_write(struct iiod_client *client, const struct iio_attr
 		iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n", id, attr->name,
 				(unsigned long)len);
 		break;
+	case IIO_ATTR_TYPE_SCAN_ELEMENT:
+		/* Scan element attributes not supported in legacy text protocol */
+		return -ENOSYS;
 	case IIO_ATTR_TYPE_CONTEXT:
 		return -EINVAL;
 	}

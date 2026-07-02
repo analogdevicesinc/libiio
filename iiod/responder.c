@@ -176,6 +176,22 @@ static const struct iio_attr *get_attr(struct parser_pdata *pdata, const struct 
 			break;
 
 		return iio_channel_get_event_attr(chn, arg1);
+	case IIOD_OP_READ_SCAN_ELEMENT_ATTR:
+	case IIOD_OP_WRITE_SCAN_ELEMENT_ATTR: {
+		const struct iio_scan_element *se;
+		unsigned int se_idx = arg2 & 0xff;
+		unsigned int buf_idx = (arg2 >> 8) & 0xff;
+
+		buf = iio_device_get_buffer(dev, buf_idx);
+		if (!buf)
+			break;
+
+		se = iio_buffer_get_scan_element_by_index(buf, se_idx);
+		if (!se)
+			break;
+
+		return iio_scan_element_get_attr(se, arg1);
+	}
 	default:
 		break;
 	}
@@ -1165,12 +1181,14 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 	[IIOD_OP_READ_CHN_ATTR] = handle_read_attr,
 	[IIOD_OP_READ_DEV_EVT_ATTR] = handle_read_attr,
 	[IIOD_OP_READ_CHN_EVT_ATTR] = handle_read_attr,
+	[IIOD_OP_READ_SCAN_ELEMENT_ATTR] = handle_read_attr,
 	[IIOD_OP_WRITE_ATTR] = handle_write_attr,
 	[IIOD_OP_WRITE_DBG_ATTR] = handle_write_attr,
 	[IIOD_OP_WRITE_BUF_ATTR] = handle_write_attr,
 	[IIOD_OP_WRITE_CHN_ATTR] = handle_write_attr,
 	[IIOD_OP_WRITE_DEV_EVT_ATTR] = handle_write_attr,
 	[IIOD_OP_WRITE_CHN_EVT_ATTR] = handle_write_attr,
+	[IIOD_OP_WRITE_SCAN_ELEMENT_ATTR] = handle_write_attr,
 	[IIOD_OP_GETTRIG] = handle_gettrig,
 	[IIOD_OP_SETTRIG] = handle_settrig,
 
