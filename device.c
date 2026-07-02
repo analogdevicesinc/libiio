@@ -103,7 +103,7 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len, const struct iio_device 
 
 	for (i = 0; i < dev->nb_buffers; i++) {
 		const struct iio_buffer *buf = dev->buffers[i];
-		unsigned int j;
+		unsigned int j, k;
 
 		if (buf->direction == IIO_BUFFER_DIRECTION_INPUT)
 			ret = iio_snprintf(ptr, len, "<buffer index=\"%u\" direction=\"in\" >",
@@ -146,10 +146,85 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len, const struct iio_device 
 		}
 
 		for (j = 0; j < buf->nb_scans; j++) {
-			const struct iio_channel *chn = buf->scans[j]->chn;
+			const struct iio_scan_element *se = buf->scans[j];
+			const struct iio_channel *chn = se->chn;
+			char processed = (se->format.is_fully_defined ? 'A' - 'a' : 0);
+			char repeat[12] = "", scale[48] = "";
 
-			ret = iio_snprintf(ptr, len, "<channel id=\"%s\" type=\"%s\" />", chn->id,
+			if (se->format.repeat > 1)
+				iio_snprintf(repeat, sizeof(repeat), "X%u", se->format.repeat);
+
+			if (se->format.with_scale)
+				iio_snprintf(scale, sizeof(scale), "scale=\"%f\" ",
+						se->format.scale);
+
+			ret = iio_snprintf(ptr, len, "<channel id=\"%s\" type=\"%s\" >", chn->id,
 					chn->is_output ? "output" : "input");
+			if (ret < 0)
+				return ret;
+			iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+			/* Per-buffer scan-element (multi-buffer support) */
+			if (se->attrlist.num > 0) {
+				/* Open tag with attributes */
+				ret = iio_snprintf(ptr, len,
+						"<scan-element index=\"%li\" format=\"%ce:%c%u/%u%s&gt;&gt;%u\" %s>",
+						se->index, se->format.is_be ? 'b' : 'l',
+						se->format.is_signed ? 's' + processed
+								     : 'u' + processed,
+						se->format.bits, se->format.length, repeat,
+						se->format.shift, scale);
+				if (ret < 0)
+					return ret;
+				iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+				/* Output scan-element attributes */
+				for (k = 0; k < se->attrlist.num; k++) {
+					const char *val = NULL;
+
+					if (include_values && se->values)
+						val = se->values[k];
+
+					ret = iio_snprintf(ptr, len, "<attribute name=\"%s\"",
+							se->attrlist.attrs[k].name);
+					if (ret < 0)
+						return ret;
+					iio_update_xml_indexes(ret, &ptr, &len, &alen);
+
+					if (val) {
+						ret = iio_xml_print_and_sanitized_param(
+								ptr, len, " value=\"", val, "\"");
+						if (ret < 0)
+							return ret;
+						iio_update_xml_indexes(ret, &ptr, &len, &alen);
+					}
+
+					ret = iio_snprintf(ptr, len, " />");
+					if (ret < 0)
+						return ret;
+					iio_update_xml_indexes(ret, &ptr, &len, &alen);
+				}
+
+				/* Close tag */
+				ret = iio_snprintf(ptr, len, "</scan-element>");
+				if (ret < 0)
+					return ret;
+				iio_update_xml_indexes(ret, &ptr, &len, &alen);
+			} else {
+				/* Self-closing tag (no attributes) */
+				ret = iio_snprintf(ptr, len,
+						"<scan-element index=\"%li\" format=\"%ce:%c%u/%u%s&gt;&gt;%u\" %s/>",
+						se->index, se->format.is_be ? 'b' : 'l',
+						se->format.is_signed ? 's' + processed
+								     : 'u' + processed,
+						se->format.bits, se->format.length, repeat,
+						se->format.shift, scale);
+				if (ret < 0)
+					return ret;
+				iio_update_xml_indexes(ret, &ptr, &len, &alen);
+			}
+
+			ret = iio_snprintf(ptr, len, "</channel>");
 			if (ret < 0)
 				return ret;
 

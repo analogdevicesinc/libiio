@@ -220,8 +220,11 @@ static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer 
 {
 	char *chan_id = NULL, *type = NULL;
 	struct iio_channel *chn;
+	struct iio_scan_element *se;
 	bool output = false;
 	xmlAttr *attr;
+	xmlNode *n;
+	int err;
 
 	for (attr = node->properties; attr; attr = attr->next) {
 		if (!strcmp((const char *)attr->name, "id"))
@@ -245,7 +248,83 @@ static int add_scan_element_to_buffer(struct iio_device *dev, struct iio_buffer 
 		return -ENOENT;
 
 	/* The en_path only matters for the local context */
-	return iio_buffer_add_scan_element(buf, chn, NULL);
+	err = iio_buffer_add_scan_element(buf, chn, NULL);
+	if (err < 0)
+		return err;
+
+	/* Parse per-buffer scan-element if present (multi-buffer support) */
+	for (n = node->children; n; n = n->next) {
+		if (!strcmp((const char *)n->name, "scan-element")) {
+			long index = -ENOENT;
+			struct iio_data_format format = { 0 };
+			xmlNode *attr_node;
+
+			err = setup_scan_element(dev, n, &index, &format);
+			if (err < 0)
+				return err;
+
+			/* Update the scan_element we just created */
+			se = buf->scans[buf->nb_scans - 1];
+			se->index = index;
+			se->format = format;
+
+			/* Parse scan-element attributes */
+			for (attr_node = n->children; attr_node; attr_node = attr_node->next) {
+				if (!strcmp((const char *)attr_node->name, "attribute")) {
+					const char *attr_name = NULL, *attr_value = NULL;
+					xmlAttr *a;
+
+					for (a = attr_node->properties; a; a = a->next) {
+						if (!strcmp((const char *)a->name, "name"))
+							attr_name = (const char *)a->children
+										    ->content;
+						else if (!strcmp((const char *)a->name, "value"))
+							attr_value = (const char *)a->children
+										     ->content;
+					}
+
+					if (attr_name) {
+						unsigned int attr_idx;
+
+						err = iio_scan_element_add_attr(
+								se, attr_name, attr_name);
+						if (err < 0)
+							return err;
+
+						/* Store the value if present (for emu backend) */
+						if (attr_value) {
+							attr_idx = se->attrlist.num - 1;
+
+							if (!se->values) {
+								se->values = calloc(
+										se->attrlist.num,
+										sizeof(char *));
+								if (!se->values)
+									return -ENOMEM;
+							} else {
+								char **tmp = realloc(se->values,
+										se->attrlist.num *
+												sizeof(char *));
+								if (!tmp)
+									return -ENOMEM;
+								se->values = tmp;
+								se->values[attr_idx] = NULL;
+							}
+
+							se->values[attr_idx] =
+									iio_strdup(attr_value);
+							if (!se->values[attr_idx])
+								return -ENOMEM;
+						}
+					}
+				}
+			}
+
+			break;
+		}
+	}
+
+	return 0;
 }
 
 static int create_buffers(struct iio_device *dev, xmlNode *node)
