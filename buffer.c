@@ -131,7 +131,7 @@ struct iio_buffer_stream *iio_buffer_open(
 	if (!ops->open_buffer)
 		return iio_ptr(-ENOSYS);
 
-	sample_size = iio_device_get_sample_size(dev, mask);
+	sample_size = iio_device_get_sample_size(buf->dev, mask);
 	if (sample_size < 0)
 		return iio_ptr((int)sample_size);
 	if (!sample_size)
@@ -232,6 +232,79 @@ const struct iio_channel *iio_buffer_get_scan_element(
 	return buf->scans[index]->chn;
 }
 
+const struct iio_data_format *iio_buffer_get_scan_element_format(
+		const struct iio_buffer *buf, const struct iio_channel *chn)
+{
+	unsigned int i;
+
+	for (i = 0; i < buf->nb_scans; i++) {
+		if (buf->scans[i]->chn == chn)
+			return &buf->scans[i]->format;
+	}
+
+	return NULL;
+}
+
+long iio_buffer_get_scan_element_index(const struct iio_buffer *buf, const struct iio_channel *chn)
+{
+	unsigned int i;
+
+	for (i = 0; i < buf->nb_scans; i++) {
+		if (buf->scans[i]->chn == chn)
+			return buf->scans[i]->index;
+	}
+
+	return -ENOENT;
+}
+
+bool iio_buffer_is_scan_element(const struct iio_buffer *buf, const struct iio_channel *chn)
+{
+	unsigned int i;
+
+	for (i = 0; i < buf->nb_scans; i++) {
+		if (buf->scans[i]->chn == chn)
+			return true;
+	}
+
+	return false;
+}
+
+int iio_buffer_refresh_formats(struct iio_buffer *buf)
+{
+	unsigned int i;
+	int ret, failures = 0;
+
+	/* Refresh format for all scan elements in the buffer */
+	for (i = 0; i < buf->nb_scans; i++) {
+		struct iio_scan_element *se = buf->scans[i];
+		const struct iio_attr *attr;
+		char type_buf[1024];
+
+		/* Find the 'type' attribute */
+		attr = iio_scan_element_find_attr(se, "type");
+		if (!attr) {
+			failures++;
+			continue;
+		}
+
+		/* Read the type attribute */
+		ret = iio_attr_read_raw(attr, type_buf, sizeof(type_buf));
+		if (ret < 0) {
+			failures++;
+			continue;
+		}
+
+		/* Parse the format string */
+		ret = iio_parse_format_string(type_buf, &se->format);
+		if (ret < 0) {
+			failures++;
+			continue;
+		}
+	}
+
+	return failures > 0 ? -EIO : 0;
+}
+
 int iio_buffer_add_scan_element(
 		struct iio_buffer *buf, const struct iio_channel *chn, const char *en_path)
 {
@@ -243,6 +316,12 @@ int iio_buffer_add_scan_element(
 		return -ENOMEM;
 
 	scan->chn = chn;
+	scan->buf = buf;
+
+	/* Initialize from channel as fallback. Local backend will update these
+	 * with buffer-specific values if _index/_type are encountered after _en. */
+	scan->index = chn->index;
+	scan->format = chn->format;
 
 	if (en_path) {
 		scan->en_path = iio_strdup(en_path);
@@ -280,14 +359,70 @@ void iio_buffer_set_direction(struct iio_buffer *buf, const char *direction)
 
 void free_buffer(struct iio_buffer *buf)
 {
-	unsigned int s;
+	unsigned int s, i;
 
 	for (s = 0; s < buf->nb_scans; s++) {
-		free(buf->scans[s]->en_path);
-		free(buf->scans[s]);
+		struct iio_scan_element *se = buf->scans[s];
+
+		/* Free scan element attribute values */
+		if (se->values) {
+			for (i = 0; i < se->attrlist.num; i++)
+				free(se->values[i]);
+			free(se->values);
+		}
+
+		iio_free_attrs(&se->attrlist);
+		free(se->en_path);
+		free(se);
 	}
 
 	free(buf->scans);
 	iio_free_attrs(&buf->attrlist);
 	free(buf);
+}
+
+/* Scan element API */
+
+const struct iio_scan_element *iio_buffer_get_scan_element_by_index(
+		const struct iio_buffer *buf, unsigned int index)
+{
+	if (index >= buf->nb_scans)
+		return NULL;
+
+	return buf->scans[index];
+}
+
+const struct iio_scan_element *iio_buffer_find_scan_element(
+		const struct iio_buffer *buf, const struct iio_channel *chn)
+{
+	unsigned int i;
+
+	for (i = 0; i < buf->nb_scans; i++) {
+		if (buf->scans[i]->chn == chn)
+			return buf->scans[i];
+	}
+
+	return NULL;
+}
+
+const struct iio_buffer *iio_scan_element_get_buffer(const struct iio_scan_element *se)
+{
+	return se->buf;
+}
+
+unsigned int iio_scan_element_get_attrs_count(const struct iio_scan_element *se)
+{
+	return se->attrlist.num;
+}
+
+const struct iio_attr *iio_scan_element_get_attr(
+		const struct iio_scan_element *se, unsigned int index)
+{
+	return iio_attr_get(&se->attrlist, index);
+}
+
+const struct iio_attr *iio_scan_element_find_attr(
+		const struct iio_scan_element *se, const char *name)
+{
+	return iio_attr_find(&se->attrlist, name);
 }

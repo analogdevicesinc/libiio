@@ -189,6 +189,21 @@ __api void iio_buffer_set_direction(struct iio_buffer *buf, const char *directio
 __api int iio_buffer_add_scan_element(
 		struct iio_buffer *buf, const struct iio_channel *chn, const char *en_path);
 
+__api int iio_scan_element_add_attr(
+		struct iio_scan_element *se, const char *name, const char *filename);
+
+__api const struct iio_channel *iio_scan_element_get_channel(const struct iio_scan_element *se);
+__api const struct iio_buffer *iio_scan_element_get_buffer(const struct iio_scan_element *se);
+__api unsigned int iio_scan_element_get_attrs_count(const struct iio_scan_element *se);
+__api const struct iio_attr *iio_scan_element_get_attr(
+		const struct iio_scan_element *se, unsigned int index);
+__api const struct iio_attr *iio_scan_element_find_attr(
+		const struct iio_scan_element *se, const char *name);
+__api const struct iio_scan_element *iio_buffer_get_scan_element_by_index(
+		const struct iio_buffer *buf, unsigned int index);
+__api const struct iio_scan_element *iio_buffer_find_scan_element(
+		const struct iio_buffer *buf, const struct iio_channel *chn);
+
 __api int iio_channel_add_attr(struct iio_channel *chn, const char *name, enum iio_attr_type type,
 		const char *filename);
 
@@ -249,6 +264,8 @@ static inline const struct iio_device *iio_attr_get_device(const struct iio_attr
 		return iio_channel_get_device(attr->iio.chn);
 	case IIO_ATTR_TYPE_BUFFER:
 		return iio_buffer_get_device(attr->iio.buf);
+	case IIO_ATTR_TYPE_SCAN_ELEMENT:
+		return iio_channel_get_device(iio_scan_element_get_channel(attr->iio.se));
 	default:
 		return attr->iio.dev;
 	}

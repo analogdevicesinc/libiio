@@ -140,6 +140,11 @@ const struct iio_attr *iio_attr_get(const struct iio_attr_list *attrs, unsigned 
 	return &attrs->attrs[idx];
 }
 
+const struct iio_channel *iio_scan_element_get_channel(const struct iio_scan_element *se)
+{
+	return se->chn;
+}
+
 const struct iio_attr *iio_attr_find(const struct iio_attr_list *attrs, const char *name)
 {
 	unsigned int i;
