@@ -214,7 +214,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < nb_channels; i++) {
 		struct iio_channel *ch = iio_device_get_channel(dev, i);
-		if (!iio_channel_is_scan_element(ch))
+		if (!iio_channel_is_scan_element(ch, NULL))
 			continue;
 		iio_channel_enable(ch, mask);
 		if (iio_channel_is_output(ch))

@@ -159,7 +159,7 @@ static void handle_sig(int sig)
 
 static ssize_t sample_cb(const struct iio_channel *chn, void *src, size_t bytes, __notused void *d)
 {
-	const struct iio_data_format *fmt = iio_channel_get_data_format(chn);
+	const struct iio_data_format *fmt = iio_channel_get_data_format(chn, NULL);
 	unsigned int j, repeat = has_repeat ? fmt->repeat : 1;
 
 	printf("%s ", iio_channel_get_id(chn));
@@ -266,7 +266,7 @@ int main(int argc, char **argv)
 
 	for (i = 0; i < iio_device_get_channels_count(dev); ++i) {
 		struct iio_channel *chn = iio_device_get_channel(dev, i);
-		if (iio_channel_is_scan_element(chn)) {
+		if (iio_channel_is_scan_element(chn, NULL)) {
 			printf("%s\n", iio_channel_get_id(chn));
 			channel_count++;
 		}
@@ -282,7 +282,7 @@ int main(int argc, char **argv)
 	}
 	for (i = 0; i < channel_count; ++i) {
 		struct iio_channel *chn = iio_device_get_channel(dev, i);
-		if (iio_channel_is_scan_element(chn))
+		if (iio_channel_is_scan_element(chn, NULL))
 			channels[i] = chn;
 	}
 
@@ -338,7 +338,7 @@ int main(int argc, char **argv)
 			shutdown();
 		}
 
-		p_inc = iio_device_get_sample_size(dev, rxmask);
+		p_inc = iio_buffer_get_sample_size(iio_device_get_buffer(dev, 0), rxmask);
 		p_end = iio_block_end(rxblock);
 
 		// Print timestamp delta in ms
@@ -356,7 +356,7 @@ int main(int argc, char **argv)
 		case BUFFER_POINTER:
 			for (i = 0; i < channel_count; ++i) {
 				const struct iio_data_format *fmt =
-						iio_channel_get_data_format(channels[i]);
+						iio_channel_get_data_format(channels[i], NULL);
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 
 				printf("%s ", iio_channel_get_id(channels[i]));
@@ -389,7 +389,7 @@ int main(int argc, char **argv)
 				uint8_t *buf;
 				size_t sample, bytes;
 				const struct iio_data_format *fmt =
-						iio_channel_get_data_format(channels[i]);
+						iio_channel_get_data_format(channels[i], NULL);
 				unsigned int repeat = has_repeat ? fmt->repeat : 1;
 				size_t sample_size = fmt->length / 8 * repeat;
 
