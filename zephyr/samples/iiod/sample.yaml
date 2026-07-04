@@ -9,15 +9,6 @@ common:
     regex:
       - "Booting Zephyr OS"
 tests:
-  sample.iiod.network:
-    extra_args:
-      - SNIPPET=iiod-network
-    extra_configs:
-      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
-      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - native_sim
-
   sample.iiod.network.pytest:
     extra_args:
       - SNIPPET=iiod-network
