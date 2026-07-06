@@ -3215,14 +3215,20 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 	}
 
 	/* Class ID */
-	// Pad bit count must be determined before we can write the Class ID.
-	if (!pkt->command_prologue.common_prologue.header.has_class_id)
+	if (pkt->command_prologue.common_prologue.header.has_class_id) 
 	{
-		fprintf(stderr, "vita49_2_process: Control Extension Packets require Class ID (ADI requirement). Failed to generate packet.\n");
-		return -EINVAL;
+		// +1 since the Class ID is 2 words
+		if (buffer_index + 1 >= max_words) 
+			return -ENOBUFS;
+		
+		uint32_t class_id_word;
+
+		memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.lower_word, sizeof(class_id_word));
+		buf[buffer_index++] = htonl(class_id_word);
+		
+		memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.upper_word, sizeof(class_id_word));
+		buf[buffer_index++] = htonl(class_id_word);
 	}
-	
-	buffer_index += 2;
 
 	/* Timestamp Int */
 	if (pkt->command_prologue.common_prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
@@ -3421,13 +3427,13 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 			}
 
 			memcpy(&buf[buffer_index], node->device_name, node->control_extension.explicit.device_name_length);
-			buffer_index += node->control_extension.explicit.device_name_length;
+			buffer_index += (node->control_extension.explicit.device_name_length + 4 - 1)/4;
 
 			memcpy(&buf[buffer_index], node->channel_name, node->control_extension.explicit.channel_name_length);
-			buffer_index += node->control_extension.explicit.channel_name_length;
+			buffer_index += (node->control_extension.explicit.channel_name_length + 4 - 1)/4;
 
 			memcpy(&buf[buffer_index], node->attribute_name, node->control_extension.explicit.attribute_name_length);
-			buffer_index += node->control_extension.explicit.attribute_name_length;
+			buffer_index += (node->control_extension.explicit.attribute_name_length + 4 - 1)/4;
 
 			switch (node->control_extension.explicit.data_type)
 			{
@@ -3505,14 +3511,14 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 					// For Explicit types, we have to copy the string data into the buffer
 					if (pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT)
 					{
-						if ((buffer_index + node->control_extension.explicit.data_length - 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+						if ((buffer_index + (node->control_extension.explicit.data_length + 4 - 1)/4) >= max_words)
 						{
 							fprintf(stderr, "vita49_2_process: Not enough buffer space for string data while generating Control Extension Packet.\n");
 							return -ENOBUFS;
 						}
 
 						memcpy(&buf[buffer_index], node->string_data, node->control_extension.explicit.data_length);
-						buffer_index += node->control_extension.explicit.data_length;
+						buffer_index += (node->control_extension.explicit.data_length + 4 - 1)/4;
 					}
 
 					break;
@@ -3528,17 +3534,6 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 			return -EINVAL;
 		}
 	}
-
-	/* Update pad bit count in class ID */
-	pkt->command_prologue.common_prologue.class_id.lower_word.pad_bit_count = (buffer_index - payload_start)/8;
-	
-	uint32_t class_id_word;
-
-	memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.lower_word, sizeof(class_id_word));
-	buf[2] = htonl(class_id_word);
-	
-	memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.upper_word, sizeof(class_id_word));
-	buf[3] = htonl(class_id_word);
 
 	/* Update size in header */
 	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;
@@ -3839,10 +3834,8 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 			fprintf(stderr, "vita49_2_process: Invalid pad bit count in Control Extension Packet. Must be divisible by 8 to be parsed properly, instead received: %d\n", pkt->command_prologue.common_prologue.class_id.lower_word.pad_bit_count);
 			return -EINVAL;
 		}
-
-		uint32_t pad_bytes = pkt->command_prologue.common_prologue.class_id.lower_word.pad_bit_count/8;
 		
-		while (buffer_index < (pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes))
+		while (buffer_index < pkt->command_prologue.common_prologue.header.packet_size_words)
 		{
 			// Avoid reallocating memory for the head node
 			if (current_node == NULL)
@@ -3865,7 +3858,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 										current_node->control_extension.explicit.attribute_name_length +
 										4 - 1) / 4;
 
-			if ((buffer_index + string_lengths) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
+			if ((buffer_index + string_lengths) >= pkt->command_prologue.common_prologue.header.packet_size_words)
 			{
 				fprintf(stderr, "vita49_2_process: Not enough buffer space to parse attribute metadata.\n");
 				return -ENOBUFS;
@@ -3878,9 +3871,9 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 				fprintf(stderr, "vita49_2_process: Failed to allocate memory for device name while parsing Control Extension Packet.\n");
 				return -ENOMEM;
 			}
-			memcpy(&current_node->device_name, &buf[buffer_index], current_node->control_extension.explicit.device_name_length);
+			memcpy(current_node->device_name, &buf[buffer_index], current_node->control_extension.explicit.device_name_length);
 			current_node->device_name[current_node->control_extension.explicit.device_name_length] = '\0';
-			buffer_index += current_node->control_extension.explicit.device_name_length;
+			buffer_index += (current_node->control_extension.explicit.device_name_length + 4 - 1)/4;
 
 			// Channel Name
 			current_node->channel_name = malloc(current_node->control_extension.explicit.channel_name_length + 1);
@@ -3889,9 +3882,9 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 				fprintf(stderr, "vita49_2_process: Failed to allocate memory for channel name while parsing Control Extension Packet.\n");
 				return -ENOMEM;
 			}
-			memcpy(&current_node->channel_name, &buf[buffer_index], current_node->control_extension.explicit.channel_name_length);
+			memcpy(current_node->channel_name, &buf[buffer_index], current_node->control_extension.explicit.channel_name_length);
 			current_node->channel_name[current_node->control_extension.explicit.channel_name_length] = '\0';
-			buffer_index += current_node->control_extension.explicit.channel_name_length;
+			buffer_index += (current_node->control_extension.explicit.channel_name_length + 4 - 1)/4;
 
 			// Attribute Name
 			current_node->attribute_name = malloc(current_node->control_extension.explicit.attribute_name_length + 1);
@@ -3900,16 +3893,16 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 				fprintf(stderr, "vita49_2_process: Failed to allocate memory for attribute name while parsing Control Extension Packet.\n");
 				return -ENOMEM;
 			}
-			memcpy(&current_node->attribute_name, &buf[buffer_index], current_node->control_extension.explicit.attribute_name_length);
+			memcpy(current_node->attribute_name, &buf[buffer_index], current_node->control_extension.explicit.attribute_name_length);
 			current_node->attribute_name[current_node->control_extension.explicit.attribute_name_length] = '\0';
-			buffer_index += current_node->control_extension.explicit.attribute_name_length;
+			buffer_index += (current_node->control_extension.explicit.attribute_name_length + 4 - 1)/4;
 
 			// Extracting the data
 			switch (current_node->control_extension.explicit.data_type)
 			{
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
 
-					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
+					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
 						return -EINVAL;
 
 					uint32_t upper = ntohl(buf[buffer_index++]);
@@ -3921,7 +3914,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
 
-					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
+					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
 						return -EINVAL;
 
 					if (current_node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
@@ -3948,7 +3941,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
 				
-					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
+					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
 						return -EINVAL;
 					
 					if (current_node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
@@ -3978,7 +3971,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
 				
-					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
+					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
 						return -EINVAL;
 
 					current_node->data.u32 = ntohl(buf[buffer_index++]);
@@ -3992,7 +3985,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 						return -EINVAL;
 					}
 
-					if ((buffer_index + current_node->control_extension.explicit.data_length - 1) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
+					if (((buffer_index + current_node->control_extension.explicit.data_length + 4 - 1)/4) >= pkt->command_prologue.common_prologue.header.packet_size_words)
 					{
 						fprintf(stderr, "vita49_2_process: Not enough buffer space to parse data from Control Extension Packet.\n");
 						return -ENOBUFS;
@@ -4005,9 +3998,9 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 						return -ENOMEM;
 					}
 
-					memcpy(&current_node->string_data, &buf[buffer_index], current_node->control_extension.explicit.data_length);
+					memcpy(current_node->string_data, &buf[buffer_index], current_node->control_extension.explicit.data_length);
 					current_node->string_data[current_node->control_extension.explicit.data_length] = '\0';
-					buffer_index += current_node->control_extension.explicit.data_length;
+					buffer_index += (current_node->control_extension.explicit.data_length + 4 - 1)/4;
 
 					break;
 

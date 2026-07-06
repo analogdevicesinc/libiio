@@ -250,7 +250,7 @@ int main(int argc, char** argv)
 
         if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
-            fprintf(stderr, "Failed to serialize first command.\n");
+            fprintf(stderr, "Failed to serialize first command. Error: %d\n", packet_size);
             return 1;
         }
 
@@ -355,6 +355,43 @@ int main(int argc, char** argv)
             close(fd);
             return 1;
         }
+        
+
+        // Unnecessary command, just wanted to test if sending string attributes is handled properly.
+        
+        // // =============================================================================
+        // // FIFTH COMMAND
+        // // =============================================================================
+        // char c5_attribute_name[] = "rf_port_select";
+        // char c5_channel_name[] = "voltage0";
+        // char c5_device_name[] = "ad9361-phy";
+
+        // command.payload->control_extension.explicit.data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S;
+        // command.payload->control_extension.explicit.is_output = false;
+        // command.payload->string_data = "B_BALANCED";
+
+        // command.payload->control_extension.explicit.attribute_name_length = sizeof(c5_attribute_name);
+        // command.payload->control_extension.explicit.channel_name_length = sizeof(c5_channel_name);
+        // command.payload->control_extension.explicit.device_name_length = sizeof(c5_device_name);
+        // command.payload->control_extension.explicit.data_length = sizeof("B_BALANCED");
+
+        // command.payload->device_name = c5_device_name;
+        // command.payload->channel_name = c5_channel_name;
+        // command.payload->attribute_name = c5_attribute_name;
+
+        // if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        // {
+        //     fprintf(stderr, "Failed to serialize fifth command.\n");
+        //     return 1;
+        // }
+
+        // printf("Sending fifth command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
+        // if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        // {
+        //     fprintf(stderr, "Failed to send packet: %s", strerror(errno));
+        //     close(fd);
+        //     return 1;
+        // }
     }
     
     close(fd);

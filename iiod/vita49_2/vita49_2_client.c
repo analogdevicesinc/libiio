@@ -1974,7 +1974,7 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 			chn = iio_device_find_channel(dev, m->channel_name, m->is_output);
 			if (!chn) 
 			{
-				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", m->channel_name);
+				fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", m->channel_name, m->is_output ? "out" : "in");
 				continue;
 			}
 
@@ -2134,6 +2134,7 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 		if (ret < 0)
 		{
 			fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", val, m->attr_name);
+			fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
 		
 			ret *= -1;
 
@@ -2274,197 +2275,344 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 
 	struct vita49_2_control_extension_word_node* control_extension_node;
 
-	// Iterate through the mappings list to find the associated attribute for this command. We're choosing to nest the loops this way (even though it's not the most efficient)
-	// because there might be 2 related attributes that are for TX and RX that correspond to the same CIF bit that should be updated simultaneously. If our outer loop iterated
-	// over the commands in the Control Extension Packet, we would miss that second attribute unless we had duplicate commands.
-	for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next)
+	// There's 2 payload formats/structures that ADI uses for the Control Extension Packets: Implicit and Explicit
+	// See the definition of the vita49_2_control_extension_description struct in vita49_2_packet_elements.h for more information
+			
+	if (pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_IMPLICIT)
+	{
+		// Iterate through the mappings list to find the associated attribute for this command. We're choosing to nest the loops this way (even though it's not the most efficient)
+		// because there might be 2 related attributes that are for TX and RX that correspond to the same CIF bit that should be updated simultaneously. If our outer loop iterated
+		// over the commands in the Control Extension Packet, we would miss that second attribute unless we had duplicate commands.
+		for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next)
+		{
+			// Iterate through all of the commands
+			for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
+			{
+				// Check if mapping is part of the extended controls group
+				if (m->cif_type != CIF_EXT)
+					continue;
+
+				// Check if mapping has the same CIF bit
+				if (m->cif_bit != control_extension_node->control_extension.implicit.mapping)
+					continue;
+
+				// We have a match
+				break;
+			}
+
+			if (control_extension_node == NULL)
+				continue;
+
+			// Find device and channel
+			dev = iio_context_find_device(ctx, m->device_name);
+			if (!dev) 
+			{
+				fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", m->device_name);
+				continue;
+			}
+
+			attr = NULL;
+
+			// Attribute we're modifying is associated with a specific channel so we must find that channel first.
+			if (m->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
+			{
+				chn = iio_device_find_channel(dev, m->channel_name, m->is_output);
+				if (!chn) 
+				{
+					fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", m->channel_name, m->is_output ? "out" : "in");
+					continue;
+				}
+
+				attr = iio_channel_find_attr(chn, m->attr_name);
+			} 
+			// Attribute we're modifying is associated with the device as a whole
+			else if (m->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
+			{
+				attr = iio_device_find_attr(dev, m->attr_name);
+			} 
+			// Attribute we're modifying is a debug attribute (advanced configuration)
+			else if (m->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
+			{
+				attr = iio_device_find_debug_attr(dev, m->attr_name);
+			}
+
+			if (!attr) 
+			{
+				fprintf(stderr, "vita49_2_process: Attribute %s not found on %s.\n", m->attr_name, m->device_name);
+				continue;
+			}
+
+
+			// Extracting the new attribute value and issuing the new value
+			switch (control_extension_node->control_extension.implicit.data_type)
+			{
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+				{
+					long long value;
+					memcpy(&value, &control_extension_node->data, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+					ret = iio_attr_write_longlong(attr, value);
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %lld to %s\n", value, m->attr_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+				{
+					float value;
+					memcpy(&value, &control_extension_node->data.f, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+					ret = iio_attr_write_double(attr, (double)(value));
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", value, m->attr_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+				{
+					double value;
+					memcpy(&value, &control_extension_node->data, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+					ret = iio_attr_write_double(attr, value);
+					if (ret < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s\n", value, m->attr_name);
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+				{
+					bool value;
+					memcpy(&value, &control_extension_node->data.b, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
+					ret = iio_attr_write_bool(attr, value);
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %d to %s\n", value, m->attr_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+				{
+
+					// This will require some extra work. We need to find the "_available" fd associated with this attribute and get a list of the possible values.
+					char available_range[256];
+
+					ret = find_available_attribute(ctx, CIF_EXT, m->cif_bit, available_range, sizeof(available_range));
+					if (ret < 0)
+					{	
+						fprintf(stderr, "vita49_2_process: Unable to find an '_available' attribute for %s. Skipping execution of Control Extension.\n", m->attr_name);
+						continue;
+					}
+
+					// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+						// "[min step max]"
+					// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+					// in the brackets:
+						// "500 600 700 750 900"
+
+					// Since we're treating the list of available options as an array and using the control_extension_node->control_extension.option field as an index,
+					// we're unable to suppor the first option.
+
+					// Means we're dealing with the first case
+					if (available_range[0] == '[')
+					{
+						fprintf(stderr, "vita49_2_process: The '%s_available' attribute provides a start-step-stop format rather than a list of distinct values.\n", m->attr_name);
+						continue;
+					}
+					
+					int num_options = control_extension_node->control_extension.implicit.option;
+
+					// VLA
+					char *values[num_options];
+					for (int i = 0; i < num_options; i++) 
+						values[i] = NULL;
+
+					int count = 0;
+
+					char *tmp = strdup(available_range);
+					if (tmp == NULL) 
+					{
+						fprintf(stderr, "vita49_2_process: Failed to duplicate string while executing an attribute update for %s\n", m->attr_name);
+						continue;
+					}
+
+					char *saveptr = NULL;
+					char *tok = strtok_r(tmp, " \t\r\n", &saveptr);
+					while (tok && count < num_options && count < num_options) 
+					{
+						values[count] = strdup(tok);  // store each token
+						if (!values[count]) 
+						{
+							break;
+						}
+						count++;
+						tok = strtok_r(NULL, " \t\r\n", &saveptr);
+					}
+
+					free(tmp);
+
+					if (values[num_options-1] == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.implicit.option, m->attr_name);
+						continue;
+					}
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %s\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", values[num_options-1]);
+					ret = iio_attr_write_string(attr, values[num_options-1]);
+
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %s to %s\n", values[num_options-1], m->attr_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}	
+					break;
+				}
+			}
+		}
+	}
+	else if (pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT)
 	{
 		// Iterate through all of the commands
 		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
 		{
-			// Check if mapping is part of the extended controls group
-			if (m->cif_type != CIF_EXT)
-				continue;
-
-			// Check if mapping has the same CIF bit
-			if (m->cif_bit != control_extension_node->control_extension.implicit.mapping)
-				continue;
-
-			// We have a match
-			break;
-		}
-
-		if (control_extension_node == NULL)
-			continue;
-
-		// Find device and channel
-		dev = iio_context_find_device(ctx, m->device_name);
-		if (!dev) 
-		{
-			fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", m->device_name);
-			continue;
-		}
-
-		attr = NULL;
-
-		// Attribute we're modifying is associated with a specific channel so we must find that channel first.
-		if (m->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
-		{
-			chn = iio_device_find_channel(dev, m->channel_name, m->is_output);
-			if (!chn) 
+			// Find device and channel
+			dev = iio_context_find_device(ctx, control_extension_node->device_name);
+			if (!dev) 
 			{
-				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", m->channel_name);
+				fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", control_extension_node->device_name);
 				continue;
 			}
 
-			attr = iio_channel_find_attr(chn, m->attr_name);
-		} 
-		// Attribute we're modifying is associated with the device as a whole
-		else if (m->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
-		{
-			attr = iio_device_find_attr(dev, m->attr_name);
-		} 
-		// Attribute we're modifying is a debug attribute (advanced configuration)
-		else if (m->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
-		{
-			attr = iio_device_find_debug_attr(dev, m->attr_name);
-		}
+			attr = NULL;
 
-		if (!attr) 
-		{
-			fprintf(stderr, "vita49_2_process: Attribute %s not found on %s.\n", m->attr_name, m->device_name);
-			continue;
-		}
-
-
-		// Extracting the new attribute value and issuing the new value
-		switch (control_extension_node->control_extension.implicit.data_type)
-		{
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+			// Attribute we're modifying is associated with the device as a whole
+			if (strcmp(control_extension_node->channel_name, "device") == 0)
 			{
-				long long value;
-				memcpy(&value, &control_extension_node->data, sizeof(value));
-
-				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-				ret = iio_attr_write_longlong(attr, value);
-				if (ret < 0)
-					fprintf(stderr, "vita49_2_process: Failed to write %lld to %s\n", value, m->attr_name);
-
-				break;
+				attr = iio_device_find_attr(dev, control_extension_node->attribute_name);
 			}
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+			// Attribute we're modifying is a debug attribute (advanced configuration)
+			else if (strcmp(control_extension_node->channel_name, "debug") == 0)
 			{
-				float value;
-				memcpy(&value, &control_extension_node->data.f, sizeof(value));
-
-				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-				ret = iio_attr_write_double(attr, (double)(value));
-				if (ret < 0)
-					fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", value, m->attr_name);
-
-				break;
+				attr = iio_device_find_debug_attr(dev, control_extension_node->attribute_name);
 			}
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+			// Attribute we're modifying is associated with a specific channel so we must find that channel first.
+			else
 			{
-				double value;
-				memcpy(&value, &control_extension_node->data, sizeof(value));
-
-				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-				ret = iio_attr_write_double(attr, value);
-				if (ret < 0)
-					fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s\n", value, m->attr_name);
-
-				break;
-			}
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
-			{
-				bool value;
-				memcpy(&value, &control_extension_node->data.b, sizeof(value));
-
-				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-				ret = iio_attr_write_bool(attr, value);
-				if (ret < 0)
-					fprintf(stderr, "vita49_2_process: Failed to write %d to %s\n", value, m->attr_name);
-
-				break;
-			}
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
-			{
-
-				// This will require some extra work. We need to find the "_available" fd associated with this attribute and get a list of the possible values.
-				char available_range[256];
-
-				ret = find_available_attribute(ctx, CIF_EXT, m->cif_bit, available_range, sizeof(available_range));
-				if (ret < 0)
-				{	
-					fprintf(stderr, "vita49_2_process: Unable to find an '_available' attribute for %s. Skipping execution of Control Extension.\n", m->attr_name);
+				chn = iio_device_find_channel(dev, control_extension_node->channel_name, control_extension_node->control_extension.explicit.is_output);
+				if (!chn) 
+				{
+					fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", control_extension_node->channel_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in");
 					continue;
 				}
 
-				// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-					// "[min step max]"
-				// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-				// in the brackets:
-					// "500 600 700 750 900"
+				attr = iio_channel_find_attr(chn, control_extension_node->attribute_name);
+			} 
 
-				// Since we're treating the list of available options as an array and using the control_extension_node->control_extension.option field as an index,
-				// we're unable to suppor the first option.
+			if (!attr) 
+			{
+				fprintf(stderr, "vita49_2_process: Attribute '%s' not found on channel '%s' of device '%s'.\n", control_extension_node->attribute_name, control_extension_node->channel_name, control_extension_node->device_name);
+				continue;
+			}
 
-				// Means we're dealing with the first case
-				if (available_range[0] == '[')
+
+			// Extracting the new attribute value and issuing the new value
+			switch (control_extension_node->control_extension.explicit.data_type)
+			{
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
 				{
-					fprintf(stderr, "vita49_2_process: The '%s_available' attribute provides a start-step-stop format rather than a list of distinct values.\n", m->attr_name);
-					continue;
-				}
-				
-				int num_options = control_extension_node->control_extension.implicit.option;
+					long long value;
+					memcpy(&value, &control_extension_node->data, sizeof(value));
 
-				// VLA
-				char *values[num_options];
-				for (int i = 0; i < num_options; i++) 
-					values[i] = NULL;
-
-				int count = 0;
-
-				char *tmp = strdup(available_range);
-				if (tmp == NULL) 
-				{
-					fprintf(stderr, "vita49_2_process: Failed to duplicate string while executing an attribute update for %s\n", m->attr_name);
-					continue;
-				}
-
-				char *saveptr = NULL;
-				char *tok = strtok_r(tmp, " \t\r\n", &saveptr);
-				while (tok && count < num_options && count < num_options) 
-				{
-					values[count] = strdup(tok);  // store each token
-					if (!values[count]) 
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					ret = iio_attr_write_longlong(attr, value);
+					if (ret < 0)
 					{
-						break;
+						fprintf(stderr, "vita49_2_process: Failed to write %lld to %s\n", value, control_extension_node->attribute_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
 					}
-					count++;
-					tok = strtok_r(NULL, " \t\r\n", &saveptr);
+
+					break;
 				}
-
-				free(tmp);
-
-				if (values[num_options-1] == NULL)
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
 				{
-					fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.implicit.option, m->attr_name);
-					continue;
+					float value;
+					memcpy(&value, &control_extension_node->data.f, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					ret = iio_attr_write_double(attr, (double)(value));
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", value, control_extension_node->attribute_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
+
+					break;
 				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+				{
+					double value;
+					memcpy(&value, &control_extension_node->data, sizeof(value));
 
-				printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %s\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", values[num_options-1]);
-				ret = iio_attr_write_string(attr, values[num_options-1]);
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					ret = iio_attr_write_double(attr, value);
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s\n", value, control_extension_node->attribute_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
 
-				if (ret < 0)
-				fprintf(stderr, "vita49_2_process: Failed to write %s to %s\n", values[num_options-1], m->attr_name);
-					
-				break;
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+				{
+					bool value;
+					memcpy(&value, &control_extension_node->data.b, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					ret = iio_attr_write_bool(attr, value);
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %d to %s\n", value, control_extension_node->attribute_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+				{
+					if (control_extension_node->string_data == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Could not execute attribute update for '%s' because of invalid data pointer.\n", control_extension_node->attribute_name);
+						continue;
+					}
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %s\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", control_extension_node->string_data);
+					ret = iio_attr_write_bool(attr, control_extension_node->string_data);
+					if (ret < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %s to %s\n", control_extension_node->string_data, control_extension_node->attribute_name);
+						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
+					}
+
+					break;
+				}
 			}
 		}
 	}
-
+	else
+	{
+		fprintf(stderr, "vita49_2_process: Unrecognized packet class code while executing Control Extension Packet: %d\n", pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code);
+		return -EINVAL;
+	}
 	return 0;
 }
 
@@ -2518,7 +2666,7 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
 		channel = iio_device_find_channel(device, cif_mappings->channel_name, cif_mappings->is_output);
 		if (!channel)
 		{
-			fprintf(stderr, "vita49_2_process: Channel %s not found.\n", available_options_fd_name);
+			fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", available_options_fd_name, cif_mappings->is_output ? "out" : "in");
 			return -ENOFIELD;
 		}
 
@@ -3188,7 +3336,7 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* c
 			channel = iio_device_find_channel(device, cif_mappings->channel_name, cif_mappings->is_output);
 			if (!channel)
 			{
-				fprintf(stderr, "vita49_2_process: Channel %s not found.\n", cif_mappings->channel_name);
+				fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", cif_mappings->channel_name, cif_mappings->is_output ? "out" : "in");
 				continue;
 			}
 
