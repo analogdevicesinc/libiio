@@ -60,7 +60,7 @@ jobs:
           if [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
-          west twister -T samples -v --force-color --inline-logs --integration --fixture iiod_tcp_30431 $EXTRA_TWISTER_FLAGS
+          west twister -T samples -v --force-color --inline-logs --integration $EXTRA_TWISTER_FLAGS
 
   regression-tests:
     name: Regression tests against Zephyr IIOD backend
