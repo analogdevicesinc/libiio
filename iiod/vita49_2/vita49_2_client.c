@@ -2287,7 +2287,7 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 				continue;
 
 			// Check if mapping has the same CIF bit
-			if (m->cif_bit != control_extension_node->control_extension.mapping)
+			if (m->cif_bit != control_extension_node->control_extension.implicit.mapping)
 				continue;
 
 			// We have a match
@@ -2338,7 +2338,7 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 
 
 		// Extracting the new attribute value and issuing the new value
-		switch (control_extension_node->control_extension.data_type)
+		switch (control_extension_node->control_extension.implicit.data_type)
 		{
 			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
 			{
@@ -2417,7 +2417,7 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 					continue;
 				}
 				
-				int num_options = control_extension_node->control_extension.option;
+				int num_options = control_extension_node->control_extension.implicit.option;
 
 				// VLA
 				char *values[num_options];
@@ -2450,7 +2450,7 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 
 				if (values[num_options-1] == NULL)
 				{
-					fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.option, m->attr_name);
+					fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.implicit.option, m->attr_name);
 					continue;
 				}
 

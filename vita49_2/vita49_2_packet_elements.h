@@ -127,7 +127,11 @@ enum vita49_2_packet_class_codes {
 
 	// Acknowledge Packet Classes
 	VITA49_2_PKT_CLASS_ACKV_ACKX				= 0x0005,		// Acknowledgement indicating validity of commands (AckV) or which commands were executed properly (AckX)
-	VITA49_2_PKT_CLASS_ACKS						= 0x0006		// Acknowledgement indicating the new values after the controls from a Control Packet were issued (simmilar to a Context Packet)
+	VITA49_2_PKT_CLASS_ACKS						= 0x0006,		// Acknowledgement indicating the new values after the controls from a Control Packet were issued (simmilar to a Context Packet)
+
+	// Control Extension Packet Classes
+	VITA49_2_PKT_CLASS_CTRL_EXT_IMPLICIT		= 0x0007,		// Control Extension Packet that uses a payload structure as described by the "implicit" struct in the vita49_2_control_extension_description union
+	VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT		= 0x0008,		// Control Extension Packet that uses a payload structure as described by the "explicit" struct in the vita49_2_control_extension_description union
 };
 
 // =============================================================================
@@ -613,13 +617,29 @@ struct vita49_2_warning_error_indicators {
  */
 union vita49_2_control_extension_description {
 	uint32_t word;
+
+	// There's 2 options for the Control Extension Description contents.
+		
+		// Option 1 (Implicit):
+			// The first is designed for referencing CIF Extensions that are declared in the hardware mapping file (such as pluto_vrt_mapping.conf).
+			// It describes the format of the data and CIF bits that reference the correct mapping, however it doesn't contain the
+			// attribute path (device name + channel name + attribute name) as that information is expected to be present in the hardware mapping file.
+			
+			// This option occupies less data per packet because a lot of that information is written into the hardware mapping file present on the device.
+
+		// Option 2 (Explicit):
+		// The second is designed for explicitly referencing device attributes by providing strings for the device name, channel name, and attribute name.
+		
+		// This option is likely preferred if the user does not want to modify the hardware mapping file because the device is in operation, or is unable
+		// to access the device to see what the available options for an attribute are.
+
 	struct {
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			uint32_t reserved:16;
 			uint32_t option:3;		// Some attributes have a fixed set of string values/options, such as "gain_control_mode" which can be "manual", "fast_attack", "slow_attack", or "hybrid". The "option" field specifies which option is being used. For example, "manual" would correspond to 0, "fast_attack" would be 1, etc... This numbering is based on the order of the options when printing the "<attribute name>_available" file descriptor (EX: gain_control_mode_available)
 			uint32_t mapping:8;		// The CIF mapping bit this corresponds to in the <device_name>_mapping.conf, EX: 0, 1, 2, 3...
-			uint32_t encoding:2;	// 0 = None, 1 = 9.7, 2 = 44.20
-			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String
+			uint32_t encoding:2;	// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
+			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
 
 				// Explanation of "4 = String":
 					// Some attributes have a fixed set of string values/options. Rather than packing a string into a VITA packet,
@@ -634,7 +654,37 @@ union vita49_2_control_extension_description {
 			uint32_t option:3;		// Some attributes have a fixed set of string values/options, such as "gain_control_mode" which can be "manual", "fast_attack", "slow_attack", or "hybrid". The "option" field specifies which option is being used. For example, "manual" would correspond to 0, "fast_attack" would be 1, etc... This numbering is based on the order of the options when printing the "<attribute name>_available" file descriptor (EX: gain_control_mode_available)
 			uint32_t reserved:16;
 		#endif
-	};
+	} implicit;
+
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			
+			// Data Metadata
+			uint32_t data_length:8;				// Used if the data type is a string and thus the length is otherwise unknown.
+			uint32_t encoding:2;				// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
+			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
+
+			// Attribute Metadata
+			uint32_t is_output:1;				// True if the attribute corresponds to an output
+			uint32_t attribute_name_length: 6;
+			uint32_t channel_name_length: 6;
+			uint32_t device_name_length: 6;
+
+		#else
+
+			// Attribute Metadata
+			uint32_t device_name_length: 6;
+			uint32_t channel_name_length: 6;
+			uint32_t attribute_name_length: 6;
+			uint32_t is_output:1;				// True if the attribute corresponds to an output
+
+			// Data Metadata
+			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
+			uint32_t encoding:2;				// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
+			uint32_t data_length:8;				// Used if the data type is a string and thus the length is otherwise unknown.
+
+		#endif
+	} explicit;
 };
 
 /**
@@ -653,6 +703,16 @@ struct vita49_2_control_extension_word_node {
 		float f;
 		bool b;
 	} data;
+
+	// For containing the attribute metadata for the Explicit version of the Control Extension Description struct.
+	char* device_name;
+	char* channel_name;
+	char* attribute_name;
+
+	// For the Explicit version of the Control Extension Description struct, we may need to store new attribute data as a string.
+	// It can be unsafe to place a char pointer inside the data union, hence it'll be declared as a separate attribute.
+	// The length of the string is contained within the "data_length" field of the explict struct.
+	char* string_data;
 
 	struct vita49_2_control_extension_word_node* next;
 

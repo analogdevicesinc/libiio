@@ -107,8 +107,8 @@ int main()
         return 1;
     }
 
-    command.payload->control_extension.data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B;
-    command.payload->control_extension.mapping = 0;
+    command.payload->control_extension.implicit.data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B;
+    command.payload->control_extension.implicit.mapping = 0;
     command.payload->data.b = false;
 
     ssize_t packet_size;
@@ -130,7 +130,7 @@ int main()
     // =============================================================================
     // SECOND COMMAND
     // =============================================================================
-    command.payload->control_extension.mapping = 1;
+    command.payload->control_extension.implicit.mapping = 1;
     command.payload->data.b = true;
 
     if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
@@ -150,7 +150,7 @@ int main()
     // =============================================================================
     // THIRD COMMAND
     // =============================================================================
-    command.payload->control_extension.mapping = 2;
+    command.payload->control_extension.implicit.mapping = 2;
     command.payload->data.b = true;
 
     if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
@@ -170,7 +170,7 @@ int main()
     // =============================================================================
     // FOURTH COMMAND
     // =============================================================================
-    command.payload->control_extension.mapping = 3;
+    command.payload->control_extension.implicit.mapping = 3;
     command.payload->data.b = true;
 
     if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
