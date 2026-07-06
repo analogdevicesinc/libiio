@@ -30,6 +30,9 @@
 #include <math.h>
 #include <sys/timerfd.h>
 #include <float.h>
+#include <dirent.h>
+#include <linux/limits.h>
+#include <dlfcn.h>
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
@@ -50,7 +53,10 @@
 
 #define CONTEXT_PACKET_INTERVAL_S 5 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
 
-#define EPSILON
+#define PLUGINS_DIRECTORY "./"
+#define VALIDATE_SYMBOL "validate_sequence" // Name of the function in each command sequence plugin for validating the commands
+#define EXECUTE_SYMBOL "execute_sequence"	// Name of the function in each command sequence plugin for executing the commands
+#define NAME_SYMBOL "get_plugin_name"	// Name of the function that returns the name of the plugin
 
 // I don't want to expose the function declarations listed below to other files, hence why I'm
 // not putting them in the header file.
@@ -287,11 +293,98 @@ int start_vita49_2_daemon(struct iio_context *ctx, struct thread_pool *pool)
 static void vita49_2_main(struct thread_pool *pool, void *args)
 {
 	struct vita49_2_pdata *arguments = args;
+	printf("\n");
+
+	// ==============================================================
+	// SHARED LIBRARIES/PLUGINS
+	// ==============================================================
+	
+	// Command sequences are a list of consecutive libiio calls. They can be implemented by putting multiple commands into a Control/Control Extension Packet,
+	// sending consecutive Control/Control Extension packets, or through a library file that contains logic to initiate all of the libiio commands.
+	struct command_plugin plugin_head = {0};
+	struct command_plugin* current_plugin = &plugin_head;
+
+	// For that last option, we'll load the library files now and keep track of what functionality has been loaded using a linked list.
+	DIR *libraries_directory;
+	libraries_directory = opendir(PLUGINS_DIRECTORY);
+	
+	if (libraries_directory == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to open directory for command sequence plugins (%s) -> %s. Any future commands invoking these libraries will fail!\n", PLUGINS_DIRECTORY, strerror(errno));
+		goto socket_creation;
+	}
+	
+	struct dirent *library;
+	size_t filename_length;
+	while ((library = readdir(libraries_directory)) != NULL)
+	{
+		// Skipping parent/current directory
+		if (strcmp(library->d_name, ".") == 0 || strcmp(library->d_name, "..") == 0)
+			continue;
+
+		// Skipping entries not ending in ".so"
+		filename_length = strlen(library->d_name);
+		if (filename_length < 4 || strcmp(library->d_name + filename_length - 3, ".so") != 0)
+			continue;
+
+		char library_path[PATH_MAX];
+		snprintf(library_path, sizeof(library_path), "%s%s", PLUGINS_DIRECTORY, library->d_name);
+
+		// Loading the library
+		printf("Loading library at %s\n", library_path);
+		void *library_handle = dlopen(library_path, RTLD_LAZY);
+
+		if (library_handle == NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load library. %s\n", dlerror());
+			continue;
+		}
+
+		dlerror();
+
+		// Extracting the symbols
+		current_plugin->validate = dlsym(library_handle, VALIDATE_SYMBOL);
+		char* error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", VALIDATE_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+
+		current_plugin->execute = dlsym(library_handle, EXECUTE_SYMBOL);
+		error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", EXECUTE_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+
+		char* (*get_name)(void);
+		get_name = (char *(*)(void)) dlsym(library_handle, NAME_SYMBOL);
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", EXECUTE_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+
+		current_plugin->name = get_name();
+	}
 
 	// ==============================================================
 	// SOCKET CREATION
 	// ==============================================================
-	
+	socket_creation:
+	{}
+
 	int socket_fd;
 	struct sockaddr_in local_address;
 

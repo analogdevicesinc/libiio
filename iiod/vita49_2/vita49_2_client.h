@@ -18,6 +18,7 @@
 #include "vita49_2_iiod_helpers.h"
 #include <vita49_2/vita49_2_packet_types.h>
 #include "thread-pool.h"
+#include <iio/iio.h>
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -87,6 +88,13 @@ struct vita49_2_cif_mapping {
 struct vita49_2_pdata {
 	struct thread_pool *pool;
 	struct iio_context *ctx;
+};
+
+struct command_plugin {
+	const char* name;
+	int (*validate)(struct iio_context *ctx);
+	int (*execute)(struct iio_context *ctx);
+	struct command_plugin* next;
 };
 
 // ==============================================================

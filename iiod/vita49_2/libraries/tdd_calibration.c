@@ -100,6 +100,7 @@ struct _command sequence[] = {
  * 
  * @return char* 
  */
+__attribute__((visibility("default")))
 char* get_plugin_name()
 {
     char* tmp = malloc(sizeof(PLUGIN_NAME));
@@ -123,7 +124,8 @@ char* get_plugin_name()
  * @param ctx
  * @return int 
  */
-int _validate_sequence(struct iio_context *ctx)
+__attribute__((visibility("default")))
+int validate_sequence(struct iio_context *ctx)
 {
     if (ctx == NULL)
         return -EBADARGS;
@@ -188,7 +190,8 @@ int _validate_sequence(struct iio_context *ctx)
  * @param ctx  
  * @return int 
  */
-int _execute_commands(struct iio_context *ctx)
+__attribute__((visibility("default")))
+int execute_sequence(struct iio_context *ctx)
 {
     if (ctx == NULL)
         return -EBADARGS;
