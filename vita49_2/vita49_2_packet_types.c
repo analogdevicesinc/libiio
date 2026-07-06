@@ -3215,20 +3215,14 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 	}
 
 	/* Class ID */
-	if (pkt->command_prologue.common_prologue.header.has_class_id) 
+	// Pad bit count must be determined before we can write the Class ID.
+	if (!pkt->command_prologue.common_prologue.header.has_class_id)
 	{
-		// +1 since the Class ID is 2 words
-		if (buffer_index + 1 >= max_words) 
-			return -ENOBUFS;
-		
-		uint32_t class_id_word;
-
-		memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.lower_word, sizeof(class_id_word));
-		buf[buffer_index++] = htonl(class_id_word);
-		
-		memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.upper_word, sizeof(class_id_word));
-		buf[buffer_index++] = htonl(class_id_word);
+		fprintf(stderr, "vita49_2_process: Control Extension Packets require Class ID (ADI requirement). Failed to generate packet.\n");
+		return -EINVAL;
 	}
+	
+	buffer_index += 2;
 
 	/* Timestamp Int */
 	if (pkt->command_prologue.common_prologue.header.ts_integer_format != VITA49_2_TSI_NONE) 
@@ -3309,95 +3303,242 @@ __vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_con
 	}
 
 	/* Payload of Control Extension Words */
+	size_t payload_start = buffer_index;
+
 	for (struct vita49_2_control_extension_word_node* node = pkt->payload; node != NULL; node = node->next)
 	{
 		if (buffer_index >= max_words)
+		{
+			fprintf(stderr, "vita49_2_process: Not enough buffer space for Control Extension Packet payload.\n");
 			return -ENOBUFS;
+		}
 
 		buf[buffer_index++] = htonl(node->control_extension.word);
 
-		// We also need to copy the new attribute value to the buffer
-		switch (node->control_extension.implicit.data_type)
+		// There's 2 payload formats/structures that ADI uses for the Control Extension Packets: Implicit and Explicit
+		// See the definition of the vita49_2_control_extension_description struct in vita49_2_packet_elements.h for more information
+			
+		if (pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_IMPLICIT)
 		{
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
-				
-				if ((buffer_index + 1) >= max_words)
-					return -ENOBUFS;
+			// We also need to copy the new attribute value to the buffer
+			switch (node->control_extension.implicit.data_type)
+			{
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+					
+					if ((buffer_index + 1) >= max_words)
+						return -ENOBUFS;
 
-				uint64_t u64;
-				memcpy(&u64, &node->data, sizeof(u64));
-				buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
-				buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
-
-				break;
-
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
-
-				if (buffer_index >= max_words)
-					return -EINVAL;
-
-				if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
-				{
-					buf[buffer_index++] = htonl(node->data.u32);
-				}
-				else if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_9_7)
-				{
-					buf[buffer_index++] = htonl((uint32_t)(convert_to_9_7(node->data.f)));
-				}
-				else if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_10_6)
-				{
-					buf[buffer_index++] = htonl((uint32_t)(convert_to_10_6(node->data.f)));
-				}
-				else
-				{
-					fprintf(stderr, "vita49_2_process: Invalid encoding type for float while trying to generate a Control Extension Packet: %d\n", node->control_extension.implicit.encoding);
-					return -EINVAL;
-				}
-
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
-
-				if ((buffer_index + 1)>= max_words)
-					return -EINVAL;
-				
-				if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
-				{
 					uint64_t u64;
 					memcpy(&u64, &node->data, sizeof(u64));
 					buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
 					buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
-				}
-				else if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_44_20)
-				{
-					int64_t converted = convert_to_44_20(node->data.d);
-					buf[buffer_index++] = htonl((uint32_t)(converted >> 32));
-					buf[buffer_index++] = htonl((uint32_t)(converted));
-				}
-				else
-				{
-					fprintf(stderr, "vita49_2_process: Invalid encoding type for double in Control Extension Packet: %d\n", node->control_extension.implicit.encoding);
+
+					break;
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+
+					if (buffer_index >= max_words)
+						return -EINVAL;
+
+					if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+					{
+						buf[buffer_index++] = htonl(node->data.u32);
+					}
+					else if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_9_7)
+					{
+						buf[buffer_index++] = htonl((uint32_t)(convert_to_9_7(node->data.f)));
+					}
+					else if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_10_6)
+					{
+						buf[buffer_index++] = htonl((uint32_t)(convert_to_10_6(node->data.f)));
+					}
+					else
+					{
+						fprintf(stderr, "vita49_2_process: Invalid encoding type for float while trying to generate a Control Extension Packet: %d\n", node->control_extension.implicit.encoding);
+						return -EINVAL;
+					}
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+
+					if ((buffer_index + 1)>= max_words)
+						return -EINVAL;
+					
+					if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+					{
+						uint64_t u64;
+						memcpy(&u64, &node->data, sizeof(u64));
+						buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
+						buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
+					}
+					else if (node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_44_20)
+					{
+						int64_t converted = convert_to_44_20(node->data.d);
+						buf[buffer_index++] = htonl((uint32_t)(converted >> 32));
+						buf[buffer_index++] = htonl((uint32_t)(converted));
+					}
+					else
+					{
+						fprintf(stderr, "vita49_2_process: Invalid encoding type for double in Control Extension Packet: %d\n", node->control_extension.implicit.encoding);
+						return -EINVAL;
+					}
+
+					break;
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+					
+					if (buffer_index >= max_words)
+						return -EINVAL;
+
+					buf[buffer_index++] = htonl(node->data.u32);
+					break;
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+
+					// For Implicit types, do nothing since this will be handled by the "options" field
+					break;
+
+				default:
+					fprintf(stderr, "vita49_2_process: Unrecognized data type encoding while attempting to serialize a Control Extension Packet: %d\n", node->control_extension.implicit.data_type);
 					return -EINVAL;
-				}
-
-				break;
-
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
-				
-				if (buffer_index >= max_words)
-					return -EINVAL;
-
-				buf[buffer_index++] = htonl(node->data.u32);
-				break;
-
-			case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
-
-				// Do nothing since this will be handled by the "options" field
-				break;
-
-			default:
-				fprintf(stderr, "vita49_2_process: Unrecognized data type encoding while attempting to serialize a Control Extension Packet: %d\n", node->control_extension.implicit.data_type);
-				return -EINVAL;
+			}
 		}
-	}	
+		else if (pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT)
+		{
+			// The attribute metadata (device name, channel name, attribute name) needs to be copied to the buffer along with the
+			// data itself.
+
+			// String length in terms of 32-bit words (ceiling division)
+			uint32_t string_lengths = (
+										node->control_extension.explicit.device_name_length +
+										node->control_extension.explicit.channel_name_length + 
+										node->control_extension.explicit.attribute_name_length +
+										4 - 1) / 4;
+
+			if ((buffer_index + string_lengths) >= max_words)
+			{
+				fprintf(stderr, "vita49_2_process: Not enough buffer space to populate attribute metadata.\n");
+				return -ENOBUFS;
+			}
+
+			memcpy(&buf[buffer_index], node->device_name, node->control_extension.explicit.device_name_length);
+			buffer_index += node->control_extension.explicit.device_name_length;
+
+			memcpy(&buf[buffer_index], node->channel_name, node->control_extension.explicit.channel_name_length);
+			buffer_index += node->control_extension.explicit.channel_name_length;
+
+			memcpy(&buf[buffer_index], node->attribute_name, node->control_extension.explicit.attribute_name_length);
+			buffer_index += node->control_extension.explicit.attribute_name_length;
+
+			switch (node->control_extension.explicit.data_type)
+			{
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+					
+					if ((buffer_index + 1) >= max_words)
+						return -ENOBUFS;
+
+					uint64_t u64;
+					memcpy(&u64, &node->data, sizeof(u64));
+					buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
+					buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
+
+					break;
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+
+					if (buffer_index >= max_words)
+						return -EINVAL;
+
+					if (node->control_extension.explicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+					{
+						buf[buffer_index++] = htonl(node->data.u32);
+					}
+					else if (node->control_extension.explicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_9_7)
+					{
+						buf[buffer_index++] = htonl((uint32_t)(convert_to_9_7(node->data.f)));
+					}
+					else if (node->control_extension.explicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_10_6)
+					{
+						buf[buffer_index++] = htonl((uint32_t)(convert_to_10_6(node->data.f)));
+					}
+					else
+					{
+						fprintf(stderr, "vita49_2_process: Invalid encoding type for float while trying to generate a Control Extension Packet: %d\n", node->control_extension.explicit.encoding);
+						return -EINVAL;
+					}
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+
+					if ((buffer_index + 1)>= max_words)
+						return -EINVAL;
+					
+					if (node->control_extension.explicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
+					{
+						uint64_t u64;
+						memcpy(&u64, &node->data, sizeof(u64));
+						buf[buffer_index++] = htonl((uint32_t)(u64 >> 32));
+						buf[buffer_index++] = htonl((uint32_t)(u64 & 0xFFFFFFFF));
+					}
+					else if (node->control_extension.explicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_44_20)
+					{
+						int64_t converted = convert_to_44_20(node->data.d);
+						buf[buffer_index++] = htonl((uint32_t)(converted >> 32));
+						buf[buffer_index++] = htonl((uint32_t)(converted));
+					}
+					else
+					{
+						fprintf(stderr, "vita49_2_process: Invalid encoding type for double in Control Extension Packet: %d\n", node->control_extension.explicit.encoding);
+						return -EINVAL;
+					}
+
+					break;
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+					
+					if (buffer_index >= max_words)
+						return -EINVAL;
+
+					buf[buffer_index++] = htonl(node->data.u32);
+					break;
+
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+
+					// For Explicit types, we have to copy the string data into the buffer
+					if (pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT)
+					{
+						if ((buffer_index + node->control_extension.explicit.data_length - 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+						{
+							fprintf(stderr, "vita49_2_process: Not enough buffer space for string data while generating Control Extension Packet.\n");
+							return -ENOBUFS;
+						}
+
+						memcpy(&buf[buffer_index], node->string_data, node->control_extension.explicit.data_length);
+						buffer_index += node->control_extension.explicit.data_length;
+					}
+
+					break;
+
+				default:
+					fprintf(stderr, "vita49_2_process: Unrecognized data type encoding while attempting to serialize a Control Extension Packet: %d\n", node->control_extension.explicit.data_type);
+					return -EINVAL;
+			}
+		}
+		else
+		{
+			fprintf(stderr, "vita49_2_process: Unrecognized packet class code while generating Control Extension Packet: %d\n", pkt->command_prologue.common_prologue.class_id.upper_word.packet_class_code);
+			return -EINVAL;
+		}
+	}
+
+	/* Update pad bit count in class ID */
+	pkt->command_prologue.common_prologue.class_id.lower_word.pad_bit_count = (buffer_index - payload_start)/8;
+	
+	uint32_t class_id_word;
+
+	memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.lower_word, sizeof(class_id_word));
+	buf[2] = htonl(class_id_word);
+	
+	memcpy(&class_id_word, &pkt->command_prologue.common_prologue.class_id.upper_word, sizeof(class_id_word));
+	buf[3] = htonl(class_id_word);
 
 	/* Update size in header */
 	pkt->command_prologue.common_prologue.header.packet_size_words = buffer_index;
@@ -3717,12 +3858,14 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 			current_node->control_extension.word = ntohl(buf[buffer_index++]);
 
-			// Extracting the attribute metadata (device name, channel name, attribute name)
-			uint32_t string_lengths = 	current_node->control_extension.explicit.device_name_length +
+			// Extracting the attribute metadata (device name, channel name, attribute name) in terms of 32-bit words (ceiling division)
+			uint32_t string_lengths = (
+										current_node->control_extension.explicit.device_name_length +
 										current_node->control_extension.explicit.channel_name_length + 
-										current_node->control_extension.explicit.attribute_name_length;
-										
-			if ((buffer_index + string_lengths - 1) >= buffer_index)
+										current_node->control_extension.explicit.attribute_name_length +
+										4 - 1) / 4;
+
+			if ((buffer_index + string_lengths) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
 			{
 				fprintf(stderr, "vita49_2_process: Not enough buffer space to parse attribute metadata.\n");
 				return -ENOBUFS;
@@ -3766,7 +3909,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 			{
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
 
-					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
 						return -EINVAL;
 
 					uint32_t upper = ntohl(buf[buffer_index++]);
@@ -3778,7 +3921,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
 
-					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
 						return -EINVAL;
 
 					if (current_node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
@@ -3805,7 +3948,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
 				
-					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					if ((buffer_index + 1) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
 						return -EINVAL;
 					
 					if (current_node->control_extension.implicit.encoding == VITA49_2_CONTROL_EXTENSION_ENCODING_NONE)
@@ -3835,7 +3978,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
 				
-					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					if (buffer_index >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
 						return -EINVAL;
 
 					current_node->data.u32 = ntohl(buf[buffer_index++]);
@@ -3849,7 +3992,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_
 						return -EINVAL;
 					}
 
-					if ((buffer_index + current_node->control_extension.explicit.data_length - 1) >= pkt->command_prologue.common_prologue.header.packet_size_words)
+					if ((buffer_index + current_node->control_extension.explicit.data_length - 1) >= pkt->command_prologue.common_prologue.header.packet_size_words - pad_bytes)
 					{
 						fprintf(stderr, "vita49_2_process: Not enough buffer space to parse data from Control Extension Packet.\n");
 						return -ENOBUFS;
