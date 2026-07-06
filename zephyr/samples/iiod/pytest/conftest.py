@@ -43,7 +43,23 @@ def _network_context(dut: DeviceAdapter):
             time.sleep(0.1)
     else:
         raise TimeoutError('IIOD network server did not start within 30 seconds')
-    ctx = iio.Context('ip:127.0.0.1')
+    # The listen socket is opened BEFORE the shared IIO context is populated,
+    # so an immediate iio.Context() may hit the accept() with 0 devices.
+    # Retry the context until we see devices or timeout.
+    deadline = time.monotonic() + 10.0
+    ctx = None
+    while time.monotonic() < deadline:
+        try:
+            ctx = iio.Context('ip:127.0.0.1')
+            if len(list(ctx.devices)) > 0:
+                break
+            del ctx
+            ctx = None
+        except OSError:
+            pass
+        time.sleep(0.1)
+    if ctx is None:
+        raise TimeoutError('IIOD server never advertised any devices')
     yield ctx
     del ctx  # close TCP connection before DUT teardown
     dut.base_timeout = 2.0
