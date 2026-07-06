@@ -11,6 +11,7 @@ set_target_properties(vita49_2 PROPERTIES
     C_STANDARD 99
     C_STANDARD_REQUIRED ON
     C_EXTENSIONS OFF
+    POSITION_INDEPENDENT_CODE ON
 )
 
 include(GNUInstallDirs)

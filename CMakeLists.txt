@@ -578,10 +578,16 @@ if(WITH_NETWORK_BACKEND)
 	
 	iio_option(WITH_VITA49_2_BACKEND "Enable the VITA 49.2 backend" ON "POSIX")
 	if(WITH_VITA49_2_BACKEND)
+		if (NOT BUILD_SHARED_LIBS)
+			set_target_properties(iio PROPERTIES POSITION_INDEPENDENT_CODE ON)
+		endif()
+
 		if (WIN32)
 			target_link_libraries(iio PRIVATE wsock32 iphlpapi ws2_32)
 		endif()
+
 		add_subdirectory(vita49_2)
+		add_subdirectory(iiod/vita49_2/libraries)
 		target_sources(iio PRIVATE iiod/vita49_2/vita49_2_host.c vita49_2/vita49_2_packet_elements.c vita49_2/vita49_2_packet_types.c)
 		target_include_directories(iio PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/vita49_2

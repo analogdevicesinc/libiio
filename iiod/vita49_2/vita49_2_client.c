@@ -2348,54 +2348,42 @@ int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_co
 			{
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
 				{
-					long long value;
-					memcpy(&value, &control_extension_node->data, sizeof(value));
-
-					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-					ret = iio_attr_write_longlong(attr, value);
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.ll);
+					ret = iio_attr_write_longlong(attr, control_extension_node->data.ll);
 					if (ret < 0)
 					{
-						fprintf(stderr, "vita49_2_process: Failed to write %lld to %s\n", value, m->attr_name);
+						fprintf(stderr, "vita49_2_process: Failed to write %lld to %s\n", control_extension_node->data.ll, m->attr_name);
 						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
 					}
 					break;
 				}
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
 				{
-					float value;
-					memcpy(&value, &control_extension_node->data.f, sizeof(value));
-
-					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-					ret = iio_attr_write_double(attr, (double)(value));
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.f);
+					ret = iio_attr_write_double(attr, (double)(control_extension_node->data.f));
 					if (ret < 0)
 					{
-						fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", value, m->attr_name);
+						fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n", control_extension_node->data.f, m->attr_name);
 						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
 					}
 					break;
 				}
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
 				{
-					double value;
-					memcpy(&value, &control_extension_node->data, sizeof(value));
-
-					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-					ret = iio_attr_write_double(attr, value);
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.d);
+					ret = iio_attr_write_double(attr, control_extension_node->data.d);
 					if (ret < 0)
-						fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s\n", value, m->attr_name);
+						fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s\n", control_extension_node->data.d, m->attr_name);
 
 					break;
 				}
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
 				{
-					bool value;
-					memcpy(&value, &control_extension_node->data.b, sizeof(value));
-
-					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", value);
-					ret = iio_attr_write_bool(attr, value);
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.b);
+					ret = iio_attr_write_bool(attr, control_extension_node->data.b);
 					if (ret < 0)
 					{
-						fprintf(stderr, "vita49_2_process: Failed to write %d to %s\n", value, m->attr_name);
+						fprintf(stderr, "vita49_2_process: Failed to write %d to %s\n", control_extension_node->data.b, m->attr_name);
 						fprintf(stderr, "Error %d: %s\n", ret, strerror(ret));
 					}
 					break;
