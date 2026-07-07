@@ -35,6 +35,6 @@ function(add_command_sequence_plugin target)
 endfunction()
 
 # One target per plugin .so
-add_command_sequence_plugin(tdd_calibration
-    tdd_calibration.c
+add_command_sequence_plugin(tdd_setup
+    tdd_setup.c
 )

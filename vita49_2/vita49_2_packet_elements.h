@@ -21,9 +21,11 @@
 // OUI is one of the component fields of the Class ID field.
 #define OUI 0x64F9C0 
 
-// =============================================================================
-// VITA 49.2 PACKET TYPES
-// =============================================================================
+/**
+ * @enum vita49_2_packet_type
+ * @brief VITA 49.2 Packet Types (lives in the header)
+ * 
+ */
 enum vita49_2_packet_type {
 	VITA49_2_PKT_TYPE_IF_DATA_NO_SID 		= 0x0,
 	VITA49_2_PKT_TYPE_IF_DATA_WITH_SID 		= 0x1,
@@ -35,9 +37,11 @@ enum vita49_2_packet_type {
 	VITA49_2_PKT_TYPE_EXT_COMMAND 			= 0x7,
 };
 
-// =============================================================================
-// TSI - TIMESTAMP INTEGER
-// =============================================================================
+/**
+ * @enum vita49_2_tsi
+ * @brief VITA 49.2 Integer Timestamp Formats (lives in the header)
+ * 
+ */
 enum vita49_2_tsi {
 	VITA49_2_TSI_NONE 		= 0,
 	VITA49_2_TSI_UTC 		= 1,
@@ -45,9 +49,11 @@ enum vita49_2_tsi {
 	VITA49_2_TSI_OTHER 		= 3,
 };
 
-// =============================================================================
-// TSF - TIMESTAMP FRACTIONAL
-// =============================================================================
+/**
+ * @enum vita49_2_tsf
+ * @brief VITA 49.2 Fractional Timestamp Formats (lives in the header)
+ * 
+ */
 enum vita49_2_tsf {
 	VITA49_2_TSF_NONE 			= 0,
 	VITA49_2_TSF_SAMPLE_COUNT 	= 1,
@@ -55,9 +61,11 @@ enum vita49_2_tsf {
 	VITA49_2_TSF_FREE_RUNNING 	= 3,
 };
 
-// =============================================================================
-// ACTION MODE BITS (CONTROL PACKET SPECIFIC)
-// =============================================================================
+/**
+ * @enum vita49_2_control_action_modes
+ * @brief VITA 49.2 Control Action Modes (lives in the CAM, meant for Control Packets)
+ * 
+ */
 enum vita49_2_control_action_modes {
 	VITA49_2_CTRL_NO_ACT 	= 0,
 	VITA49_2_CTRL_DRY_RUN	= 1,
@@ -65,9 +73,12 @@ enum vita49_2_control_action_modes {
 	VITA49_2_CTRL_RESERVED	= 3
 };
 
-// ================================================================================================
-// FIELD-SPECIFIC PREDEFINED WARNINGS AND ERRORS (see Table 8.4.1.2.1-1 in the VITA 49.2 2017)
-// ================================================================================================
+/**
+ * @enum vita49_2_warnings_error_codes
+ * @brief VITA 49.2 Warning and Error Codes
+ * 
+ * See Table 8.4.1.2.1-1 in the VITA 49.2 2017 Documentation
+ */
 enum vita49_2_warnings_error_codes {
 	ENOEXECUTE 	= 31,		// The field was NOT executed because of a Warning or Error (ENOEXEC is a conflicting name)
 	EDEVFAIL 	= 30,		// The field was NOT executed properly because of a device (such as hardware) failure
@@ -93,17 +104,18 @@ enum vita49_2_warnings_error_codes {
 	ENONE		= 0			// No warnings/errors were produced
 };
 
-// =============================================================================
-// PACKET CLASS CODES
-// =============================================================================
-
-// VITA 49.2 specifies that an organization must come up with Packet Classes which define
-// what information is present in VITA 49.2 packets and how they're structured/formatted.
-
-// Each of these Packet Classes are assigned codes. I've already generated some
-// Packet Classes and Packet Class Codes as specified in my "VITA 49.2 Information Structures" document.
-
-// Packet Class Code is a 16-bit field.
+/**
+ * @enum vita49_2_packet_class_codes
+ * @brief VITA 49.2 Packet Class Codes
+ * 
+ * VITA 49.2 specifies that an organization must come up with Packet Classes which define
+ * what information is present in VITA 49.2 packets and how they're structured/formatted.
+ *
+ * Each of these Packet Classes are assigned codes. I've already generated some
+ * Packet Classes and Packet Class Codes as specified in my "VITA 49.2 Information Structures" document.
+ *
+ * Packet Class Code is a 16-bit field.
+ */
 enum vita49_2_packet_class_codes {
 
 	// IMPORTANT: As more classes are defined in the future, please make to use explicit enum values
@@ -134,18 +146,19 @@ enum vita49_2_packet_class_codes {
 	VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT		= 0x0008,		// Control Extension Packet that uses a payload structure as described by the "explicit" struct in the vita49_2_control_extension_description union
 };
 
-// =============================================================================
-// INFORMATION CLASS CODES
-// =============================================================================
-
-// A VITA 49.2 Information Class is a specification of a structure consisting of one or more Packet Classes.
-// It basically a logical organization that groups packets together. It says "I want to accomplish this task 
-// and I'm using these Packet Classes to do that."
-
-// For example, if I want to convey 70-MHz signal data from a component in my signal processing chain,
-// I'd create an Information Class that uses Signal Data Packets, Context Packets, and Control Packets.
-
-// Information Class Code is a 16-bit field.
+/**
+ * @enum vita49_2_information_class_codes
+ * @brief 
+ * 
+ * A VITA 49.2 Information Class is a specification of a structure consisting of one or more Packet Classes.
+ * It basically a logical organization that groups packets together. It says "I want to accomplish this task 
+ * and I'm using these Packet Classes to do that."
+ *
+ * For example, if I want to convey 70-MHz signal data from a component in my signal processing chain,
+ * I'd create an Information Class that uses Signal Data Packets, Context Packets, and Control Packets.
+ *
+ * Information Class Code is a 16-bit field.
+ */
 enum vita49_2_information_class_codes {
 
 	// IMPORTANT: Same warning that I gave for the Packet Class Code. Read that message.
@@ -174,14 +187,17 @@ enum vita49_2_information_class_codes {
 
 };
 
-// =============================================================================
-// CONTROL EXTENSION PACKET DATA TYPES
-// =============================================================================
-
-// The Control Extension Packet is for issuing controls that don't map well to CIF fields, such as the "frequency-division-duplex-mode-enable"
-// debug attribute for the AD9361. Because there's so many different attributes across ADI devices, there's no conceivable way to
-// create CIF-like structures, thus we have to rely on indicator bits to tell us how to interpret the payload in a Control Extension Packet
-// such as the datatype for one of the attributes we're trying to modify.
+/**
+ * @enum vita49_2_control_extension_data_types
+ * @brief Common data types used in the libiio VITA 49.2 subsystem.
+ * 
+ * The Control Extension Packet is for issuing controls that don't map well to CIF fields, such as the "frequency-division-duplex-mode-enable"
+ * debug attribute for the AD9361. Because there's so many different attributes across ADI devices, there's no conceivable way to
+ * create CIF-like structures, thus we have to rely on indicator bits to tell us how to interpret the payload in a Control Extension Packet
+ * such as the datatype for one of the attributes we're trying to modify.
+ * 
+ * This is not a standard VITA 49.2 definition. This is a custom enum definition for ADI's Control Extension Packets.
+ */
 enum vita49_2_control_extension_data_types {
 	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL 	= 0,	// long long
 	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F		= 1,	// float
@@ -190,10 +206,12 @@ enum vita49_2_control_extension_data_types {
 	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S		= 4		// Means the attribute we're modifying has a "string" type value.
 };
 
-// =============================================================================
-// CONTROL EXTENSION PACKET ENCODING TYPES
-// =============================================================================
-
+/**
+ * @enum vita49_2_control_extension_encoding_types
+ * @brief Defines some common VITA encoding formats for conveying data. Used primarily in ADI's Control Extension Packets.
+ * 
+ * This is not a standard VITA 49.2 definition. This is a custom enum definition for ADI's Control Extension Packets.
+ */
 enum vita49_2_control_extension_encoding_types {
 	VITA49_2_CONTROL_EXTENSION_ENCODING_NONE 	= 0,	// No special encoding
 	VITA49_2_CONTROL_EXTENSION_ENCODING_9_7		= 1,	// 9.7 for floats
@@ -202,53 +220,63 @@ enum vita49_2_control_extension_encoding_types {
 };
 
 /**
- * @struct vita49_2_header
+ * @union vita49_2_header
  * @brief VITA 49.2 Packet Header (32 bits)
  * 
- * This structure contains the subfields composing the Header field existing in every VITA 49.2 packet.
+ * Contains the subfields composing the Header field existing in every VITA 49.2 packet.
  */
-struct vita49_2_header {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
-	uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
-	uint32_t ts_fractional_format:2; /* Timestamp Fractional (TSF) Format, MUST use values from the vita49_2_tsi enum */
-	uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format, MUST use values from the vita49_2_tsf enum */
-	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
-	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
-	uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
-#else
-	uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
-	uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
-	uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
-	uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
-	uint32_t ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
-	uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
-	uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
-#endif
+union vita49_2_header {
+	
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+			uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
+			uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
+			uint32_t ts_fractional_format:2; /* Timestamp Fractional (TSF) Format, MUST use values from the vita49_2_tsi enum */
+			uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format, MUST use values from the vita49_2_tsf enum */
+			uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
+			uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
+			uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
+		#else
+			uint32_t packet_type:4;         /* VITA 49.2 Packet Type */
+			uint32_t has_class_id:1;        /* Class ID Included Indicator (C bit) */
+			uint32_t indicators:3;			/* Packet Specific Indicator Bits*/
+			uint32_t ts_integer_format:2;   /* Timestamp Integer (TSI) Format */
+			uint32_t ts_fractional_format:2; /* Timestamp Fractional (TSF) Format */
+			uint32_t packet_count:4;        /* Packet Count (modulo-15 sequence counter) */
+			uint32_t packet_size_words:16;  /* Packet Size in 32-bit words (including the header)*/
+		#endif
+	};
+
 };
 
 /**
- * @struct vita_4_2_trailer
+ * @union vita_4_2_trailer
  * @brief VITA 49.2 Trailer (32 bits)
  * 
- * This structure contains the subfields composing the optional Trailer field in Signal Data Packets.
+ * Contains the subfields composing the optional Trailer field in Signal Data Packets.
  */
-struct vita49_2_trailer {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+union vita49_2_trailer {
 
-	uint32_t associated_context_packet_count:7;      /* Count of linked Context packets */
-	uint32_t context_packet_count_enable:1;          /* E bit: Associated Context Packet Count is valid */
-	uint32_t state_and_event_indicators:12;          /* State and Event indicators (e.g., AGC, Cal Error) */
-	uint32_t indicator_enables:12;                   /* Enables: Validates corresponding indicators */
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
-#else
+			uint32_t associated_context_packet_count:7;      /* Count of linked Context packets */
+			uint32_t context_packet_count_enable:1;          /* E bit: Associated Context Packet Count is valid */
+			uint32_t state_and_event_indicators:12;          /* State and Event indicators (e.g., AGC, Cal Error) */
+			uint32_t indicator_enables:12;                   /* Enables: Validates corresponding indicators */
 
-	uint32_t indicator_enables:12;                   /* Enables: Validates corresponding indicators */
-	uint32_t state_and_event_indicators:12;          /* State and Event indicators (e.g., AGC, Cal Error) */
-	uint32_t context_packet_count_enable:1;          /* E bit: Associated Context Packet Count is valid */
-	uint32_t associated_context_packet_count:7;      /* Count of linked Context packets */
+		#else
 
-#endif
+			uint32_t indicator_enables:12;                   /* Enables: Validates corresponding indicators */
+			uint32_t state_and_event_indicators:12;          /* State and Event indicators (e.g., AGC, Cal Error) */
+			uint32_t context_packet_count_enable:1;          /* E bit: Associated Context Packet Count is valid */
+			uint32_t associated_context_packet_count:7;      /* Count of linked Context packets */
+
+		#endif
+	};
+
 };
 
 /**
@@ -258,33 +286,53 @@ struct vita49_2_trailer {
  * This structure contains the individual fields composing the Class ID field.
  */
 struct vita49_2_class_id {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	
-	// Organizing into words to make encoding into a buffer simpler
-	struct {
-		uint32_t oui:24;           				/* Organizationally Unique Identifier (OUI) */
-		uint32_t reserved:3;
-		uint32_t pad_bit_count:5;  				/* Number of padding bits appended to the end of the payload to ensure the payload is a multiple of 32-bit words*/
-	} lower_word;
+	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		
+		// Organizing into words to make encoding into a buffer simpler
+		union {
+			
+			uint32_t lower_word;
+			struct {
+				uint32_t oui:24;           				/* Organizationally Unique Identifier (OUI) */
+				uint32_t reserved:3;
+				uint32_t pad_bit_count:5;  				/* Number of padding bits appended to the end of the payload to ensure the payload is a multiple of 32-bit words*/
+			};
+		};
 
-	struct {
-		uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class, MUST use values from the vita49_2_packet_class_codes enum*/
-		uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class, MUST use valuse from the vita49_2_information_class_codes enum */
-	} upper_word;
+		union {
+			
+			uint32_t upper_word;
+			struct {
+				uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class, MUST use values from the vita49_2_packet_class_codes enum*/
+				uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class, MUST use valuse from the vita49_2_information_class_codes enum */
+			};
+		
+		};
 
-#else
+	#else
 
-	struct {
-		uint32_t pad_bit_count:5;  				/* Number of padding bits appended to the end of the payload to ensure the payload is a multiple of 32-bit words*/
-		uint32_t reserved:3;
-		uint32_t oui:24;           				/* Organizationally Unique Identifier (OUI) */
-	} lower_word;
+		union {
+			
+			uint32_t lower_word;
+			struct {
+				uint32_t pad_bit_count:5;  				/* Number of padding bits appended to the end of the payload to ensure the payload is a multiple of 32-bit words*/
+				uint32_t reserved:3;
+				uint32_t oui:24;           				/* Organizationally Unique Identifier (OUI) */
+			};
 
-	struct {
-		uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class, MUST use valuse from the vita49_2_information_class_codes enum */	} upper_word;
-		uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class, MUST use values from the vita49_2_packet_class_codes enum*/
-	
-#endif
+		};
+
+		union {
+
+			uint32_t upper_word;
+			struct {
+				uint32_t information_class_code:16; 	/* Information Class Code - Identifies the particular Information Class, MUST use valuse from the vita49_2_information_class_codes enum */	} upper_word;
+				uint32_t packet_class_code:16; 			/* Packet Class Code - Identifies the particular Packet Class, MUST use values from the vita49_2_packet_class_codes enum*/
+			};
+		
+		};
+
+	#endif
 };
 
 
@@ -304,7 +352,7 @@ struct vita49_2_class_id {
  */
 struct vita49_2_prologue {
 
-	struct vita49_2_header header;
+	union vita49_2_header header;
 	uint32_t stream_id;       					/* Stream Identifier, required for ADI's implementation */
 	struct vita49_2_class_id class_id;        	/* 64-bit Class Identifier, required for ADI's implementation */
 	uint32_t timestamp_int;   					/* Integer Timestamp, required for ADI's implementation */
@@ -318,200 +366,225 @@ struct vita49_2_prologue {
 };
 
 /**
- * @struct vita49_2_iq_item
+ * @union vita49_2_iq_item
  * @brief VITA 49.2 Item Packing Field for 16-bit I/Q Data (32 bits)
  * 
- * This structure defines the format of Item Packing Fields for 16-bit I/Q samples. These structs
+ * Defines the format of Item Packing Fields for 16-bit I/Q samples. These structs
  * will be used to populate the payload of a Signal-Time Data Packet (specifically for 16-bit I/Q).
  */
-struct vita49_2_iq_item {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-	
-	// Currently we're not implementing channel and event tags as that would cause Item Packing Fields to extend beyond 32 bits,
-	// however ADI retains the right to implement them in the future.
+union vita49_2_iq_item {
 
-	// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
-	// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
-	
-	uint32_t quadrature:16; 		/* 16-bit signed Q component */
-	uint32_t in_phase:16; 			/* 16-bit signed I component */
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		
+			// Currently we're not implementing channel and event tags as that would cause Item Packing Fields to extend beyond 32 bits,
+			// however ADI retains the right to implement them in the future.
 
-#else
+			// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
+			// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
+			
+			uint32_t quadrature:16; 		/* 16-bit signed Q component */
+			uint32_t in_phase:16; 			/* 16-bit signed I component */
 
-	uint32_t in_phase:16; 			/* 16-bit signed I component */
-	uint32_t quadrature:16; 		/* 16-bit signed Q component */
-	
-	// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
-	// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
+		#else
 
-#endif
+			uint32_t in_phase:16; 			/* 16-bit signed I component */
+			uint32_t quadrature:16; 		/* 16-bit signed Q component */
+			
+			// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
+			// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
+
+	#endif
+	};
+
 };
 
 /**
- * @struct vita49_2_cam_field
+ * @union vita49_2_cam_field
  * @brief VITA 49.2 Control/Acknowledge Mode (CAM) Field (32 bits)
  * 
- * This structure contains bits representing the Control/Acknowledge Mode (CAM) field specifically for Control Packets.
+ * Contains bits representing the Control/Acknowledge Mode (CAM) field specifically for Control Packets.
  * Another variation exists for Acknowledge Packets.
  */
-struct vita49_2_control_cam_field {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
+union vita49_2_control_cam_field {
 
-	// See Table 8.3.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
-	uint32_t reserved_7_0:8; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
-	
-	uint32_t ack_bits:4;					/* Set to 0 for Control Packets */
-	
-	uint32_t timing_control:3;				/* See Table 8.3.1.7-1 in the full VITA 49.2 specification document */
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
 
-	uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			// See Table 8.3.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
+			uint32_t reserved_7_0:8; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+			
+			uint32_t ack_bits:4;					/* Set to 0 for Control Packets */
+			
+			uint32_t timing_control:3;				/* See Table 8.3.1.7-1 in the full VITA 49.2 specification document */
 
-	uint32_t request_error_x:1;				/* Requests Error fields be sent in the AckX packet */
-	uint32_t request_warning_x:1;			/* Requests Warning fields be sent in the AckX packet */
+			uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t request_ack_s:1;				/* Requests an AckS packet in response to a Command packet */
-	uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
-	uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
+			uint32_t request_error_x:1;				/* Requests Error fields be sent in the AckX packet */
+			uint32_t request_warning_x:1;			/* Requests Warning fields be sent in the AckX packet */
 
-	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t request_ack_s:1;				/* Requests an AckS packet in response to a Command packet */
+			uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
+			uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
 
-	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+			uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+			uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-	uint32_t errors:1;						/* Permit execution of fields that generate Errors */
-	uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+			uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-	uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+			uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+			uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
 
-	uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
-	uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+			uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-	// ADI does not use controllee ID/UUID, however we retain the right to support it at a later time.
-	uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
-	uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+			uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+			uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
 
-#else
+			// ADI does not use controllee ID/UUID, however we retain the right to support it at a later time.
+			uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+			uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
 
-	uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-	uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+		#else
 
-	uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-	uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+			uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+			uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
 
-	uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+			uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+			uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
 
-	uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-	uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+			uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-	uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+			uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+			uint32_t errors:1;						/* Permit execution of fields that generate Errors */
 
-	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+			uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-	uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
-	uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
-	uint32_t request_ack_s:1;				/* Requests an AckS packet in response to a Command packet */
+			uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t request_warning_x:1;			/* Requests Warning fields be sent in the AckX packet */
-	uint32_t request_error_x:1;				/* Requests Error fields be sent in the AckX packet */
+			uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
+			uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
+			uint32_t request_ack_s:1;				/* Requests an AckS packet in response to a Command packet */
 
-	uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t request_warning_x:1;			/* Requests Warning fields be sent in the AckX packet */
+			uint32_t request_error_x:1;				/* Requests Error fields be sent in the AckX packet */
 
-	uint32_t timing_control:3;				/* See Table 8.3.1.7-1 in the full VITA 49.2 specification document */
+			uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t ack_bits:4;					/* Set to 0 for Control Packets */
-	
-	uint32_t reserved_7_0:8; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+			uint32_t timing_control:3;				/* See Table 8.3.1.7-1 in the full VITA 49.2 specification document */
 
-#endif
+			uint32_t ack_bits:4;					/* Set to 0 for Control Packets */
+			
+			uint32_t reserved_7_0:8; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+
+		#endif
+	};
 };
 
 /**
- * @struct vita49_2_cam_field
+ * @union vita49_2_cam_field
  * @brief VITA 49.2 Control/Acknowledge Mode (CAM) Field (32 bits)
  * 
- * This structure contains bits representing the Control/Acknowledge Mode (CAM) field specifically for Control Packets.
+ * Contains bits representing the Control/Acknowledge Mode (CAM) field specifically for Control Packets.
  * Another variation exists for Acknowledge Packets.
  */
-struct vita49_2_ack_cam_field {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
+union vita49_2_ack_cam_field {
 
-	// See Table 8.4.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
-	uint32_t reserved_9_0:10; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
 
-	uint32_t action_scheduled:1;			/* Action Scheduled or Executed, indicates whether actions can be scheduled or were scheduled*/
-	uint32_t partial_action:1;				/* Indicate whether an action was partially executed */
+			// See Table 8.4.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
+			uint32_t reserved_9_0:10; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t timing_ack:3;					/* See Table 8.4.1.5-1 in the full VITA 49.2 specification document */
+			uint32_t action_scheduled:1;			/* Action Scheduled or Executed, indicates whether actions can be scheduled or were scheduled*/
+			uint32_t partial_action:1;				/* Indicate whether an action was partially executed */
 
-	uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t timing_ack:3;					/* See Table 8.4.1.5-1 in the full VITA 49.2 specification document */
 
-	uint32_t errors_present:1;				/* Applicable to AckX Packets only. Indicates errors were generated. */
-	uint32_t warnings_present:1;			/* Applicable to AckV/AckX Packets. Indicates warnings were generated. */
+			uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t ackS_request:1;				/* Set to 1 if this packet is an AckS Packet */
-	uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
-	uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
+			uint32_t errors_present:1;				/* Applicable to AckX Packets only. Indicates errors were generated. */
+			uint32_t warnings_present:1;			/* Applicable to AckV/AckX Packets. Indicates warnings were generated. */
 
-	/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM (specified in Table 8.4.1-1) */
-	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t ackS_request:1;				/* Set to 1 if this packet is an AckS Packet */
+			uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
+			uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
 
-	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+			/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM (specified in Table 8.4.1-1) */
+			union {
+				uint32_t associated_bits:11;
 
-	uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+				struct {
+					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t errors:1;						/* Permit execution of fields that generate Errors */
-	uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-	
-	uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
-	uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
-	uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-	uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
-	uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-	/* ======================================================================================= */
+					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-#else
+					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+					
+					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
 
-	/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM */
-	uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-	uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+				};
+			};
+			/* ======================================================================================= */
 
-	uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-	uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+		#else
 
-	uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+			/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM */
+			union {
+				uint32_t associated_bits:11;
 
-	uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-	uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+				struct {
+					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
 
-	uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
 
-	uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-	uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
-	/* ======================================================================================= */
+					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+
+					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+
+					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+
+					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+				};
+			};
+			/* ======================================================================================= */
 
 
-	uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
-	uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
-	uint32_t ackS_request:1;				/* Set to 1 if this packet is an AckS Packet */
+			uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
+			uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
+			uint32_t ackS_request:1;				/* Set to 1 if this packet is an AckS Packet */
 
-	uint32_t warnings_present:1;			/* Applicable to AckV/AckX Packets. Indicates warnings were generated. */
-	uint32_t errors_present:1;				/* Applicable to AckX Packets only. Indicates errors were generated. */
+			uint32_t warnings_present:1;			/* Applicable to AckV/AckX Packets. Indicates warnings were generated. */
+			uint32_t errors_present:1;				/* Applicable to AckX Packets only. Indicates errors were generated. */
 
-	uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t reserved_15:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t timing_ack:3;					/* See Table 8.4.1.5-1 in the full VITA 49.2 specification document */
+			uint32_t timing_ack:3;					/* See Table 8.4.1.5-1 in the full VITA 49.2 specification document */
 
-	uint32_t partial_action:1;				/* Indicate whether an action was partially executed */
-	uint32_t action_scheduled:1;			/* Action Scheduled or Executed, indicates whether actions can be scheduled or were scheduled*/
+			uint32_t partial_action:1;				/* Indicate whether an action was partially executed */
+			uint32_t action_scheduled:1;			/* Action Scheduled or Executed, indicates whether actions can be scheduled or were scheduled*/
 
-	uint32_t reserved_9_0:10; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+			uint32_t reserved_9_0:10; 				/* Reserved bits - should be set to 0 on generation and ignored on parsing */
 
-#endif
+		#endif
+	};
 };
 
 /**
@@ -526,8 +599,8 @@ struct vita49_2_command_prologue {
 
 	// There's a difference in the CAM fields for Control Packets vs. Acknowledge Packets. So instead of embedding the structs,
 	// I'm deciding to use 2 pointers. I could technically just use a single void pointer, but that doesn't work well with intellisense.
-	struct vita49_2_control_cam_field* control_cam;		/* Control/Acknowledge Mode (CAM) field for Control Packets specifically */
-	struct vita49_2_ack_cam_field* ack_cam;				/* Control/Acknowledge Mode (CAM) field for Acknowledge Packets specifically */
+	union vita49_2_control_cam_field* control_cam;		/* Control/Acknowledge Mode (CAM) field for Control Packets specifically */
+	union vita49_2_ack_cam_field* ack_cam;				/* Control/Acknowledge Mode (CAM) field for Acknowledge Packets specifically */
 	
 	uint32_t message_id;						/* Message ID field - used to correlate Control Packets with their corresponding Acknowledge Packets */
 
@@ -535,12 +608,12 @@ struct vita49_2_command_prologue {
 	// IMPORTANT: The CAM contains indicator bits to indicate if Controllee ID/UUID and Controller ID/UUID are present
 
 	// ADI doesn't use 128-bit UUIDs, however we retain the right to support it at a later time.
-	union controllee_id {
+	union {
 		uint32_t id32;
 		uint32_t uuid128[4];
 	} controllee_id;
 
-	union controller_id {
+	union {
 		uint32_t id32;
 		uint32_t uuid128[4];
 	} controller_id;
@@ -548,69 +621,74 @@ struct vita49_2_command_prologue {
 };
 
 /**
- * @struct vita49_2_warning_error_indicators
+ * @union vita49_2_warning_error_indicators
  * @brief VITA 49.2 Warning/Error Indicators (32 bits) 
  * 
  * This structure holds event indicator bits that can be asserted if a warning or error occurs during
  * execution of a command/control.
  */
-struct vita49_2_warning_error_indicators {
-#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+union vita49_2_warning_error_indicators {
 
-	// See Table 8.4.1.2.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
-	uint32_t reserved_0:1;						/* Reserved bit - should be set to 0 on generation and ignored on parsing */
-	uint32_t user_defined:12;					/* User may specify 12 custom error types */
-	uint32_t reserved_18_13:6;					/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
-	uint32_t regional_interference:1;			/* Supplied field will cause interference between devices in the same operational region */
-	uint32_t cosite_interference:1;				/* Supplied field will cause co-site interference between the transmitter and receiver at the same location.*/
-	
-	uint32_t out_of_band_power_compliance:1; 	/* Supplied field will place the out-of-band power levels out of compiance. */
-	uint32_t in_band_power_compliance:1;		/* Supplied field will place the in-band power levels out of compliance. */
+			// See Table 8.4.1.2.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
+			uint32_t reserved_0:1;						/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t user_defined:12;					/* User may specify 12 custom error types */
+			uint32_t reserved_18_13:6;					/* Reserved bits - should be set to 0 on generation and ignored on parsing */
 
-	uint32_t distortion:1; 						/* Supplied field will cause components to be over-driven, leading to distortion. Applies to receive and transmit. */
-	uint32_t hazardous_power_levels:1;			/* Supplied field will cause transmission of hazardous power levels. */
+			uint32_t regional_interference:1;			/* Supplied field will cause interference between devices in the same operational region */
+			uint32_t cosite_interference:1;				/* Supplied field will cause co-site interference between the transmitter and receiver at the same location.*/
+			
+			uint32_t out_of_band_power_compliance:1; 	/* Supplied field will place the out-of-band power levels out of compiance. */
+			uint32_t in_band_power_compliance:1;		/* Supplied field will place the in-band power levels out of compliance. */
 
-	uint32_t timestamp_problem:1;				/* Indicates that the Controllee was unable to meet the timestamp requirement specified by [T2-T0] for the specified field. */
-	
-	uint32_t field_value_invalid:1;				/* Supplied field has an invalid value. */
-	uint32_t parameter_precision:1;				/* Supplied field has a level of precision beyond the capability of the device. */
-	uint32_t parameter_range:1;					/* Supplied field has a value beyond the capability/operational range of the device. */
-	uint32_t erroneous_field:1;					/* Supplied field does not accept this particular Control field. */
+			uint32_t distortion:1; 						/* Supplied field will cause components to be over-driven, leading to distortion. Applies to receive and transmit. */
+			uint32_t hazardous_power_levels:1;			/* Supplied field will cause transmission of hazardous power levels. */
 
-	uint32_t device_failure:1;					/* Supplied field was not executed properly because of adevice failure. */
-	uint32_t field_not_executed:1;				/* Supplied filed was not executed because of a warning or error. */
+			uint32_t timestamp_problem:1;				/* Indicates that the Controllee was unable to meet the timestamp requirement specified by [T2-T0] for the specified field. */
+			
+			uint32_t field_value_invalid:1;				/* Supplied field has an invalid value. */
+			uint32_t parameter_precision:1;				/* Supplied field has a level of precision beyond the capability of the device. */
+			uint32_t parameter_range:1;					/* Supplied field has a value beyond the capability/operational range of the device. */
+			uint32_t erroneous_field:1;					/* Supplied field does not accept this particular Control field. */
 
-#else
+			uint32_t device_failure:1;					/* Supplied field was not executed properly because of adevice failure. */
+			uint32_t field_not_executed:1;				/* Supplied filed was not executed because of a warning or error. */
 
-	uint32_t field_not_executed:1;				/* Supplied filed was not executed because of a warning or error. */
-	uint32_t device_failure:1;					/* Supplied field was not executed properly because of adevice failure. */
+		#else
 
-	uint32_t erroneous_field:1;					/* Supplied field does not accept this particular Control field. */
-	uint32_t parameter_range:1;					/* Supplied field has a value beyond the capability/operational range of the device. */
-	uint32_t parameter_precision:1;				/* Supplied field has a level of precision beyond the capability of the device. */
-	uint32_t field_value_invalid:1;				/* Supplied field has an invalid value. */
+			uint32_t field_not_executed:1;				/* Supplied filed was not executed because of a warning or error. */
+			uint32_t device_failure:1;					/* Supplied field was not executed properly because of adevice failure. */
 
-	uint32_t timestamp_problem:1;				/* Indicates that the Controllee was unable to meet the timestamp requirement specified by [T2-T0] for the specified field. */
+			uint32_t erroneous_field:1;					/* Supplied field does not accept this particular Control field. */
+			uint32_t parameter_range:1;					/* Supplied field has a value beyond the capability/operational range of the device. */
+			uint32_t parameter_precision:1;				/* Supplied field has a level of precision beyond the capability of the device. */
+			uint32_t field_value_invalid:1;				/* Supplied field has an invalid value. */
 
-	uint32_t hazardous_power_levels:1;			/* Supplied field will cause transmission of hazardous power levels. */
-	uint32_t distortion:1; 						/* Supplied field will cause components to be over-driven, leading to distortion. Applies to receive and transmit. */
+			uint32_t timestamp_problem:1;				/* Indicates that the Controllee was unable to meet the timestamp requirement specified by [T2-T0] for the specified field. */
 
-	uint32_t in_band_power_compliance:1;		/* Supplied field will place the in-band power levels out of compliance. */
-	uint32_t out_of_band_power_compliance:1; 	/* Supplied field will place the out-of-band power levels out of compiance. */
+			uint32_t hazardous_power_levels:1;			/* Supplied field will cause transmission of hazardous power levels. */
+			uint32_t distortion:1; 						/* Supplied field will cause components to be over-driven, leading to distortion. Applies to receive and transmit. */
 
-	uint32_t cosite_interference:1;				/* Supplied field will cause co-site interference between the transmitter and receiver at the same location.*/
-	uint32_t regional_interference:1;			/* Supplied field will cause interference between devices in the same operational region */
-	
-	uint32_t reserved_18_13:6;					/* Reserved bits - should be set to 0 on generation and ignored on parsing */
-	uint32_t user_defined:12;					/* User may specify 12 custom error types */
-	uint32_t reserved_0:1;						/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			uint32_t in_band_power_compliance:1;		/* Supplied field will place the in-band power levels out of compliance. */
+			uint32_t out_of_band_power_compliance:1; 	/* Supplied field will place the out-of-band power levels out of compiance. */
 
-#endif
+			uint32_t cosite_interference:1;				/* Supplied field will cause co-site interference between the transmitter and receiver at the same location.*/
+			uint32_t regional_interference:1;			/* Supplied field will cause interference between devices in the same operational region */
+			
+			uint32_t reserved_18_13:6;					/* Reserved bits - should be set to 0 on generation and ignored on parsing */
+			uint32_t user_defined:12;					/* User may specify 12 custom error types */
+			uint32_t reserved_0:1;						/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+
+		#endif
+	};
+
 };
 
 /**
- * @union
+ * @union vita49_2_control_extension_description
  * @brief Not all of the CIF0 fields translate well to attributes that can be modified on ADI devices.
  * To resolve that, Command/Control Extension Packets are used, but we must also define a custom word format to
  * represent those unique commands in the payload of the Control Extension Packet. 
@@ -725,7 +803,7 @@ struct vita49_2_control_extension_word_node {
 struct vita49_2_ackV_extension_word_node {
 
 	union vita49_2_control_extension_description control_extension;
-	struct vita49_2_warning_error_indicators warning_indicators;
+	union vita49_2_warning_error_indicators warning_indicators;
 	struct vita49_2_ackV_extension_word_node* next;
 
 };
@@ -737,8 +815,8 @@ struct vita49_2_ackV_extension_word_node {
 struct vita49_2_ackX_extension_word_node {
 
 	union vita49_2_control_extension_description control_extension;
-	struct vita49_2_warning_error_indicators warning_indicators;
-	struct vita49_2_warning_error_indicators error_indicators;
+	union vita49_2_warning_error_indicators warning_indicators;
+	union vita49_2_warning_error_indicators error_indicators;
 	struct vita49_2_ackV_extension_word_node* next;
 	
 };
@@ -757,53 +835,73 @@ struct vita49_2_data_payload_format {
 
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 
-	// See Table 9.13.3-1 in the VITA 49.2 2017 document
-	struct {
+		// See Table 9.13.3-1 in the VITA 49.2 2017 document
+		union {
 
-		uint32_t data_item_size:6;
-		uint32_t item_packing_field_size:6;
-		uint32_t data_item_fraction_size:4;
-		uint32_t channel_tag_size:4;
-		uint32_t event_tag_size:3;
-		uint32_t sample_component_repeat_indicator:1;
-		uint32_t data_item_format:5;
-		uint32_t real_complex_type:2;
-		uint32_t packing_method:1;
+			uint32_t lower_word;
+			struct {
 
-	} lower_word;
+				uint32_t data_item_size:6;
+				uint32_t item_packing_field_size:6;
+				uint32_t data_item_fraction_size:4;
+				uint32_t channel_tag_size:4;
+				uint32_t event_tag_size:3;
+				uint32_t sample_component_repeat_indicator:1;
+				uint32_t data_item_format:5;
+				uint32_t real_complex_type:2;
+				uint32_t packing_method:1;
 
-	// See Table 9.13.3-2 in the VITA 49.2 2017 doucment
-	struct {
+			};
 
-		uint32_t vector_size:16;
-		uint32_t repeat_count:16;
+		};
 
-	} upper_word;
+		// See Table 9.13.3-2 in the VITA 49.2 2017 doucment
+		union {
 
+			uint32_t upper_word;
+			struct {
+
+				uint32_t vector_size:16;
+				uint32_t repeat_count:16;
+
+			};
+
+		};
+		
 	#else
 
-	// See Table 9.13.3-1 in the VITA 49.2 2017 document
-	struct {
+		// See Table 9.13.3-1 in the VITA 49.2 2017 document
+		union {
 
-		uint32_t packing_method:1;
-		uint32_t real_complex_type:2;
-		uint32_t data_item_format:5;
-		uint32_t sample_component_repeat_indicator:1;
-		uint32_t event_tag_size:3;
-		uint32_t channel_tag_size:4;
-		uint32_t data_item_fraction_size:4;
-		uint32_t item_packing_field_size:6;
-		uint32_t data_item_size:6;
+			uint32_t lower_word;
+			struct {
 
-	} lower_word;
+				uint32_t packing_method:1;
+				uint32_t real_complex_type:2;
+				uint32_t data_item_format:5;
+				uint32_t sample_component_repeat_indicator:1;
+				uint32_t event_tag_size:3;
+				uint32_t channel_tag_size:4;
+				uint32_t data_item_fraction_size:4;
+				uint32_t item_packing_field_size:6;
+				uint32_t data_item_size:6;
 
-	// See Table 9.13.3-2 in the VITA 49.2 2017 doucment
-	struct {
+			};
+			
+		};
 
-		uint32_t repeat_count:16;
-		uint32_t vector_size:16;
-	
-	} upper_word;
+		// See Table 9.13.3-2 in the VITA 49.2 2017 doucment
+		union {
+
+			uint32_t upper_word;
+			struct {
+
+				uint32_t repeat_count:16;
+				uint32_t vector_size:16;
+			
+			};
+
+		};
 
 	#endif
 
@@ -826,41 +924,146 @@ struct vita49_2_ecef_relative_ephemeris{};
 // See Section 9.13.2 in the VITA 49.2 2017 document for more information.
 struct vita49_2_context_association_lists{};
 
+/**
+ * @struct vita49_2_device_identifier
+ * @brief VITA 49.2 Device Identifier Field
+ * 
+ */
 struct vita49_2_device_identifier {
 
 	#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 	
-	struct {
-		
-		uint32_t oui:24;				/* OUI code, either IEEE-defined or provided by VITA */
-		uint32_t reserved_24_31:8; 		/* Reserved bits should be zeroed out. */
-	
-	} lower_word;
+		union {
 
-	struct {
-		
-		uint32_t device_code:16;		/* Unique device identifier such as a serial number */
-		uint32_t reserved_16_31:16;		/* Reserved bits should be zeroed out. */
-	
-	} upper_word;
+			uint32_t lower_word;
+			struct {
+				
+				uint32_t oui:24;				/* OUI code, either IEEE-defined or provided by VITA */
+				uint32_t reserved_24_31:8; 		/* Reserved bits should be zeroed out. */
+
+			};
+
+		};
+
+		union {
+			
+			uint32_t upper_word;
+			struct {
+				
+				uint32_t device_code:16;		/* Unique device identifier such as a serial number */
+				uint32_t reserved_16_31:16;		/* Reserved bits should be zeroed out. */
+			
+			};
+		};
 
 	#else
 
-	struct {
-		
-		uint32_t reserved_24_31:8; 		/* Reserved bits should be zeroed out. */
-		uint32_t oui:24;				/* OUI code, either IEEE-defined or provided by VITA */
-	
-	} lower_word;
+		union {
 
-	struct {
-		
-		uint32_t reserved_16_31:16		/* Reserved bits should be zeroed out. */
-		uint32_t device_code:16;		/* Unique device identifier such as a serial number */
-	
-	} upper_word;
+			uint32_t lower_word;
+			struct {
+				
+				uint32_t reserved_24_31:8; 		/* Reserved bits should be zeroed out. */
+				uint32_t oui:24;				/* OUI code, either IEEE-defined or provided by VITA */
+
+			};
+
+		};
+
+		union {
+			
+			uint32 upper_word;
+			struct {
+				
+				uint32_t reserved_16_31:16		/* Reserved bits should be zeroed out. */
+				uint32_t device_code:16;		/* Unique device identifier such as a serial number */
+			
+			};
+		};
 
 	#endif
+};
+
+/**
+ * @union vita49_2_cif0_word
+ * @brief The raw Context Indicator Field 0 word
+ * 
+ * See Table 9.1-1 in the full VITA 49.2 Specification
+ * 
+ */
+union vita49_2_cif0_word {
+
+	uint32_t word;
+	struct {
+		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
+		
+			// These are fields that are unlikely to be used, however ADI retains the right to implement them in the future
+			uint32_t reserved_0:1;							/* Reserved bit should be zeroed out */
+			uint32_t cif1_enable:1;							/**< True if a CIF1 word and associated payload are present (Bit 1) */
+			uint32_t cif2_enable:1;							/**< True if a CIF2 word and associated payload are present (Bit 2) */
+			uint32_t cif3_enable:1;							/**< True if a CIF3 word and associated payload are present (Bit 3) */
+			uint32_t reserved_6_4:3;						/* Reserved bits should be zeroed out */
+			uint32_t cif7_enable:1;							/**< True if a CIF7 word and associated payload are present (Bit 7) */
+			uint32_t has_context_association_lists:1;		/**< True if Context Association Lists are present (Bit 8) */
+			uint32_t has_gps_ascii:1;						/**< True if the GPS ASCII payload is present (Bit 9) */
+			uint32_t has_ephemeris_ref_id:1;				/**< True if Ephemeris Reference ID is present (Bit 10) */
+			uint32_t has_relative_ephemeris:1;				/**< True if Relative Ephemeris is present (Bit 11) */
+			uint32_t has_ecef_ephemeris:1;					/**< True if ECEF Ephemeris is present (Bit 12) */
+			uint32_t has_formatted_ins:1;					/**< True if the Formatted INS payload is present (Bit 13) */
+			uint32_t has_formatted_gps:1;					/**< True if the Formatted GPS payload is present (Bit 14) */
+			uint32_t has_data_packet_payload_format:1; 		/**< True if Data Packet Payload Format is present (Bit 15) */
+			uint32_t has_state_and_event_indicators:1; 		/**< True if State/Event Indicators are present (Bit 16) */
+			uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
+			uint32_t has_temperature:1;        				/**< True if Temperature is present (Bit 18) */
+			uint32_t has_timestamp_calibration_time:1;     	/**< True if Timestamp Calibration Time is present (Bit 19) */
+			uint32_t has_timestamp_adjustment:1; 			/**< True if Timestamp Adjustment is present (Bit 20) */
+			uint32_t has_sample_rate:1;        				/**< True if Sample Rate is present (Bit 21) */
+			uint32_t has_over_range_count:1;   				/**< True if Over-Range Count is present (Bit 22) */
+			uint32_t has_gain:1;               				/**< True if Gain is present (Bit 23) */
+			uint32_t has_reference_level:1;    				/**< True if Reference Level is present (Bit 24) */
+			uint32_t has_if_band_offset:1;     				/**< True if IF Band Offset is present (Bit 25) */
+			uint32_t has_rf_reference_frequency_offset:1; 	/**< True if RF Reference Frequency Offset is present (Bit 26) */
+			uint32_t has_rf_reference_frequency:1; 			/**< True if RF Reference Frequency is present (Bit 27) */
+			uint32_t has_if_reference_frequency:1; 			/**< True if IF Reference Frequency is present (Bit 28) */
+			uint32_t has_bandwidth:1;          				/**< True if Bandwidth is present (Bit 29) */
+			uint32_t has_reference_point_id:1; 				/**< True if Reference Point Identifier is present (Bit 30) */
+			uint32_t context_field_change:1; 				/**< True if any context field has changed since the previous Context Packet was sent(Bit 31) */
+		
+		#else
+
+			uint32_t context_field_change:1; 				/**< True if any context field has changed since the previous Context Packet was sent(Bit 31) */
+			uint32_t has_reference_point_id:1; 				/**< True if Reference Point Identifier is present (Bit 30) */
+			uint32_t has_bandwidth:1;          				/**< True if Bandwidth is present (Bit 29) */
+			uint32_t has_if_reference_frequency:1; 			/**< True if IF Reference Frequency is present (Bit 28) */
+			uint32_t has_rf_reference_frequency:1; 			/**< True if RF Reference Frequency is present (Bit 27) */
+			uint32_t has_rf_reference_frequency_offset:1; 	/**< True if RF Reference Frequency Offset is present (Bit 26) */
+			uint32_t has_if_band_offset:1;     				/**< True if IF Band Offset is present (Bit 25) */
+			uint32_t has_reference_level:1;    				/**< True if Reference Level is present (Bit 24) */
+			uint32_t has_gain:1;               				/**< True if Gain is present (Bit 23) */
+			uint32_t has_over_range_count:1;   				/**< True if Over-Range Count is present (Bit 22) */
+			uint32_t has_sample_rate:1;        				/**< True if Sample Rate is present (Bit 21) */
+			uint32_t has_timestamp_adjustment:1; 			/**< True if Timestamp Adjustment is present (Bit 20) */
+			uint32_t has_timestamp_calibration_time:1;     	/**< True if Timestamp Calibration Time is present (Bit 19) */
+			uint32_t has_temperature:1;        				/**< True if Temperature is present (Bit 18) */
+			uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
+			uint32_t has_state_and_event_indicators:1; 		/**< True if State/Event Indicators are present (Bit 16) */
+			uint32_t has_data_packet_payload_format:1; 		/**< True if Data Packet Payload Format is present (Bit 15) */
+			uint32_t has_formatted_gps:1;					/**< True if the Formatted GPS payload is present (Bit 14) */
+			uint32_t has_formatted_ins:1;					/**< True if the Formatted INS payload is present (Bit 13) */
+			uint32_t has_ecef_ephemeris:1;					/**< True if ECEF Ephemeris is present (Bit 12) */
+			uint32_t has_relative_ephemeris:1;				/**< True if Relative Ephemeris is present (Bit 11) */
+			uint32_t has_ephemeris_ref_id:1;				/**< True if Ephemeris Reference ID is present (Bit 10) */
+			uint32_t has_gps_ascii:1;						/**< True if the GPS ASCII payload is present (Bit 9) */
+			uint32_t has_context_association_lists:1;		/**< True if Context Association Lists are present (Bit 8) */
+			uint32_t cif7_enable:1;							/**< True if a CIF7 word and associated payload are present (Bit 7) */
+			uint32_t reserved_6_4:3;						/* Reserved bits should be zeroed out */
+			uint32_t cif3_enable:1;							/**< True if a CIF3 word and associated payload are present (Bit 3) */
+			uint32_t cif2_enable:1;							/**< True if a CIF2 word and associated payload are present (Bit 2) */
+			uint32_t cif1_enable:1;							/**< True if a CIF1 word and associated payload are present (Bit 1) */
+			uint32_t reserved_0:1;							/* Reserved bit should be zeroed out */
+
+		#endif
+	};
 };
 
 /**
@@ -872,79 +1075,7 @@ struct vita49_2_device_identifier {
  */
 struct vita49_2_cif0_fields {
 
-	// See Table 9.1-1 in the full VITA 49.2 Specification
-
-	/* The raw Context Indicator Field 0 word */
-	struct cif0_word {
-		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
-		
-		// These are fields that are unlikely to be used, however ADI retains the right to implement them in the future
-		uint32_t reserved_0:1;							/* Reserved bit should be zeroed out */
-		uint32_t cif1_enable:1;							/**< True if a CIF1 word and associated payload are present (Bit 1) */
-		uint32_t cif2_enable:1;							/**< True if a CIF2 word and associated payload are present (Bit 2) */
-		uint32_t cif3_enable:1;							/**< True if a CIF3 word and associated payload are present (Bit 3) */
-		uint32_t reserved_6_4:3;						/* Reserved bits should be zeroed out */
-		uint32_t cif7_enable:1;							/**< True if a CIF7 word and associated payload are present (Bit 7) */
-		uint32_t has_context_association_lists:1;		/**< True if Context Association Lists are present (Bit 8) */
-		uint32_t has_gps_ascii:1;						/**< True if the GPS ASCII payload is present (Bit 9) */
-		uint32_t has_ephemeris_ref_id:1;				/**< True if Ephemeris Reference ID is present (Bit 10) */
-		uint32_t has_relative_ephemeris:1;				/**< True if Relative Ephemeris is present (Bit 11) */
-		uint32_t has_ecef_ephemeris:1;					/**< True if ECEF Ephemeris is present (Bit 12) */
-		uint32_t has_formatted_ins:1;					/**< True if the Formatted INS payload is present (Bit 13) */
-		uint32_t has_formatted_gps:1;					/**< True if the Formatted GPS payload is present (Bit 14) */
-		uint32_t has_data_packet_payload_format:1; 		/**< True if Data Packet Payload Format is present (Bit 15) */
-		uint32_t has_state_and_event_indicators:1; 		/**< True if State/Event Indicators are present (Bit 16) */
-		uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
-		uint32_t has_temperature:1;        				/**< True if Temperature is present (Bit 18) */
-		uint32_t has_timestamp_calibration_time:1;     	/**< True if Timestamp Calibration Time is present (Bit 19) */
-		uint32_t has_timestamp_adjustment:1; 			/**< True if Timestamp Adjustment is present (Bit 20) */
-		uint32_t has_sample_rate:1;        				/**< True if Sample Rate is present (Bit 21) */
-		uint32_t has_over_range_count:1;   				/**< True if Over-Range Count is present (Bit 22) */
-		uint32_t has_gain:1;               				/**< True if Gain is present (Bit 23) */
-		uint32_t has_reference_level:1;    				/**< True if Reference Level is present (Bit 24) */
-		uint32_t has_if_band_offset:1;     				/**< True if IF Band Offset is present (Bit 25) */
-		uint32_t has_rf_reference_frequency_offset:1; 	/**< True if RF Reference Frequency Offset is present (Bit 26) */
-		uint32_t has_rf_reference_frequency:1; 			/**< True if RF Reference Frequency is present (Bit 27) */
-		uint32_t has_if_reference_frequency:1; 			/**< True if IF Reference Frequency is present (Bit 28) */
-		uint32_t has_bandwidth:1;          				/**< True if Bandwidth is present (Bit 29) */
-		uint32_t has_reference_point_id:1; 				/**< True if Reference Point Identifier is present (Bit 30) */
-		uint32_t context_field_change:1; 				/**< True if any context field has changed since the previous Context Packet was sent(Bit 31) */
-		
-		#else
-
-		uint32_t context_field_change:1; 				/**< True if any context field has changed since the previous Context Packet was sent(Bit 31) */
-		uint32_t has_reference_point_id:1; 				/**< True if Reference Point Identifier is present (Bit 30) */
-		uint32_t has_bandwidth:1;          				/**< True if Bandwidth is present (Bit 29) */
-		uint32_t has_if_reference_frequency:1; 			/**< True if IF Reference Frequency is present (Bit 28) */
-		uint32_t has_rf_reference_frequency:1; 			/**< True if RF Reference Frequency is present (Bit 27) */
-		uint32_t has_rf_reference_frequency_offset:1; 	/**< True if RF Reference Frequency Offset is present (Bit 26) */
-		uint32_t has_if_band_offset:1;     				/**< True if IF Band Offset is present (Bit 25) */
-		uint32_t has_reference_level:1;    				/**< True if Reference Level is present (Bit 24) */
-		uint32_t has_gain:1;               				/**< True if Gain is present (Bit 23) */
-		uint32_t has_over_range_count:1;   				/**< True if Over-Range Count is present (Bit 22) */
-		uint32_t has_sample_rate:1;        				/**< True if Sample Rate is present (Bit 21) */
-		uint32_t has_timestamp_adjustment:1; 			/**< True if Timestamp Adjustment is present (Bit 20) */
-		uint32_t has_timestamp_calibration_time:1;     	/**< True if Timestamp Calibration Time is present (Bit 19) */
-		uint32_t has_temperature:1;        				/**< True if Temperature is present (Bit 18) */
-		uint32_t has_device_identifier:1;     			/**< True if Device Identifier is present (Bit 17) */
-		uint32_t has_state_and_event_indicators:1; 		/**< True if State/Event Indicators are present (Bit 16) */
-		uint32_t has_data_packet_payload_format:1; 		/**< True if Data Packet Payload Format is present (Bit 15) */
-		uint32_t has_formatted_gps:1;					/**< True if the Formatted GPS payload is present (Bit 14) */
-		uint32_t has_formatted_ins:1;					/**< True if the Formatted INS payload is present (Bit 13) */
-		uint32_t has_ecef_ephemeris:1;					/**< True if ECEF Ephemeris is present (Bit 12) */
-		uint32_t has_relative_ephemeris:1;				/**< True if Relative Ephemeris is present (Bit 11) */
-		uint32_t has_ephemeris_ref_id:1;				/**< True if Ephemeris Reference ID is present (Bit 10) */
-		uint32_t has_gps_ascii:1;						/**< True if the GPS ASCII payload is present (Bit 9) */
-		uint32_t has_context_association_lists:1;		/**< True if Context Association Lists are present (Bit 8) */
-		uint32_t cif7_enable:1;							/**< True if a CIF7 word and associated payload are present (Bit 7) */
-		uint32_t reserved_6_4:3;						/* Reserved bits should be zeroed out */
-		uint32_t cif3_enable:1;							/**< True if a CIF3 word and associated payload are present (Bit 3) */
-		uint32_t cif2_enable:1;							/**< True if a CIF2 word and associated payload are present (Bit 2) */
-		uint32_t cif1_enable:1;							/**< True if a CIF1 word and associated payload are present (Bit 1) */
-		uint32_t reserved_0:1;							/* Reserved bit should be zeroed out */
-
-		#endif
-	} cif0_word;
+	union vita49_2_cif0_word word;
 
 	// NOTE: "Context Field Change Indicator" doesn't have an actual payload field. 
 	// It's simply an indicator and can exist in the CIF0 word
@@ -991,24 +1122,56 @@ struct vita49_2_cif0_fields {
 	struct vita49_2_context_association_lists context_association_lists;	/**< CALs allow a data packet to be associated with multiple context packets from relevant reference points or systems */
 };
 
-// TODO: Define a struct to represent CIF1 similarly to how we've defined CIF0 below.
+// TODO: Define a struct to represent CIF1 similarly to how we've defined CIF0 above.
+union vita49_2_cif1_word{
+
+	uint32_t word;
+	struct {};
+
+};
 struct vita49_2_cif1_fields {
-	struct cif1_word {} cif1_word;
+	
+	union vita49_2_cif1_word word;
+
 };
 
-// TODO: Define a struct to represent CIF2 similarly to how we've defined CIF0 below.
+// TODO: Define a struct to represent CIF2 similarly to how we've defined CIF0 above.
+union vita49_2_cif2_word {
+
+	uint32_t word;
+	struct {};
+
+};
 struct vita49_2_cif2_fields {
-	struct cif2_word {} cif2_word;
+
+	union vita49_2_cif2_word word;
+
 };
 
-// TODO: Define a struct to represent CIF3 similarly to how we've defined CIF0 below.
+// TODO: Define a struct to represent CIF3 similarly to how we've defined CIF0 above.
+union vita49_2_cif3_word {
+	
+	uint32_t word;
+	struct {};
+
+};
 struct vita49_2_cif3_fields {
-	struct cif3_word {} cif3_word;
+	
+	union vita49_2_cif3_word word;
+	
 };
 
-// TODO: Define a struct to represent CIF7 similarly to how we've defined CIF0 below.
+// TODO: Define a struct to represent CIF7 similarly to how we've defined CIF0 above.
+union vita49_2_cif7_word {
+
+	uint32_t word;
+	struct {};
+
+};
 struct vita49_2_cif7_fields {
-	struct cif7_word {} cif7_word;
+
+	union vita49_2_cif7_word word;
+
 };
 
 /**
@@ -1017,20 +1180,22 @@ struct vita49_2_cif7_fields {
  * 
  */
 struct vita49_2_warnings {
-	struct cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
+
+	union vita49_2_cif0_word cif0_warnings;	/* Indicates which of the CIF0 attributes had warnings */
 
 	// Not currently in use, but ADI retains the right to implement these fields in the future.
 	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
-	struct cif1_word* cif1_warnings;	
-	struct cif2_word* cif2_warnings;
-	struct cif3_word* cif3_warnings;
-	struct cif7_word* cif7_warnings;
+	union vita49_2_cif1_word* cif1_warnings;	
+	union vita49_2_cif2_word* cif2_warnings;
+	union vita49_2_cif3_word* cif3_warnings;
+	union vita49_2_cif7_word* cif7_warnings;
 
 	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
 	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 2017 document
 	// for the list of predefined warnings/errors)
-	struct vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
+	union vita49_2_warning_error_indicators* warnings_payload; 	/* Pointer to the start of the payload words */
 	uint16_t warnings_payload_num_words;     					/* Number of 32-bit words in the payload */
+
 };
 
 /**
@@ -1039,22 +1204,23 @@ struct vita49_2_warnings {
  * 
  */
 struct vita49_2_errors {
-	struct cif0_word cif0_errors;	/* Indicates which of the CIF0 had errors */
+
+	union vita49_2_cif0_word cif0_errors;	/* Indicates which of the CIF0 had errors */
 
 	// Not currently in use, but ADI retains the right to implement these fields in the future.
 	// Using pointers since embedding each of these structs would result in a lot of bloat if they're unused.
-	struct cif1_word* cif1_errors;	
-	struct cif2_word* cif2_errors;
-	struct cif3_word* cif3_errors;
-	struct cif7_word* cif7_errors;
+	union vita49_2_cif1_word* cif1_errors;	
+	union vita49_2_cif2_word* cif2_errors;
+	union vita49_2_cif3_word* cif3_errors;
+	union vita49_2_cif7_word* cif7_errors;
 
 	// Each CIF field that produced a warning gets a 32-bit warning indicator word in the payload
 	// to indicate what kind of warning occured (see Table 8.4.1.2.1-1 in the VITA 49.2 2017 document
 	// for the list of predefined warnings/errors)
-	struct vita49_2_warning_error_indicators* errors_payload;  	/* Pointer to the start of the payload words */
+	union vita49_2_warning_error_indicators* errors_payload;  	/* Pointer to the start of the payload words */
 	uint16_t errors_payload_num_words;     						/* Number of 32-bit words in the payload */
-};
 
+};
 
 
 
@@ -1107,7 +1273,6 @@ __vrt_api int16_t convert_to_10_6(float value);
  */
 __vrt_api float convert_from_10_6(int16_t value);
 
-
 /**
  * @brief Converts a 16-bit FP-value to a 16-bit integer in 9.7 format (meaning the radix point is to the left of the first 7 bits).
  * 
@@ -1152,7 +1317,6 @@ __vrt_api ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint3
  */
 __vrt_api int vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset, uint32_t* const payload_word);
 
-
 /* Inserts a 32-bit word into a raw payload buffer in network byte-order. */
 __vrt_api void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val);
 
@@ -1179,5 +1343,23 @@ __vrt_api int64_t vita49_2_get_payload_int64(const uint32_t* const payload, uint
 
 /* Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order. */
 __vrt_api void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val);
+
+/**
+ * @brief Serializes the common prologue of a packet to a destination buffer.
+ * 
+ * IMPORTANT: Does NOT serialize the header (first word) because the header contains a packet size field which can only be
+ * determined after the entire packet has been serialized.
+ * 
+ * Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written
+ * to the buffer is returned.
+ * 
+ * @param prologue 
+ * @param buf Pointer to destination buffer.
+ * @param max_words Size of destination buffer in 32-bit words.
+ * @return __vrt_api 
+ */
+__vrt_api ssize_t vita49_2_serialize_common_prologue(const struct vita49_2_prologue* const prologue, uint32_t* const buf, size_t max_words);
+
+__vrt_api ssize_t vita49_2_serialize_cif0_attributes(const struct vita49_2_cif0_fields* const cif0, uint32_t* const buf, size_t offset, size_t max_words, bool is_command_packet);
 
 #endif /* __VITA49_2_PACKET_ELEMENTS_H__ */

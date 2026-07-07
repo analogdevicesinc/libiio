@@ -186,3 +186,15 @@ enum vita49_2_warnings_error_codes validate_command_ll(struct iio_context *ctx, 
 enum vita49_2_warnings_error_codes validate_command_double_h(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, double new_value);
 
 enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const char* const new_value);
+
+/**
+ * @brief Retrieves a handle to an IIO device (high level wrapper around libiio calls).
+ * 
+ * @param ctx
+ * @param device_name
+ * @param channel_name
+ * @param attribute_name
+ * @param is_output
+ * @param attribute Provide a pointer to an attribute struct which will be updated by this function if the attribute exists.
+ */
+enum vita49_2_warnings_error_codes find_iio_device(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute);

@@ -134,7 +134,7 @@ int main(int argc, char** argv)
 
         ssize_t packet_size;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize first command.\n");
             return 1;
@@ -154,7 +154,7 @@ int main(int argc, char** argv)
         command.payload->control_extension.implicit.mapping = 1;
         command.payload->data.b = true;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize second command.\n");
             return 1;
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
         command.payload->control_extension.implicit.mapping = 2;
         command.payload->data.b = true;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize third command.\n");
             return 1;
@@ -194,7 +194,7 @@ int main(int argc, char** argv)
         command.payload->control_extension.implicit.mapping = 3;
         command.payload->data.b = true;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize fourth command.\n");
             return 1;
@@ -248,7 +248,7 @@ int main(int argc, char** argv)
 
         ssize_t packet_size;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize first command. Error: %d\n", packet_size);
             return 1;
@@ -280,7 +280,7 @@ int main(int argc, char** argv)
         command.payload->attribute_name = c2_attribute_name;
 
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize second command.\n");
             return 1;
@@ -311,7 +311,7 @@ int main(int argc, char** argv)
         command.payload->channel_name = c3_channel_name;
         command.payload->attribute_name = c3_attribute_name;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize third command.\n");
             return 1;
@@ -342,7 +342,7 @@ int main(int argc, char** argv)
         command.payload->channel_name = c4_channel_name;
         command.payload->attribute_name = c4_attribute_name;
 
-        if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         {
             fprintf(stderr, "Failed to serialize fourth command.\n");
             return 1;
@@ -379,7 +379,7 @@ int main(int argc, char** argv)
         // command.payload->channel_name = c5_channel_name;
         // command.payload->attribute_name = c5_attribute_name;
 
-        // if ((packet_size = vita49_2_generate_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        // if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
         // {
         //     fprintf(stderr, "Failed to serialize fifth command.\n");
         //     return 1;

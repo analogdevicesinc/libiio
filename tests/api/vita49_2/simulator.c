@@ -108,14 +108,14 @@ int main()
 
 
     // Uncomment to send a packet to change the sample rate
-    if ((packet_size = vita49_2_generate_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
+    if ((packet_size = vita49_2_serialize_control_packet(&sampling_freq_packet, packet, sizeof(packet)/4)) < 0)
     {
         fprintf(stderr, "Failed to serialize Control Packet!\n");
         return 1;
     }
 
     // Uncomment to instead send a packet to request IQ data
-    // if ((packet_size = vita49_2_generate_control_packet(&request_iq_packet, packet, sizeof(packet)/4)) < 0)
+    // if ((packet_size = vita49_2_serialize_control_packet(&request_iq_packet, packet, sizeof(packet)/4)) < 0)
     // {
     //     fprintf(stderr, "Failed to serialize Control Packet!\n");
     //     return 1;

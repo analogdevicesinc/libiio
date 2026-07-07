@@ -36,6 +36,7 @@
 
 #define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
+// ====================================================================================================================================
 // Streaming related parameters for the RX and TX I/Q buffers
 
 // A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
@@ -46,23 +47,22 @@
 #define NUM_TX_SAMPLES 128
 #define NUM_RX_BLOCKS 4
 
-#define NUM_CHANNELS 2 // One for the I-component and one for the Q-component
-#define BYTES_PER_SAMPLE 4 // I and Q-components are both 16-bit signed integers
+#define NUM_CHANNELS 2 		// One for the I-component and one for the Q-component
+#define BYTES_PER_SAMPLE 4 	// I and Q-components are both 16-bit signed integers
+// ====================================================================================================================================
 
-#define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent VITA 49.2 connections/packet streams.
+#define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent or new VITA 49.2 connections/packet streams.
 
 #define CONTEXT_PACKET_INTERVAL_S 5 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
 
-#define PLUGINS_DIRECTORY "./"
+#define PLUGINS_DIRECTORY "./"				// Directory containing the plugins used for command sequences
 #define VALIDATE_SYMBOL "validate_sequence" // Name of the function in each command sequence plugin for validating the commands
 #define EXECUTE_SYMBOL "execute_sequence"	// Name of the function in each command sequence plugin for executing the commands
-#define NAME_SYMBOL "get_plugin_name"	// Name of the function that returns the name of the plugin
+#define NAME_SYMBOL "get_plugin_name"		// Name of the function that returns the name of the plugin
 
-// I don't want to expose the function declarations listed below to other files, hence why I'm
-// not putting them in the header file.
 
 // ==============================================================
-// FUNCTION DECLARATIONS (INTERNAL ONLY, NOT OUTWARDLY EXPOSED)
+// INTERNAL FUNCTION DECLARATIONS ONLY, NOT OUTWARDLY EXPOSED
 // ==============================================================
 
 /**
@@ -76,21 +76,21 @@
  * @param insertion_item Pointer to a struct containing the parameter values of the associated struct that we want to insert into the array.
  * @return ssize_t 
  */
-ssize_t insert_stream_id(struct vita49_2_stream_entry* array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item);
+ssize_t _insert_stream_id(struct vita49_2_stream_entry* array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item);
 
 /**
  * @brief Add a CIF-to-hardware mapping node to the FRONT of the mappings linked list.
  * 
- * @param cif_type 
- * @param cif_bit 
- * @param device_name 
- * @param attr_type 
+ * @param cif_type CIF0/1/2/3/7
+ * @param cif_bit 0 to 31
+ * @param device_name
+ * @param attr_type Channel/Device/Debug/etc.
  * @param channel_name 
  * @param is_output 
  * @param attr_name 
  * @return int 
  */
-int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, 
+int _command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, 
 			    const char *device_name, enum vita49_2_attr_type attr_type, const char *channel_name,
 			    bool is_output, const char *attr_name);
 
@@ -103,7 +103,7 @@ int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit,
  * @param plugin_head 
  * @return int 
  */
-int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct command_plugin* plugin_head);
+int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct command_plugin* plugin_head);
 
 /**
  * @brief Accepts a parsed Control Extension Packet and executes the commands in it.
@@ -112,7 +112,7 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
  * @param pkt 
  * @return int 
  */
-int execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt);
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt);
 
 /**
  * @brief Finds the "_available" attribute associated with a modifiable IIO attribute.
@@ -334,7 +334,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		// Loading the library
 		printf("Loading library at %s\n", library_path);
-		void *library_handle = dlopen(library_path, RTLD_LAZY);
+		void *library_handle = dlopen(library_path, RTLD_NOW | RTLD_LOCAL);
 
 		if (library_handle == NULL)
 		{
@@ -695,7 +695,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// Data Packet:
 		// Prologue:
 			// Header:
-				// packet_size_words (this gets handled automatically when the vita49_2_generate_<packet_name>() function gets called) *
+				// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
 				// packet_count *
 			// stream_id *
 			// timestamp_int *
@@ -743,7 +743,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Command Prologue:
 			// Common Prologue
 				// Header:
-					// packet_size_words (this gets handled automatically when the vita49_2_generate_<packet_name>() function gets called) *
+					// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
 					// packet_count *
 				// stream_id *
 				// timestamp_int *
@@ -799,7 +799,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Command Prologue:
 			// Common Prologue
 				// Header:
-					// packet_size_words (this gets handled automatically when the vita49_2_generate_<packet_name>() function gets called) *
+					// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
 					// packet_count *
 				// stream_id *
 				// timestamp_int *
@@ -859,7 +859,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Command Prologue:
 			// Common Prologue
 				// Header:
-					// packet_size_words (this gets handled automatically when the vita49_2_generate_<packet_name>() function gets called) *
+					// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
 					// packet_count *
 				// stream_id *
 				// timestamp_int *
@@ -1192,7 +1192,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							}
 
 							// Now to write that data to a buffer and send it
-							if ((time_data_packet_size = vita49_2_generate_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							if ((time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 							{
 								fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet.\n");
 								continue;							
@@ -1278,7 +1278,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							memcpy(&ackV_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackV_packet.command_prologue.controllee_id));
 
 							// Now to write that data to a buffer and send it
-							if ((ackV_packet_size = vita49_2_generate_ackV_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							if ((ackV_packet_size = vita49_2_serialize_ackV_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet.\n");
 							else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP.\n");
@@ -1404,7 +1404,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 
 								// Now to write that data to a buffer and send it
-								if ((ackX_packet_size = vita49_2_generate_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+								if ((ackX_packet_size = vita49_2_serialize_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 									fprintf(stderr, "vita49_2_client: Failed to serialize AckX Packet.\n");
 								else if (sendto(socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 									fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP.\n");
@@ -1514,7 +1514,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							memcpy(&ackS_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackS_packet.command_prologue.controllee_id));
 						
 							// Now to write that data to a buffer and send it
-							if ((ackS_packet_size = vita49_2_generate_ackS_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							if ((ackS_packet_size = vita49_2_serialize_ackS_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to serialize AckS Packet.\n");
 							else if (sendto(socket_fd, send_buffer, ackS_packet_size*4, 0, (struct sockaddr*)&sender_address, sizeof(sender_address)) <= 0)
 								fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP.\n");
@@ -1783,7 +1783,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 			}
 
-			if ((context_packet_size = vita49_2_generate_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+			if ((context_packet_size = vita49_2_serialize_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet.\n");
 				goto cleanup_context;

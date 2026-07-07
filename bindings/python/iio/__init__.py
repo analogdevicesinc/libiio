@@ -1269,10 +1269,10 @@ _c_write.argtypes = (
 
 # VITA 49.2 Generators/Parsers
 # Data Packets
-_vita49_2_generate_data_packet = getattr(_lib, "vita49_2_generate_data_packet")
-if _vita49_2_generate_data_packet:
-    _vita49_2_generate_data_packet.restype = c_ssize_t
-    _vita49_2_generate_data_packet.argtypes = [_POINTER(_VITA49_2_Data_Packet), _POINTER(c_uint), c_size_t]
+_vita49_2_serialize_data_packet = getattr(_lib, "vita49_2_serialize_data_packet")
+if _vita49_2_serialize_data_packet:
+    _vita49_2_serialize_data_packet.restype = c_ssize_t
+    _vita49_2_serialize_data_packet.argtypes = [_POINTER(_VITA49_2_Data_Packet), _POINTER(c_uint), c_size_t]
 
 _vita49_2_parse_data_packet = getattr(_lib, "vita49_2_parse_data_packet")
 if _vita49_2_parse_data_packet:
@@ -1280,10 +1280,10 @@ if _vita49_2_parse_data_packet:
     _vita49_2_parse_data_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_Data_Packet)]
 
 # Context Packets
-_vita49_2_generate_context_packet = getattr(_lib, "vita49_2_generate_context_packet")
-if _vita49_2_generate_context_packet:
-    _vita49_2_generate_context_packet.restype = c_ssize_t
-    _vita49_2_generate_context_packet.argtypes = [_POINTER(_VITA49_2_Context_Packet), _POINTER(c_uint), c_size_t]
+_vita49_2_serialize_context_packet = getattr(_lib, "vita49_2_serialize_context_packet")
+if _vita49_2_serialize_context_packet:
+    _vita49_2_serialize_context_packet.restype = c_ssize_t
+    _vita49_2_serialize_context_packet.argtypes = [_POINTER(_VITA49_2_Context_Packet), _POINTER(c_uint), c_size_t]
 
 _vita49_2_parse_context_packet = getattr(_lib, "vita49_2_parse_context_packet")
 if _vita49_2_parse_context_packet:
@@ -1291,10 +1291,10 @@ if _vita49_2_parse_context_packet:
     _vita49_2_parse_context_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_Context_Packet)]
 
 # Control Packets
-_vita49_2_generate_control_packet = getattr(_lib, "vita49_2_generate_control_packet")
-if _vita49_2_generate_control_packet:
-    _vita49_2_generate_control_packet.restype = c_ssize_t
-    _vita49_2_generate_control_packet.argtypes = [_POINTER(_VITA49_2_Control_Packet), _POINTER(c_uint), c_size_t]
+_vita49_2_serialize_control_packet = getattr(_lib, "vita49_2_serialize_control_packet")
+if _vita49_2_serialize_control_packet:
+    _vita49_2_serialize_control_packet.restype = c_ssize_t
+    _vita49_2_serialize_control_packet.argtypes = [_POINTER(_VITA49_2_Control_Packet), _POINTER(c_uint), c_size_t]
 
 _vita49_2_parse_control_packet = getattr(_lib, "vita49_2_parse_control_packet")
 if _vita49_2_parse_control_packet:
@@ -1302,10 +1302,10 @@ if _vita49_2_parse_control_packet:
     _vita49_2_parse_control_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_Control_Packet)]
 
 # AckX Packets
-_vita49_2_generate_ackX_packet = getattr(_lib, "vita49_2_generate_ackX_packet")
-if _vita49_2_generate_ackX_packet:
-    _vita49_2_generate_ackX_packet.restype = c_ssize_t
-    _vita49_2_generate_ackX_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
+_vita49_2_serialize_ackX_packet = getattr(_lib, "vita49_2_serialize_ackX_packet")
+if _vita49_2_serialize_ackX_packet:
+    _vita49_2_serialize_ackX_packet.restype = c_ssize_t
+    _vita49_2_serialize_ackX_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
 
 _vita49_2_parse_ackX_packet = getattr(_lib, "vita49_2_parse_ackX_packet")
 if _vita49_2_parse_ackX_packet:
@@ -1313,10 +1313,10 @@ if _vita49_2_parse_ackX_packet:
     _vita49_2_parse_ackX_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_AckX_Packet)]
 
 # AckV Packets
-_vita49_2_generate_ackV_packet = getattr(_lib, "vita49_2_generate_ackV_packet")
-if _vita49_2_generate_ackV_packet:
-    _vita49_2_generate_ackV_packet.restype = c_ssize_t
-    _vita49_2_generate_ackV_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
+_vita49_2_serialize_ackV_packet = getattr(_lib, "vita49_2_serialize_ackV_packet")
+if _vita49_2_serialize_ackV_packet:
+    _vita49_2_serialize_ackV_packet.restype = c_ssize_t
+    _vita49_2_serialize_ackV_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
 
 _vita49_2_parse_ackV_packet = getattr(_lib, "vita49_2_parse_ackV_packet")
 if _vita49_2_parse_ackV_packet:
@@ -1324,10 +1324,10 @@ if _vita49_2_parse_ackV_packet:
     _vita49_2_parse_ackV_packet.argtypes = [_POINTER(c_uint), c_size_t, _POINTER(_VITA49_2_AckX_Packet)]
 
 # AckS Packets
-_vita49_2_generate_ackS_packet = getattr(_lib, "vita49_2_generate_ackS_packet")
-if _vita49_2_generate_ackS_packet:
-    _vita49_2_generate_ackS_packet.restype = c_ssize_t
-    _vita49_2_generate_ackS_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
+_vita49_2_serialize_ackS_packet = getattr(_lib, "vita49_2_serialize_ackS_packet")
+if _vita49_2_serialize_ackS_packet:
+    _vita49_2_serialize_ackS_packet.restype = c_ssize_t
+    _vita49_2_serialize_ackS_packet.argtypes = [_POINTER(_VITA49_2_AckX_Packet), _POINTER(c_uint), c_size_t]
 
 _vita49_2_parse_ackS_packet = getattr(_lib, "vita49_2_parse_ackS_packet")
 if _vita49_2_parse_ackS_packet:
@@ -2255,7 +2255,7 @@ class Context(_IIO_Object):
 class _VITA49_2_Packet_Base(object):
     _private_type = None    # The corresponding ctypes struct that defines this what message this is (EX: )
     _parse_fn = None
-    _generate_fn = None
+    _serialize_fn = None
 
     def __init__(self, buffer=None, packet_struct=None):
         if self._private_type is None:
@@ -2293,14 +2293,14 @@ class _VITA49_2_Packet_Base(object):
         return cls(packet_struct=packet_struct)
 
     def to_bytes(self, max_words=1024):
-        if self._generate_fn is None:
+        if self._serialize_fn is None:
             raise NotImplementedError("Generator function is not available in this libiio build.")
 
         if max_words <= 0:
             raise ValueError("max_words must be > 0")
 
         out_words = (c_uint * max_words)()
-        written_words = self._generate_fn(_byref(self._pkt_struct), out_words, c_size_t(max_words))
+        written_words = self._serialize_fn(_byref(self._pkt_struct), out_words, c_size_t(max_words))
         if written_words < 0:
             raise ValueError(f"Failed to generate packet. Error code: {written_words}")
 
@@ -2316,7 +2316,7 @@ class VITA49_2_Data_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_Data_Packet
     _parse_fn = _vita49_2_parse_data_packet
-    _generate_fn = _vita49_2_generate_data_packet
+    _serialize_fn = _vita49_2_serialize_data_packet
 
 
 class VITA49_2_Context_Packet(_VITA49_2_Packet_Base):
@@ -2324,7 +2324,7 @@ class VITA49_2_Context_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_Context_Packet
     _parse_fn = _vita49_2_parse_context_packet
-    _generate_fn = _vita49_2_generate_context_packet
+    _serialize_fn = _vita49_2_serialize_context_packet
 
 
 class VITA49_2_Control_Packet(_VITA49_2_Packet_Base):
@@ -2332,7 +2332,7 @@ class VITA49_2_Control_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_Control_Packet
     _parse_fn = _vita49_2_parse_control_packet
-    _generate_fn = _vita49_2_generate_control_packet
+    _serialize_fn = _vita49_2_serialize_control_packet
 
 
 class VITA49_2_AckX_Packet(_VITA49_2_Packet_Base):
@@ -2340,7 +2340,7 @@ class VITA49_2_AckX_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_AckX_Packet
     _parse_fn = _vita49_2_parse_ackX_packet
-    _generate_fn = _vita49_2_generate_ackX_packet
+    _serialize_fn = _vita49_2_serialize_ackX_packet
 
 
 class VITA49_2_AckV_Packet(_VITA49_2_Packet_Base):
@@ -2348,7 +2348,7 @@ class VITA49_2_AckV_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_AckV_Packet
     _parse_fn = _vita49_2_parse_ackV_packet
-    _generate_fn = _vita49_2_generate_ackV_packet
+    _serialize_fn = _vita49_2_serialize_ackV_packet
 
 
 class VITA49_2_AckS_Packet(_VITA49_2_Packet_Base):
@@ -2356,7 +2356,7 @@ class VITA49_2_AckS_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_AckS_Packet
     _parse_fn = _vita49_2_parse_ackS_packet
-    _generate_fn = _vita49_2_generate_ackS_packet
+    _serialize_fn = _vita49_2_serialize_ackS_packet
 
 
 class VITA49_2_Extended_Control_Packet(_VITA49_2_Packet_Base):
@@ -2367,7 +2367,7 @@ class VITA49_2_Extended_Control_Packet(_VITA49_2_Packet_Base):
 
     _private_type = _VITA49_2_Control_Extension_Packet
     _parse_fn = None
-    _generate_fn = None
+    _serialize_fn = None
 
 
 class VRTCifFields(object):

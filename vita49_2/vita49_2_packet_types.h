@@ -3,10 +3,10 @@
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
  * Copyright (C) 2026 Analog Devices, Inc.
- * Author: Travis Collins <travis.collins@analog.com>
+ * Author: Praveen Perera <praveen.perera@analog.com>
  * 
  * Contributors:
- * 		- Praveen Perera <praveen.perera@analog.com>
+ * 		- Travis Collins <travis.collins@analog.com>
  */
 
 #ifndef __VITA49_2_PACKET_TYPES_H__
@@ -43,10 +43,10 @@ struct vita49_2_data_packet {
 	
 	struct vita49_2_prologue prologue;	/* Common fields present in every VITA 49.2 packet */
 	
-	const struct vita49_2_iq_item *payload;  /* Pointer to the start of the payload words */
+	union vita49_2_iq_item *payload;  	/* Pointer to the start of the payload words */
 	uint16_t payload_num_words;     	/* Number of 32-bit words in the payload */
 	
-	struct vita49_2_trailer trailer; 	/* Optional 32-bit trailer */
+	union vita49_2_trailer trailer; 	/* Optional 32-bit trailer */
 	bool has_trailer;         			/* True if trailer is populated */
 
 };
@@ -100,6 +100,7 @@ struct vita49_2_control_packet {
 	// NOTE: The enable bits for CIF1-7 are contained within the cif0_word parameter in the cif0 struct.
 	// DO NOT duplicate those enable bits here so we can avoid mismatching states. 
 	// Always access those enables through the cif0 struct.
+
 };
 
 /**
@@ -119,6 +120,7 @@ struct vita49_2_ackX_packet {
 
 	struct vita49_2_warnings warnings;
 	struct vita49_2_errors errors;
+
 };
 
 /**
@@ -140,6 +142,7 @@ struct vita49_2_ackV_packet {
 	// Always access those enables through the cif0_warnings struct.
 
 	// AckV messages aren't allowed to have error fields unlike AckX
+
 };
 
 /**
@@ -161,6 +164,7 @@ struct vita49_2_ackS_packet {
 	struct vita49_2_cif2_fields* cif2;	/* CIF2 Word and Fields */
 	struct vita49_2_cif3_fields* cif3;	/* CIF3 Word and Fields */
 	struct vita49_2_cif7_fields* cif7;	/* CIF7 Word and Fields */
+
 };
 
 /**
@@ -236,161 +240,161 @@ struct vita49_2_ackX_extension_packet {
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the data packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to.
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_data_packet(struct vita49_2_data_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_data_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf.
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a data packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_data_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_data_packet *pkt);
+__vrt_api int vita49_2_parse_data_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_data_packet* const pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Context Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the context packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to. 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_context_packet(struct vita49_2_context_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_context_packet(struct vita49_2_context_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_context_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf.
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a context packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_context_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_context_packet *pkt);
+__vrt_api int vita49_2_parse_context_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_context_packet* const pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Control Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the control packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to. 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_control_packet(struct vita49_2_control_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_control_packet(struct vita49_2_control_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_control_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf.
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a control packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_control_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_control_packet *pkt);
+__vrt_api int vita49_2_parse_control_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_control_packet* const pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for an AckX Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the ackX packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to. 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackX_packet(struct vita49_2_ackX_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_ackX_packet(struct vita49_2_ackX_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_ackx_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf.
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a ackX packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackX_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackX_packet *pkt);
+__vrt_api int vita49_2_parse_ackX_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_ackX_packet* const pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for an AckV Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the ackV packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to.  
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackV_packet(struct vita49_2_ackV_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_ackV_packet(struct vita49_2_ackV_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_ackv_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf.
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a ackV packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackV_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackV_packet *pkt);
+__vrt_api int vita49_2_parse_ackV_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_ackV_packet* const pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a AckS Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the ackS packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to. 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_ackS_packet(struct vita49_2_ackS_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_ackS_packet(struct vita49_2_ackS_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_acks_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf.
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a ackS packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_ackS_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_ackS_packet *pkt);
+__vrt_api int vita49_2_parse_ackS_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_ackS_packet* const pkt);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Control Extension Packet. 
  * The buffer MUST be large enough to hold the generated packet.
  * Returns the number of words written, or a negative error code on failure.
  * 
- * @param pkt 
- * @param buf 
- * @param max_words 
+ * @param pkt Pointer to the control extension packet.
+ * @param buf Pointer to the destination buffer.
+ * @param max_words Max size of the destination buffer that the packet gets serialized to. 
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_generate_control_extension_packet(struct vita49_2_control_extension_packet *pkt, uint32_t *buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_control_extension_packet(struct vita49_2_control_extension_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_control_extension_packet structure. 
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
- * @param buf 
- * @param buf_words Number of 32-bit words in buf. 
- * @param pkt 
+ * @param buf Pointer to the source buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param pkt Pointer to a control extension packet that is to be populated.
  * @return int 
  */
-__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t *buf, size_t buf_words, struct vita49_2_control_extension_packet *pkt);
+__vrt_api int vita49_2_parse_control_extension_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_control_extension_packet* const pkt);
 
 
 #endif /* __VITA49_2_PACKET_TYPES_H__ */

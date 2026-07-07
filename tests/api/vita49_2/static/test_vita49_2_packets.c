@@ -153,7 +153,7 @@ TEST_FUNCTION (test_vita49_2_parse_data_packet)
 }
 
 // Testing Data Packet generation
-TEST_FUNCTION (test_vita49_2_generate_data_packet)
+TEST_FUNCTION (test_vita49_2_serialize_data_packet)
 {
 	// Translating to network order
 	uint32_t time_packet_data[TIME_PACKET_LENGTH];
@@ -164,7 +164,7 @@ TEST_FUNCTION (test_vita49_2_generate_data_packet)
 	vita49_2_parse_data_packet(time_packet_data, TIME_PACKET_LENGTH, &data_packet);
 
 	uint32_t gen_data_packet[TIME_PACKET_LENGTH+5];
-	TEST_ASSERT_EQ(vita49_2_generate_data_packet(&data_packet, gen_data_packet, sizeof(gen_data_packet)/sizeof(gen_data_packet[0])), TIME_PACKET_LENGTH, "9 word packet should be generated.");
+	TEST_ASSERT_EQ(vita49_2_serialize_data_packet(&data_packet, gen_data_packet, sizeof(gen_data_packet)/sizeof(gen_data_packet[0])), TIME_PACKET_LENGTH, "9 word packet should be generated.");
 
 	// Now to compare each byte with the reference buffer
 	char message[50];
@@ -217,7 +217,7 @@ TEST_FUNCTION (test_vita49_2_generate_data_packet)
 // 	TEST_ASSERT_EQ(pkt.payload_words, 6, "Payload should be 6 words");
 // }
 
-// TEST_FUNCTION(test_vrt_generate_packet_basic)
+// TEST_FUNCTION(test_vrt_serialize_packet_basic)
 // {
 // 	struct vrt_packet pkt;
 // 	memset(&pkt, 0, sizeof(pkt));
@@ -239,7 +239,7 @@ TEST_FUNCTION (test_vita49_2_generate_data_packet)
 // 	pkt.trailer.context_packet_count_enable = 1;
 	
 // 	uint32_t buffer[10];
-// 	ssize_t words = vrt_generate_packet(&pkt, buffer, 10);
+// 	ssize_t words = vrt_serialize_packet(&pkt, buffer, 10);
 	
 // 	TEST_ASSERT_EQ(words, 8, "Should generate 8 words");
 	
@@ -261,8 +261,8 @@ int main(void)
 	RUN_TEST(test_vita49_2_parse_data_packet);
 	
 	printf("Testing Data Packet Generation...\n");
-	RUN_TEST(test_vita49_2_generate_data_packet);
-	// RUN_TEST(test_vrt_generate_packet_basic);
+	RUN_TEST(test_vita49_2_serialize_data_packet);
+	// RUN_TEST(test_vrt_serialize_packet_basic);
 	TEST_SUMMARY();
 	return 0;
 }
