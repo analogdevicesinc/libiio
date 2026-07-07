@@ -223,6 +223,7 @@ int iio_resolve_timeout(int timeout, unsigned int default_timeout_ms);
 
 int read_double(const char *str, double *val);
 int write_double(char *buf, size_t len, double val);
+int iio_parse_format_string(const char *fmt_str, struct iio_data_format *fmt);
 
 struct iio_context *iio_create_dynamic_context(
 		const struct iio_context_params *params, const char *uri);

@@ -1564,6 +1564,35 @@ __api void iio_channel_convert(const struct iio_channel *chn, void *dst, const v
  * @param src A pointer to the source buffer containing the sample */
 __api void iio_channel_convert_inverse(const struct iio_channel *chn, void *dst, const void *src);
 
+/** @brief Refresh the data format of a scan element channel from hardware
+ * @param chn A pointer to an iio_channel structure
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned
+ *
+ * This function re-reads the scan element type attribute from the kernel
+ * and updates the cached data format. Use this when the hardware format
+ * may have changed (e.g., after changing oversampling or resolution).
+ *
+ * The channel must be a scan element. For non-scan-element channels,
+ * this returns -EINVAL.
+ *
+ * <b>IMPORTANT:</b> Call this function BEFORE opening a new buffer stream
+ * after changing any attribute that affects channel format.
+ *
+ * Example usage:
+ * @code
+ * // Change hardware configuration
+ * iio_channel_attr_write(chn, "oversampling_ratio", "8");
+ *
+ * // Refresh the format (updates both client and server)
+ * iio_channel_refresh_format(chn);
+ *
+ * // Now safe to open buffer with updated format
+ * buf_stream = iio_buffer_open(buf, mask);
+ * @endcode
+ */
+__api __check_ret int iio_channel_refresh_format(struct iio_channel *chn);
+
 /** @brief Enumerate the event attributes of the given device
  * @param dev A pointer to an iio_device structure
  * @return The number of event attributes found */

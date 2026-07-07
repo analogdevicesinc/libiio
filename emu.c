@@ -563,35 +563,9 @@ static int setup_scan_element(
 				return -EINVAL;
 			*index = (long)value;
 		} else if (!strcmp(name, "format")) {
-			char e, s;
-			if (strchr(content, 'X')) {
-				err = iio_sscanf(content, "%ce:%c%u/%uX%u>>%u",
-#ifdef _MSC_BUILD
-						&e, (unsigned int)sizeof(e), &s,
-						(unsigned int)sizeof(s),
-#else
-						&e, &s,
-#endif
-						&fmt->bits, &fmt->length, &fmt->repeat,
-						&fmt->shift);
-				if (err != 6)
-					return -EINVAL;
-			} else {
-				fmt->repeat = 1;
-				err = iio_sscanf(content, "%ce:%c%u/%u>>%u",
-#ifdef _MSC_BUILD
-						&e, (unsigned int)sizeof(e), &s,
-						(unsigned int)sizeof(s),
-#else
-						&e, &s,
-#endif
-						&fmt->bits, &fmt->length, &fmt->shift);
-				if (err != 5)
-					return -EINVAL;
-			}
-			fmt->is_be = e == 'b';
-			fmt->is_signed = (s == 's' || s == 'S');
-			fmt->is_fully_defined = (s == 'S' || s == 'U' || fmt->bits == fmt->length);
+			err = iio_parse_format_string(content, fmt);
+			if (err)
+				return err;
 		} else if (!strcmp(name, "scale")) {
 			char *end;
 			float value;

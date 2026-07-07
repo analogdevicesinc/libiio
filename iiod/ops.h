@@ -168,6 +168,8 @@ ssize_t set_trigger(struct parser_pdata *pdata, struct iio_device *dev, const ch
 int set_timeout(struct parser_pdata *pdata, int timeout);
 int set_buffers_count(struct parser_pdata *pdata, struct iio_device *dev, long value);
 
+void invalidate_sample_size_cache(const struct iio_device *dev);
+
 ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
 ssize_t read_all(struct parser_pdata *pdata, void *dst, size_t len);
 ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len);
