@@ -13,6 +13,7 @@
 #include <iio/iiod-client.h>
 
 #include "iio-config.h"
+#include "iio-private.h"
 #ifdef __linux__
 #include <dirent.h>
 #endif
@@ -519,6 +520,36 @@ static struct iio_event_stream_pdata *usb_open_events_fd(const struct iio_device
 	return iiod_client_open_event_stream(pdata->io_ctx.iiod_client, dev);
 }
 
+static int usb_refresh_format(const struct iio_channel *chn)
+{
+	const struct iio_device *dev = iio_channel_get_device(chn);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iio_data_format new_format;
+	struct iio_channel *chn_rw = (struct iio_channel *)chn;
+	char format_str[256];
+	ssize_t ret;
+
+	ret = iiod_client_refresh_format(pdata->io_ctx.iiod_client, dev, chn,
+	                                   format_str, sizeof(format_str));
+	if (ret < 0)
+		return (int)ret;
+
+	format_str[ret] = '\0';
+
+	ret = iio_parse_format_string(format_str, &new_format);
+	if (ret < 0)
+		return (int)ret;
+
+	new_format.with_scale = chn->format.with_scale;
+	new_format.scale = chn->format.scale;
+	new_format.offset = chn->format.offset;
+
+	chn_rw->format = new_format;
+
+	return 0;
+}
+
 static const struct iio_backend_ops usb_ops = {
 	.scan = usb_context_scan,
 	.create = usb_create_context_from_args,
@@ -548,6 +579,8 @@ static const struct iio_backend_ops usb_ops = {
 
 	.reg_read = usb_reg_read,
 	.reg_write = usb_reg_write,
+
+	.refresh_format = usb_refresh_format,
 
 	.ping = usb_ping,
 };

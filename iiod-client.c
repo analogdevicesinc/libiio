@@ -1948,6 +1948,23 @@ int iiod_client_reg_write(struct iiod_client *client, const struct iio_device *d
 	return iiod_io_wait_for_command_done(io);
 }
 
+int iiod_client_refresh_format(struct iiod_client *client, const struct iio_device *dev,
+		const struct iio_channel *chn, char *format_str, size_t len)
+{
+	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
+	struct iiod_command cmd = {
+		.op = IIOD_OP_REFRESH_FORMAT,
+		.dev = (uint8_t)iio_device_get_index(dev),
+		.code = (int32_t)iio_channel_get_index(chn),
+	};
+	struct iiod_buf iiod_buf = {
+		.ptr = format_str,
+		.size = len,
+	};
+
+	return iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+}
+
 int iiod_client_nop(struct iiod_client *client)
 {
 	struct iiod_command cmd;

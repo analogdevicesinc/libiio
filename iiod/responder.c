@@ -301,6 +301,57 @@ out_send_response:
 	iiod_io_send_response_code(io, ret);
 }
 
+static void handle_refresh_format(struct parser_pdata *pdata, const struct iiod_command *cmd,
+		struct iiod_command_data *cmd_data)
+{
+	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
+	const struct iio_device *dev;
+	struct iio_channel *chn;
+	struct iiod_buf iiod_buf;
+	char format_str[256];
+	uint16_t chn_idx = cmd->code & 0xffff;
+	ssize_t ret;
+
+	dev = iio_context_get_device(pdata->ctx, cmd->dev);
+	if (!dev) {
+		ret = -ENODEV;
+		goto out_send_error;
+	}
+
+	chn = (struct iio_channel *)iio_device_get_channel(dev, chn_idx);
+	if (!chn) {
+		ret = -EINVAL;
+		goto out_send_error;
+	}
+
+	ret = iio_channel_refresh_format(chn);
+	if (ret < 0)
+		goto out_send_error;
+
+	invalidate_sample_size_cache(dev);
+
+	const struct iio_data_format *fmt = iio_channel_get_data_format(chn);
+	char endian = fmt->is_be ? 'b' : 'l';
+	char sign = fmt->is_signed ? 's' : 'u';
+	char repeat[12] = "";
+
+	if (fmt->repeat > 1)
+		iio_snprintf(repeat, sizeof(repeat), "X%u", fmt->repeat);
+
+	ret = iio_snprintf(format_str, sizeof(format_str), "%ce:%c%u/%u%s>>%u", endian, sign,
+			fmt->bits, fmt->length, repeat, fmt->shift);
+	if (ret < 0)
+		goto out_send_error;
+
+	iiod_buf.ptr = format_str;
+	iiod_buf.size = ret;
+	iiod_io_send_response(io, ret, &iiod_buf, 1);
+	return;
+
+out_send_error:
+	iiod_io_send_response_code(io, ret);
+}
+
 static int buffer_enqueue_block(void *priv, void *d)
 {
 	struct block_entry *entry = d;
@@ -1191,6 +1242,8 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 
 	[IIOD_OP_REG_READ] = handle_reg_read,
 	[IIOD_OP_REG_WRITE] = handle_reg_write,
+
+	[IIOD_OP_REFRESH_FORMAT] = handle_refresh_format,
 
 	[IIOD_OP_NOP] = handle_nop,
 };

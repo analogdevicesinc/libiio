@@ -56,6 +56,10 @@ struct iio_device_pdata {
 	int fd;
 };
 
+struct iio_channel_pdata {
+	char *type_attr_path;
+};
+
 struct iio_event_stream_pdata {
 	const struct iio_device *dev;
 	int fd, cancel_fd;
@@ -90,11 +94,20 @@ int ioctl_nointr(int fd, unsigned long request, void *data)
 
 static void local_shutdown(struct iio_context *ctx)
 {
-	/* Free the backend data stored in every device structure */
-	unsigned int i;
+	unsigned int i, j;
 
 	for (i = 0; i < iio_context_get_devices_count(ctx); i++) {
 		struct iio_device *dev = iio_context_get_device(ctx, i);
+
+		/* Free channel pdata */
+		for (j = 0; j < iio_device_get_channels_count(dev); j++) {
+			struct iio_channel *chn = iio_device_get_channel(dev, j);
+			if (chn->pdata) {
+				struct iio_channel_pdata *pdata = chn->pdata;
+				free(pdata->type_attr_path);
+				free(pdata);
+			}
+		}
 
 		if (dev->pdata && dev->pdata->fd >= 0)
 			close(dev->pdata->fd);
@@ -674,6 +687,48 @@ unlock:
 	return ret;
 }
 
+static int local_refresh_format(const struct iio_channel *chn)
+{
+	struct iio_channel_pdata *pdata = iio_channel_get_pdata(chn);
+	struct iio_channel *chn_rw = (struct iio_channel *)chn;
+	const struct iio_device *dev = chn->dev;
+	const char *dev_id = iio_device_get_id(dev);
+	struct iio_data_format new_format;
+	char buf[256];
+	ssize_t ret;
+
+	if (!chn->is_scan_element) {
+		chn_dbg(chn, "local_refresh_format: channel is not a scan element\n");
+		return -EINVAL;
+	}
+
+	if (!pdata || !pdata->type_attr_path) {
+		chn_dbg(chn, "local_refresh_format: no stored type path\n");
+		return -ENOENT;
+	}
+
+	ret = local_do_read_dev_attr(dev_id, 0, pdata->type_attr_path,
+				      buf, sizeof(buf) - 1, IIO_ATTR_TYPE_DEVICE);
+	if (ret < 0) {
+		chn_dbg(chn, "local_refresh_format: failed to read sysfs: %zd\n", ret);
+		return (int)ret;
+	}
+
+	ret = iio_parse_format_string(buf, &new_format);
+	if (ret < 0) {
+		chn_dbg(chn, "local_refresh_format: failed to parse format string\n");
+		return (int)ret;
+	}
+
+	new_format.with_scale = chn->format.with_scale;
+	new_format.scale = chn->format.scale;
+	new_format.offset = chn->format.offset;
+
+	chn_rw->format = new_format;
+
+	return 0;
+}
+
 static int local_ping(struct iio_context *ctx)
 {
 	return 0;
@@ -831,34 +886,31 @@ static int handle_scan_element_attr(struct iio_channel *chn, const char *name, c
 			chn->index = (long)value;
 		}
 	} else if (!strcmp(name, "type")) {
+		struct iio_channel_pdata *chn_pdata;
+
+		chn_pdata = iio_channel_get_pdata(chn);
+		if (chn_pdata && chn_pdata->type_attr_path)
+			return 0;
+
 		ret = local_read_dev_attr(dev, 0, path, buf, sizeof(buf), IIO_ATTR_TYPE_DEVICE);
 		if (ret > 0) {
-			char endian, sign;
+			ret = iio_parse_format_string(buf, &chn->format);
+			if (ret < 0)
+				return ret;
 
-			if (strchr(buf, 'X')) {
-				iio_sscanf(buf, "%ce:%c%u/%uX%u>>%u",
-#ifdef _MSC_BUILD
-						&endian, sizeof(endian), &sign, sizeof(sign),
-#else
-						&endian, &sign,
-#endif
-						&chn->format.bits, &chn->format.length,
-						&chn->format.repeat, &chn->format.shift);
-			} else {
-				chn->format.repeat = 1;
-				iio_sscanf(buf, "%ce:%c%u/%u>>%u",
-#ifdef _MSC_BUILD
-						&endian, sizeof(endian), &sign, sizeof(sign),
-#else
-						&endian, &sign,
-#endif
-						&chn->format.bits, &chn->format.length,
-						&chn->format.shift);
+			if (!chn_pdata) {
+				chn_pdata = zalloc(sizeof(*chn_pdata));
+				if (!chn_pdata)
+					return -ENOMEM;
+				iio_channel_set_pdata(chn, chn_pdata);
 			}
-			chn->format.is_signed = (sign == 's' || sign == 'S');
-			chn->format.is_fully_defined = (sign == 'S' || sign == 'U' ||
-							chn->format.bits == chn->format.length);
-			chn->format.is_be = endian == 'b';
+
+			chn_pdata->type_attr_path = iio_strdup(path);
+			if (!chn_pdata->type_attr_path) {
+				if (!iio_channel_get_pdata(chn))
+					free(chn_pdata);
+				return -ENOMEM;
+			}
 		}
 	} else {
 		return -EINVAL;
@@ -1920,6 +1972,7 @@ static const struct iio_backend_ops local_ops = {
 	.disable_cpu_access = local_disable_cpu_access,
 	.reg_read = local_reg_read,
 	.reg_write = local_reg_write,
+	.refresh_format = local_refresh_format,
 	.ping = local_ping,
 };
 

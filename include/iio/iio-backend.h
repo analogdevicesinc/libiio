@@ -138,6 +138,9 @@ struct iio_backend_ops {
 	int (*reg_read)(const struct iio_device *dev, uint32_t address, uint32_t *value);
 	int (*reg_write)(const struct iio_device *dev, uint32_t address, uint32_t value);
 
+	/* Channel format refresh */
+	int (*refresh_format)(const struct iio_channel *chn);
+
 	/* Connection liveness test */
 	int (*ping)(struct iio_context *ctx);
 };
