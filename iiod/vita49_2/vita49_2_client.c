@@ -100,9 +100,10 @@ int command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit,
  * @param ctx 
  * @param pkt 
  * @param ackX_packet Can be NULL (optional). Pass an AckX Packet to populate its error fields if necessary. 
+ * @param plugin_head 
  * @return int 
  */
-int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet);
+int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct command_plugin* plugin_head);
 
 /**
  * @brief Accepts a parsed Control Extension Packet and executes the commands in it.
@@ -133,9 +134,10 @@ enum vita49_2_warnings_error_codes find_available_attribute(struct iio_context *
  * @param ctx
  * @param control_packet 
  * @param warnings 
+ * @param plugin_head 
  * @return int 
  */
-int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_warnings* const warnings);
+int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_warnings* const warnings, const struct command_plugin* const plugin_head);
 
 /**
  * @brief Validates a specific command that takes a uint32_t attribute value.
@@ -1208,7 +1210,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						if (control_packet.command_prologue.control_cam->request_ack_v)
 						{
 
-							if ((ackV_ret_value = (ssize_t)(validate_commands(arguments->ctx, &control_packet, &ackV_packet.warnings))) < 0)
+							if ((ackV_ret_value = (ssize_t)(validate_commands(arguments->ctx, &control_packet, &ackV_packet.warnings, &plugin_head))) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet.\n");
 								goto cleanup_ackv;
@@ -1302,7 +1304,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						// If AckX was requested, I need to do some initial setup to see what fields might generate warnings.
 						if (control_packet.command_prologue.control_cam->request_ack_x && control_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
 						{
-							if (validate_commands(arguments->ctx, &control_packet, &ackX_packet.warnings) < 0)
+							if (validate_commands(arguments->ctx, &control_packet, &ackX_packet.warnings, &plugin_head) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Failed to acquire Warnings for AckX Packet.\n");
 								ackX_warning_init_error = true;
@@ -1320,7 +1322,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						{
 							if (control_packet.command_prologue.control_cam->request_ack_x && !ackX_warning_init_error)
 							{
-								if (execute_commands(arguments->ctx, &control_packet, &ackX_packet) < 0)
+								if (execute_commands(arguments->ctx, &control_packet, &ackX_packet, &plugin_head) < 0)
 								{
 									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet.\n");	
 									goto cleanup_ackX;
@@ -1409,7 +1411,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							}
 							else
 							{
-								if (execute_commands(arguments->ctx, &control_packet, NULL) < 0)
+								if (execute_commands(arguments->ctx, &control_packet, NULL, &plugin_head) < 0)
 								{
 									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet.\n");
 									continue;
@@ -1955,13 +1957,14 @@ void vita49_2_command_cleanup(void)
 	fprintf(stderr, "vita49_2_process: Cleaned up VITA 49.2 translation layer.\n");
 }
 
-int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet)
+int execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct command_plugin* plugin_head)
 {
 	struct iio_device *dev;
 	struct iio_channel *chn;
 	const struct iio_attr *attr;
 	struct vita49_2_cif_mapping *m;
 	int ret = 0;
+	uint32_t original_warnings_indicator;
 
 	// Don't need to check the AckX Packet pointer since it's optional
 	if (!ctx || !pkt)
@@ -1974,6 +1977,8 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 	if (pkt->command_prologue.control_cam->action_bits != VITA49_2_CTRL_EXECUTE)
 		return -EINVAL;
 
+	if (ackX_packet != NULL)
+		memcpy(&original_warnings_indicator, &ackX_packet->warnings.cif0_warnings, sizeof(original_warnings_indicator));
 
 	// For keeping track of which CIF0 fields have generated errors
 	struct vita49_2_warning_error_indicators cif0_errors_buffer[32] = {0};
@@ -2051,7 +2056,101 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 				continue;
 		}
 
-		/* We have a match! Find device and channel */
+		// We have a match! If the device name is "sequence", that means we need to execute the code in
+		// one of the shared libraries that was loaded in at startup.
+		if (strcmp(m->device_name, "sequence") == 0)
+		{
+			for (struct command_plugin* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
+			{
+				if (strcmp(m->attr_name, current_plugin->name) == 0)
+				{
+					int error = current_plugin->execute(ctx);
+
+					// If the ackX_packet argument isn't NULL, that means we need to report the error
+					if (ackX_packet != NULL && (error < 0))
+					{
+						uint32_t existing_cif_errors;
+
+						switch (m->cif_type)
+						{
+							case CIF0:
+
+								// Because the CIF words fields in the vita49_2_errors struct are defined as structs rather than uint32_ts,
+								// it's slightly cumbersome to set the bit-field values. Instead of referencing attributes within the CIF structs,
+								// I'll instead treat it as a uint32_t by copying it, modifying that value, then storing it again.
+								memcpy(&existing_cif_errors, &ackX_packet->errors.cif0_errors, sizeof(existing_cif_errors));
+								existing_cif_errors |= (1 << m->cif_bit);
+								memcpy(&ackX_packet->errors.cif0_errors, &existing_cif_errors, sizeof(existing_cif_errors));
+
+								// Now to write the actual error value
+								if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
+								{
+									cif0_errors_buffer[cif0_errors_index].field_not_executed = 1;
+									cif0_errors_buffer[cif0_errors_index++].device_failure = 1;
+								}
+								else
+								{
+									existing_cif_errors = ((1 << ENOEXECUTE) | (1 << VITA49_2_ERRNO_MAP[error]));
+									memcpy(&cif0_errors_buffer[cif0_errors_index++], &existing_cif_errors, sizeof(existing_cif_errors));
+								}
+
+								// The corresponding CIF bit in the warnings field must now also be disabled since a CIF field can't simultaneously
+								// have a warning and an error.
+								memcpy(&existing_cif_errors, &ackX_packet->warnings.cif0_warnings, sizeof(existing_cif_errors));
+								existing_cif_errors &= ~(1 << m->cif_bit);
+								memcpy(&ackX_packet->warnings.cif0_warnings, &existing_cif_errors, sizeof(existing_cif_errors));
+
+								// Setting that warning indicator struct to 0 to indicate that it shouldn't be copied during the serialization of the packet
+								// To do that, I need to determine its index which can be figured out by counting how many fields to the left of this field were
+								// also asserted/present in the warnings CIF0 word.
+								uint8_t warning_index = 0;
+								for (int8_t i = 31; i > m->cif_bit; i--)
+								{
+									if (original_warnings_indicator & (1 << i))
+										warning_index++;
+								}
+
+								memset(&ackX_packet->warnings.warnings_payload[warning_index], 0, sizeof(ackX_packet->warnings.warnings_payload[warning_index]));
+
+								break;
+
+							case CIF1:
+								// TODO: Logic for CIF1 error fields
+								break;
+
+							case CIF2:
+								// TODO: Logic for CIF2 error fields
+								break;
+
+							case CIF3:
+								// TODO: Logic for CIF3 error fields
+								break;
+
+							case CIF7:
+								// TODO: Logic for CIF7 error fields
+								break;
+						}
+
+						// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
+						// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
+						// for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
+						// the error index as soon as the first mapping is seen.
+						if (m->next != NULL)
+						{
+							if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
+								cif0_errors_index--;
+						}
+					}
+
+					break;
+				}
+			}
+
+			continue;
+		}
+
+		// Otherwise we're not dealing with a sequence and must find the device and attribute to execute
+		// this command
 		dev = iio_context_find_device(ctx, m->device_name);
 		if (!dev) 
 		{
@@ -2270,10 +2369,9 @@ int execute_commands(struct iio_context *ctx, const struct vita49_2_control_pack
 						// To do that, I need to determine its index which can be figured out by counting how many fields to the left of this field were
 						// also asserted/present in the warnings CIF0 word.
 						uint8_t warning_index = 0;
-						memcpy(&existing_cif_errors, &ackX_packet->warnings.cif0_warnings, sizeof(existing_cif_errors));
 						for (int8_t i = 31; i > m->cif_bit; i--)
 						{
-							if (existing_cif_errors & (1 << i))
+							if (original_warnings_indicator & (1 << i))
 								warning_index++;
 						}
 
@@ -3095,7 +3193,7 @@ enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ct
 	return -EGENERIC;
 }
 
-int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_warnings* warnings)
+int validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_warnings* warnings, const struct command_plugin* const plugin_head)
 {	
 	if (!ctx || !control_packet || !warnings)
 		return -EINVAL;
@@ -3128,7 +3226,7 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 		// Iterating over each mapping
 		for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next) 
 		{
-			if (m->cif_bit != cif_bit)
+			if (m->cif_bit != cif_bit || m->cif_type != CIF0)
 				continue;
 			
 			bool warning_generated = false;
@@ -3137,10 +3235,32 @@ int validate_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 			// from the packet and feed it to the appropriate command validation function based on the type.
 			int ret_value;
 
-			// Checking CIF0
-			if (m->cif_type == CIF0)
+			// If the device name is "sequence", that means this CIF attribute is associated with a shared object/library
+			// that we may/may not have loaded. We need to search for that library.
+			if (strcmp(m->device_name, "sequence") == 0)
 			{
+				for (struct command_plugin* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
+				{
+					if (strcmp(m->attr_name, current_plugin->name) == 0)
+					{
+						int warning = current_plugin->validate(ctx);
 
+						printf("Warning from library: %d\n", warning);
+							// // Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
+							// // For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
+							// // for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
+							// // the error index as soon as the first mapping is seen.
+							// if (m->next != NULL)
+							// {
+							// 	if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
+							// 		cif0_errors_index--;
+							// }
+						// }
+					}
+				}
+			}
+			else
+			{
 				switch (m->cif_bit)
 				{
 					// Context Field Change Indicator is N/A for Command Packets
@@ -3388,6 +3508,9 @@ int acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* c
 			fprintf(stderr, "vita49_2_proces: Encountered an invalid CIF bit (%d)\n", cif_mappings->cif_bit);
 			continue;
 		}
+
+		if (strcmp(cif_mappings->attr_name, "sequence") == 0)
+			continue;
 
 		switch (cif_mappings->cif_type)
 		{

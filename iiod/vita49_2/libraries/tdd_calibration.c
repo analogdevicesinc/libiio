@@ -89,7 +89,7 @@ struct _command sequence[] = {
         .string_data = NULL,
         .device_name = "ad9361-phy",
         .channel_name = "debug",
-        .attribute_name = "initialize ",
+        .attribute_name = "initialize",
         .is_output = false
     },
 };
@@ -184,7 +184,7 @@ int validate_sequence(struct iio_context *ctx)
  * This function returns as soon as the first execution error is generated in the sequence, meaning any commands following the command
  * that raised the warning are not executed.
  * 
- * Returns the bit number associated with a particular warning based on Table 8.4.1.2.1-1 from the VITA 49.2 2017 documentation.
+ * Returns the positive bit number associated with a particular warning based on Table 8.4.1.2.1-1 from the VITA 49.2 2017 documentation.
  * If no warning is generated and all commands are executed, 32 is returned.
  * 
  * @param ctx  
@@ -205,18 +205,18 @@ int execute_sequence(struct iio_context *ctx)
     {
         // Field validity checks
         if (sequence[command].device_name == NULL || sequence[command].channel_name == NULL || sequence[command].attribute_name == NULL)
-            return -EBADARGS;
+            return EBADARGS;
 
         if (sequence[command].data_type == VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S)
             if (sequence[command].string_data == NULL)
-                return -EBADARGS;
+                return EBADARGS;
 
 
         // Finding the IIO device
         dev = iio_context_find_device(ctx, sequence[command].device_name);
 		if (!dev) 
 		{
-            return -ENOFIELD;
+            return ENOFIELD;
         }
 
 		attr = NULL;
@@ -237,7 +237,7 @@ int execute_sequence(struct iio_context *ctx)
 			chn = iio_device_find_channel(dev, sequence[command].channel_name, sequence[command].is_output);
 			if (!chn) 
 			{
-                return -ENOFIELD;
+                return ENOFIELD;
             }
 
 			attr = iio_channel_find_attr(chn, sequence[command].attribute_name);
@@ -245,7 +245,7 @@ int execute_sequence(struct iio_context *ctx)
 
 		if (!attr) 
 		{
-            return -ENOFIELD;
+            return ENOFIELD;
         }
 
 
@@ -262,7 +262,7 @@ int execute_sequence(struct iio_context *ctx)
                     fprintf(stderr, "Error %d: %s\n", error, strerror(error));
 
                     if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-                        return -EDEVFAIL;
+                        return EDEVFAIL;
                     else
                         return VITA49_2_ERRNO_MAP[error];
                 }
@@ -278,7 +278,7 @@ int execute_sequence(struct iio_context *ctx)
                     fprintf(stderr, "Error %d: %s\n", error, strerror(error));
 
                     if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-                        return -EDEVFAIL;
+                        return EDEVFAIL;
                     else
                         return VITA49_2_ERRNO_MAP[error];
                 }
@@ -294,7 +294,7 @@ int execute_sequence(struct iio_context *ctx)
                     fprintf(stderr, "Error %d: %s\n", error, strerror(error));
 
                     if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-                        return -EDEVFAIL;
+                        return EDEVFAIL;
                     else
                         return VITA49_2_ERRNO_MAP[error];
                 }
@@ -311,7 +311,7 @@ int execute_sequence(struct iio_context *ctx)
                     fprintf(stderr, "Error %d: %s\n", error, strerror(error));
 
                     if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-                        return -EDEVFAIL;
+                        return EDEVFAIL;
                     else
                         return VITA49_2_ERRNO_MAP[error];
                 }
@@ -327,7 +327,7 @@ int execute_sequence(struct iio_context *ctx)
                     fprintf(stderr, "Error %d: %s\n", error, strerror(error));
 
                     if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-                        return -EDEVFAIL;
+                        return EDEVFAIL;
                     else
                         return VITA49_2_ERRNO_MAP[error];
                 }
@@ -335,6 +335,8 @@ int execute_sequence(struct iio_context *ctx)
             }
         }
     }
+
+    return 32;
 }
 
 

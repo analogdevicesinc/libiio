@@ -94,13 +94,13 @@ int main()
         return 1;
     }
 
-    sampling_freq_packet.command_prologue.control_cam->request_ack_v = 1;
-    sampling_freq_packet.command_prologue.control_cam->request_ack_x = 1;
-    sampling_freq_packet.command_prologue.control_cam->request_ack_s = 1;
+    // sampling_freq_packet.command_prologue.control_cam->request_ack_v = 1;
+    // sampling_freq_packet.command_prologue.control_cam->request_ack_x = 1;
+    // sampling_freq_packet.command_prologue.control_cam->request_ack_s = 1;
     sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
 
-    sampling_freq_packet.cif0.cif0_word.has_sample_rate = 1;
-    sampling_freq_packet.cif0.sample_rate = 2083335;
+    sampling_freq_packet.cif0.cif0_word.has_reference_level = 1;
+    sampling_freq_packet.cif0.sample_rate = 0;
 
 
 
