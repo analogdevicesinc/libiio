@@ -64,7 +64,6 @@ static ssize_t iiod_network_read(struct iiod_pdata *pdata, void *buf, size_t siz
 	size_t bytes_read = 0;
 	int read = 0;
 	int this_fd;
-	int i;
 
 	if (!client) {
 		return -EPERM;
@@ -77,17 +76,12 @@ static ssize_t iiod_network_read(struct iiod_pdata *pdata, void *buf, size_t siz
 
 	while (bytes_read < size) {
 		read = recv(this_fd, buffer, size - bytes_read, 0);
+		LOG_DBG("[Client %d] Read %d/%d bytes", client->client_num, read, size);
+		LOG_HEXDUMP_DBG(buffer, read, "");
 
 		if (read > 0) {
-			if (read <= 20)
-				for(i = 0; i < size; i++) {
-					LOG_DBG("%02x ", buffer[i]);
-				}
 			buffer += read;
 			bytes_read += read;
-
-			LOG_DBG("[Client %d] Read %d characters from read_cb; size = %d",
-				client->client_num, read, size);
 		}
 		else if (read < 0) {
 			if (errno == ECONNRESET || errno == ENOTCONN) {
@@ -114,7 +108,6 @@ static ssize_t iiod_network_write(struct iiod_pdata *pdata, const void *buf, siz
 	int bytes_sent = 0;
 	int sent = 0;
 	int this_fd;
-	int i;
 
 	if (!client) {
 		return -EPERM;
@@ -127,6 +120,8 @@ static ssize_t iiod_network_write(struct iiod_pdata *pdata, const void *buf, siz
 
 	while (bytes_sent < size) {
 		sent = send(this_fd, buffer, size - bytes_sent, 0);
+		LOG_DBG("[Client %d] Wrote %d/%d bytes", client->client_num, sent, size);
+		LOG_HEXDUMP_DBG(buffer, sent, "");
 
 		if (sent < 0) {
 			LOG_ERR("[Client %d] error: send: %d",
@@ -134,17 +129,8 @@ static ssize_t iiod_network_write(struct iiod_pdata *pdata, const void *buf, siz
 			return -ESRCH;
 		}
 
-		if (sent <= 20) {
-			for(i = 0; i < size; i++) {
-				LOG_DBG("%02x ", buffer[i]);
-			}
-		}
-
 		buffer += sent;
 		bytes_sent += sent;
-
-		LOG_DBG("[Client %d] Written %d characters in write_cb; size = %zu; bytes_sent = %d",
-			client->client_num, sent, size, bytes_sent);
 	}
 
 	return (ssize_t)bytes_sent;
