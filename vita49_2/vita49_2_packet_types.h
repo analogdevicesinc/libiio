@@ -26,11 +26,7 @@
 
 // Acceptable range of values for Stream ID for Signal Time Data Packets.
 #define VITA49_2_PKT_TIME_DATA_DEVICE_START 0
-#define VITA49_2_PKT_TIME_DATA_DEVICE_END 1073741823
-
-// Acceptable range of values for Stream ID for Signal Spectral Data Packets.
-#define VITA49_2_PKT_SPECTRAL_DATA_DEVICE_START 1073741824
-#define VITA49_2_PKT_SPECTRAL_DATA_DEVICE_END 2147483647
+#define VITA49_2_PKT_TIME_DATA_DEVICE_END 2147483647
 
 /**
  * @struct vita49_2_data_packet
@@ -252,11 +248,12 @@ __vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* co
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a data packet that is to be populated.
+ * @param with_stream_id True if this is a Data Packet that includes Stream ID (Packet Type = 1)
  * @return int 
  */
-__vrt_api int vita49_2_parse_data_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_data_packet* const pkt);
+__vrt_api int vita49_2_parse_data_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_data_packet* const pkt, bool with_stream_id);
 
 /**
  * @brief Populates a 32-bit word buffer with data for a Context Packet. 
@@ -275,7 +272,7 @@ __vrt_api ssize_t vita49_2_serialize_context_packet(struct vita49_2_context_pack
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a context packet that is to be populated.
  * @return int 
  */
@@ -298,7 +295,7 @@ __vrt_api ssize_t vita49_2_serialize_control_packet(struct vita49_2_control_pack
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a control packet that is to be populated.
  * @return int 
  */
@@ -321,7 +318,7 @@ __vrt_api ssize_t vita49_2_serialize_ackX_packet(struct vita49_2_ackX_packet* co
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a ackX packet that is to be populated.
  * @return int 
  */
@@ -344,7 +341,7 @@ __vrt_api ssize_t vita49_2_serialize_ackV_packet(struct vita49_2_ackV_packet* co
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a ackV packet that is to be populated.
  * @return int 
  */
@@ -367,7 +364,7 @@ __vrt_api ssize_t vita49_2_serialize_ackS_packet(struct vita49_2_ackS_packet* co
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a ackS packet that is to be populated.
  * @return int 
  */
@@ -390,7 +387,7 @@ __vrt_api ssize_t vita49_2_serialize_control_extension_packet(struct vita49_2_co
  * Returns 0 on success, or a negative error code (e.g. -EINVAL) on failure.
  * 
  * @param buf Pointer to the source buffer.
- * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param buf_words Size of the buffer in 32-bit words.
  * @param pkt Pointer to a control extension packet that is to be populated.
  * @return int 
  */

@@ -587,6 +587,21 @@ if(WITH_NETWORK_BACKEND)
 		endif()
 
 		add_subdirectory(vita49_2)
+		add_library(vita49_2_iiod STATIC iiod/vita49_2/vita49_2_iiod_helpers.c)
+		set_target_properties(vita49_2_iiod PROPERTIES
+			C_STANDARD 99
+			C_STANDARD_REQUIRED ON
+			C_EXTENSIONS OFF
+			POSITION_INDEPENDENT_CODE ON
+		)
+		target_include_directories(vita49_2_iiod PUBLIC
+			${CMAKE_SOURCE_DIR}/include
+			${CMAKE_SOURCE_DIR}/vita49_2
+			${CMAKE_SOURCE_DIR}/iiod
+			${CMAKE_SOURCE_DIR}/iiod/vita49_2
+			${CMAKE_BINARY_DIR}
+		)
+		target_link_libraries(vita49_2_iiod PRIVATE iio vita49_2 m)
 		add_subdirectory(iiod/vita49_2/libraries)
 		target_sources(iio PRIVATE iiod/vita49_2/vita49_2_host.c vita49_2/vita49_2_packet_elements.c vita49_2/vita49_2_packet_types.c)
 		target_include_directories(iio PRIVATE 

@@ -73,7 +73,7 @@ int main(int argc, char** argv)
     // initial_values_rq.command_prologue.common_prologue.header.has_class_id = 1;
     // initial_values_rq.command_prologue.common_prologue.has_class_id = 1;
     // initial_values_rq.command_prologue.common_prologue.has_stream_id = 1;
-    // initial_values_rq.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTROL;
+    // initial_values_rq.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTROL;
 
     // initial_values_rq.command_prologue.control_cam = calloc(1, sizeof(*initial_values_rq.command_prologue.control_cam));
     // if (initial_values_rq.command_prologue.control_cam == NULL)
@@ -123,7 +123,7 @@ int main(int argc, char** argv)
     {    
         printf("Payload Format: implicit\n\n");
 
-        command.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_CTRL_EXT_IMPLICIT;
+        command.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_CTRL_EXT_IMPLICIT;
 
         // =============================================================================
         // FIRST COMMAND
@@ -217,7 +217,7 @@ int main(int argc, char** argv)
     {
         printf("Payload Format: explicit\n\n");
 
-        command.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT;
+        command.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT;
 
         // =============================================================================
         // FIRST COMMAND

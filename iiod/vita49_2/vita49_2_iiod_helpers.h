@@ -1,3 +1,6 @@
+#ifndef __VITA49_2_IIOD_HELPERS_H__
+#define __VITA49_2_IIOD_HELPERS_H__
+
 #include <iio/iio.h>
 #include <vita49_2/vita49_2_packet_elements.h>
 
@@ -196,5 +199,73 @@ enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, c
  * @param attribute_name
  * @param is_output
  * @param attribute Provide a pointer to an attribute struct which will be updated by this function if the attribute exists.
+ * @return enum vita49_2_warnings_error_codes
  */
-enum vita49_2_warnings_error_codes find_iio_device(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute);
+enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute);
+
+/**
+ * @brief Validates a specific command that takes a uint32_t attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint32_t new_value);
+
+/**
+ * @brief Validates a specific command that takes a uint64_t attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint64_t new_value);
+
+/**
+ * @brief Validates a specific command that takes a int64_t attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, int64_t new_value);
+
+/**
+ * @brief Validates a specific command that takes a float attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, float new_value);
+
+/**
+ * @brief Validates a specific command that takes a double attribute value.
+ * 
+ * Returns a negative value if there's an error, otherwise 0 is returned.
+ * 
+ * @param ctx 
+ * @param cif_type Which CIF group (0, 1, 3, 7).
+ * @param cif_bit 0 to 31.
+ * @param new_value The new value that you want to validate before assigning to the attribute.
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, double new_value);
+
+#endif /* __VITA49_2_IIOD_HELPERS_H__ */

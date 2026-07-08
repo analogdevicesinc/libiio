@@ -52,6 +52,7 @@ enum vita49_2_cif_types {
  * 
  */
 struct vita49_2_stream_entry {
+
 	uint32_t host_ip_addr;
 	uint16_t host_port;
 	enum vita49_2_packet_class_codes packet_class_code;
@@ -62,6 +63,7 @@ struct vita49_2_stream_entry {
 	// // Direction. This matters only for Signal Time Data Packets where we have to differentiate
 	// // between whether the host is sending the packet or is the device is sending.
 	// bool host_sending;
+
 };
 
 /**
@@ -70,6 +72,7 @@ struct vita49_2_stream_entry {
  * 
  */
 struct vita49_2_cif_mapping {
+
 	enum vita49_2_cif_types cif_type;		/* Which CIF (0, 1, 2, 3, or 7) is associated with this attribute */
 	uint32_t cif_bit;          				/* Which bit in the CIF triggers this (e.g. 21) */
 	char device_name[64];       			/* ID of the target iio_device (e.g. "ad9361-phy") */
@@ -78,6 +81,7 @@ struct vita49_2_cif_mapping {
 	bool is_output;             			/* True if channel is an output (TX). Ignored for device/debug attrs */
 	char attr_name[64];         			/* Attribute to write to (e.g. "sampling_frequency") */
 	struct vita49_2_cif_mapping *next;			/* Next item in the linked list */
+
 };
 
 /**
@@ -86,20 +90,26 @@ struct vita49_2_cif_mapping {
  * 
  */
 struct vita49_2_pdata {
+
 	struct thread_pool *pool;
 	struct iio_context *ctx;
+
 };
 
-struct command_plugin {
-	const char* name;
-	int (*validate)(struct iio_context *ctx);
-	int (*execute)(struct iio_context *ctx);
-	struct command_plugin* next;
-};
+/**
+ * @struct vita49_2_command_plugin_node
+ * @brief Represents a loadable library for executing custom commands when a Control/Control Extension Packet is received with the
+ * appropriate CIF fields enabled or proper payload.
+ * 
+ */
+struct vita49_2_command_plugin_node {
 
-// ==============================================================
-// FUNCTION DECLARATIONS
-// ==============================================================
+	const char* name;							// Name of the plugin
+	int (*validate)(struct iio_context *ctx);	// Function pointer to a function that validates the commands in the plugin and returns warnings (if any)
+	int (*execute)(struct iio_context *ctx);	// Function pointer to a function that executes the commands in the plugin and returns warnings (if any)
+	struct vita49_2_command_plugin_node* next;
+
+};
 
 /**
  * @brief Daemon for VITA 49.2 backend. Manages the VITA 49.2 processing thread.

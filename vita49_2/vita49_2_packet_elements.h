@@ -411,6 +411,7 @@ union vita49_2_control_cam_field {
 
 	uint32_t word;
 	struct {
+
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__	
 
 			// See Table 8.3.1-1 in the full VITA 49.2 specification for details on the meaning of each bit in this field
@@ -429,42 +430,62 @@ union vita49_2_control_cam_field {
 			uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
 			uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
 
-			uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			/* The following 11 bits must be copied in any associated AckV/X/S Packets */
+			union {
 
-			uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+				uint32_t associated_bits:11;
+				struct {
+				
+					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-			uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-			uint32_t errors:1;						/* Permit execution of fields that generate Errors */
-			uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-			uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
 
-			uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
-			uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-			// ADI does not use controllee ID/UUID, however we retain the right to support it at a later time.
-			uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
-			uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+
+					// ADI does not use controllee ID/UUID, however we retain the right to support it at a later time.
+					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+				
+				};
+			};
+			/* ======================================================================================= */
 
 		#else
+		
+			/* The following 11 bits must be copied in any associated AckV/X/S Packets */
+			union {
 
-			uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-			uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+				uint32_t associated_bits:11;
+				struct {
+				
+					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
 
-			uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-			uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
 
-			uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-			uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-			uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
 
-			uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-			uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-			uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+			
+				};
+			};
+			/* ======================================================================================= */
 
 			uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
 			uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
@@ -1223,7 +1244,6 @@ struct vita49_2_errors {
 };
 
 
-
 #if defined(_WIN32)
 #  if defined(LIBIIO_EXPORTS)
 #    define __vrt_api __declspec(dllexport)
@@ -1237,15 +1257,11 @@ struct vita49_2_errors {
 #endif
 
 
-// =============================================================================
-// FUNCTION DECLARATIONS
-// =============================================================================
-
 /**
  * @brief Converts a double to a 64-bit integer in 44.20 format (meaning the radix point is to the left of the first 20 bits).
  * 
  * @param value 
- * @return __vrt_api 
+ * @return int64_t 
  */
 __vrt_api int64_t convert_to_44_20(double value);
 
@@ -1253,7 +1269,7 @@ __vrt_api int64_t convert_to_44_20(double value);
  * @brief Converts a 64-bit integer in 44.20 format (meaning the radix point is to the left of the first 20 bits) back to a double.
  * 
  * @param value 
- * @return __vrt_api 
+ * @return double 
  */
 __vrt_api double convert_from_44_20(int64_t value);
 
@@ -1261,7 +1277,7 @@ __vrt_api double convert_from_44_20(int64_t value);
  * @brief Converts a 16-bit FP-value to a 16-bit integer in 10.6 format (meaning the radix point is to the left of the first 6 bits).
  * 
  * @param value 
- * @return __vrt_api 
+ * @return int16_t 
  */
 __vrt_api int16_t convert_to_10_6(float value);
 
@@ -1269,7 +1285,7 @@ __vrt_api int16_t convert_to_10_6(float value);
  * @brief Converts a 16-bit integer in 10.6 format (meaning the radix point is to the left of the first 6 bits) back to a float.
  * 
  * @param value 
- * @return __vrt_api 
+ * @return float 
  */
 __vrt_api float convert_from_10_6(int16_t value);
 
@@ -1277,7 +1293,7 @@ __vrt_api float convert_from_10_6(int16_t value);
  * @brief Converts a 16-bit FP-value to a 16-bit integer in 9.7 format (meaning the radix point is to the left of the first 7 bits).
  * 
  * @param value 
- * @return __vrt_api 
+ * @return int16_t 
  */
 __vrt_api int16_t convert_to_9_7(float value);
 
@@ -1285,39 +1301,30 @@ __vrt_api int16_t convert_to_9_7(float value);
  * @brief Converts a 16-bit integer in 9.7 format (meaning the radix point is to the left of the first 7 bits) back to a float.
  * 
  * @param value 
- * @return __vrt_api 
+ * @return float 
  */
 __vrt_api float convert_from_9_7(int16_t value);
 
 /**
- * @brief Parses the CIF0 payload section.
- * Evaluates the flags present in CIF0 to sequentially decode the context payload.
- * 
- * IMPORTANT: The struct pointed to by the cif0 pointer MUST have it's CIF0 word populated beforehand.
- * 
- * Returns a negative value on error. Otherwise a value indicating the number of 32-bit words that were read from the buffer is returned.
- * 
- * @param payload_size Size of the payload minus any of the 32-bit CIF-words (CIF0/1/2/3/7).
- * @param payload Pointer to the payload section containing the CIF0 attribute values. Do NOT provide a pointer to the start of the CIF0 word.
- * @param cif0 Pointer to memory that's already been allocated for a vita49_2_cif0_fields struct.
- * @return ssize_t 
- */
-__vrt_api ssize_t vita49_2_parse_cif0_payload(uint16_t payload_size, const uint32_t* const payload, struct vita49_2_cif0_fields *cif0);
-
-/**
  * @brief Extracts a 32-bit word from the packet payload, handling network byte-order translation.
- * 
- * Returns a negative value on failure.
  * 
  * @param payload Pointer to the start of the payload. 
  * @param payload_size Size of the payload in 32-bit words.
  * @param offset Location of the field in 32-bit words relative to the payload pointer.
  * @param payload_word Pointer to a uint32_t that can be used to store the payload value.
- * @return int 
+ * @return int Returns a negative value on failure.
  */
 __vrt_api int vita49_2_get_payload_word(const uint32_t* const payload, uint16_t payload_size, size_t offset, uint32_t* const payload_word);
 
-/* Inserts a 32-bit word into a raw payload buffer in network byte-order. */
+/**
+ * @brief Inserts a 32-bit word into a raw payload buffer in network byte-order.
+ * 
+ * @param payload 
+ * @param max_words 
+ * @param offset 
+ * @param val 
+ * @return void 
+ */
 __vrt_api void vita49_2_set_payload_word(uint32_t *payload, size_t max_words, size_t offset, uint32_t val);
 
 /**
@@ -1340,26 +1347,131 @@ __vrt_api double vita49_2_get_payload_double(const uint32_t* const payload, uint
  */
 __vrt_api int64_t vita49_2_get_payload_int64(const uint32_t* const payload, uint16_t payload_size, size_t offset);
 
-
-/* Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order. */
+/**
+ * @brief Inserts an IEEE 754 64-bit float into a raw payload buffer in network byte-order.
+ * 
+ * @param payload 
+ * @param max_words 
+ * @param offset 
+ * @param val 
+ * @return void 
+ */
 __vrt_api void vita49_2_set_payload_double(uint32_t *payload, size_t max_words, size_t offset, double val);
 
 /**
- * @brief Serializes the common prologue of a packet to a destination buffer.
+ * @brief Serializes the common prologue (Header, Stream ID, Class ID, Int Timestamp, and Fractional Timestamp) present in every VITA 49.2 Packet 
+ * into 32-bit words, handling host to network byte-order conversion.
  * 
  * IMPORTANT: Does NOT serialize the header (first word) because the header contains a packet size field which can only be
  * determined after the entire packet has been serialized.
  * 
- * Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written
- * to the buffer is returned.
+ * Since the common prologue lives at the beginning of the packet, no buffer offset argument is needed unlike vita49_2_serialize_cif0_attributes().
  * 
  * @param prologue 
  * @param buf Pointer to destination buffer.
  * @param max_words Size of destination buffer in 32-bit words.
- * @return __vrt_api 
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written to the buffer is returned.
  */
 __vrt_api ssize_t vita49_2_serialize_common_prologue(const struct vita49_2_prologue* const prologue, uint32_t* const buf, size_t max_words);
 
+/**
+ * @brief Parses the common prologue (Header, Stream ID, Class ID, Int Timestamp, and Fractional Timestamp) present in every VITA 49.2 packet, 
+ * handling network to host byte-order conversion.
+ * 
+ * @param buf Pointer to the start of the packet data in a buffer.
+ * @param buf_words Size of the destination buffer in 32-bit words.
+ * @param prologue
+ * @param packet_type The type of VITA 49.2 packet being parsed.
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words that were read is returned.
+ */
+__vrt_api ssize_t vita49_2_parse_common_prologue(const uint32_t* const buf, size_t buf_words, struct vita49_2_prologue* const prologue, enum vita49_2_packet_type packet_type);
+
+/**
+ * @brief Serializes the command prologue (common prologue, CAM, Message ID, Controllee ID/UUID, Controller ID/UUID) present in every Command Packet
+ * into 32-bit words, handling host to network byte-order conversion.
+ * 
+ * IMPORTANT: Does NOT serialize the header (first word) because the header contains a packet size field which can only be
+ * determined after the entire packet has been serialized.
+ * 
+ * Since the command prologue lives at the beginning of the packet, no buffer offset argument is needed unlike vita49_2_serialize_cif0_attributes().
+ * 
+ * @param prologue
+ * @param buf Pointer to the destination buffer to contain the 32-bit words.
+ * @param max_words Size of destination buffer in 32-bit words.
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written to the buffer is returned.
+ */
+__vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_command_prologue* const prologue, uint32_t* const buf, size_t max_words);
+
+/**
+ * @brief Parses the command prologue (common prologue, CAM, Message ID, Controllee ID/UUID, Controller ID/UUID) present in every VITA 49.2 Command Packet, 
+ * handling network to host byte-order conversion.
+ * 
+ * @param buf Pointer to the start of the packet data in the buffer.
+ * @param buf_words Number of 32-bit words the packet occupies in the buffer.
+ * @param command_prologue
+ * @param packet_type The type of VITA 49.2 packet being parsed.
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words that were read is returned.
+ */
+__vrt_api ssize_t vita49_2_parse_command_prologue(const uint32_t* const buf, size_t buf_words, struct vita49_2_command_prologue* const command_prologue, enum vita49_2_packet_type packet_type);
+
+/**
+ * @brief Serializes the CIF0 attributes (sampling rate, RF frequency offset, etc.) into 32-bit words, handling host to network byte-order conversion.
+ * 
+ * @param cif0 
+ * @param buf Pointer to the start of the destination buffer to contain the 32-bit words.
+ * @param offset Number of 32-bit words from the start of the buffer to write the serialized CIF0 words. 
+ * @param max_words Size of destination buffer in 32-bit words.
+ * @param is_command_packet True if the packet containing the CIF0 data is a Command Packet.
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written to the buffer is returned.
+ */
 __vrt_api ssize_t vita49_2_serialize_cif0_attributes(const struct vita49_2_cif0_fields* const cif0, uint32_t* const buf, size_t offset, size_t max_words, bool is_command_packet);
+
+/**
+ * @brief Parses the CIF0 payload section.
+ * Evaluates the flags present in CIF0 to sequentially decode the context payload.
+ * 
+ * IMPORTANT: The struct pointed to by the cif0 pointer MUST have it's CIF0 word populated beforehand.
+ * 
+ * @param payload_size Size of the payload minus any of the 32-bit CIF-words (CIF0/1/2/3/7).
+ * @param buf Pointer to the buffer containing the packet data.
+ * @param payload_offset How many 32-bit words the CIF0 data is from the start of the buffer.
+ * @param cif0 Pointer to memory that's already been allocated for a vita49_2_cif0_fields struct.
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words that were read is returned.
+ */
+__vrt_api ssize_t vita49_2_parse_cif0_attributes(uint16_t payload_size, const uint32_t* const buf, size_t payload_offset, struct vita49_2_cif0_fields *cif0);
+
+/**
+ * @brief Wrapper function around the individual vita49_2_serialize_cifX_field() functions that serializes all of the CIF words and their attribute data.
+ * 
+ * @param cif0 
+ * @param cif1 
+ * @param cif2 
+ * @param cif3 
+ * @param cif7 
+ * @param buf Pointer to the start of the destination buffer to contain the 32-bit words.
+ * @param offset Number of 32-bit words from the start of the buffer to write the serialized CIF0 words.
+ * @param max_words Size of the destination buffer in 32-bit words.
+ * @param is_command_packet True if the packet containing the CIF data is a Command Packet.
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written to the buffer is returned.
+ */
+__vrt_api ssize_t vita49_2_serialize_cif_fields(const struct vita49_2_cif0_fields* const cif0, const struct vita49_2_cif1_fields* cif1, 
+	const struct vita49_2_cif2_fields* cif2, const struct vita49_2_cif3_fields* cif3, const struct vita49_2_cif7_fields* cif7, 
+	uint32_t* const buf, size_t offset, size_t max_words, bool is_command_packet);
+	
+/**
+ * @brief Wrapper function around the individaul vita49_2_parse_cifX_field() functions that parses all of the CIF words and their attribute data.
+ * 
+ * @param payload_size Size of the payload.
+ * @param buf Pointer to the buffer containing the packet data.
+ * @param payload_offset How many 32-bit words the start of the CIF data is from the start of the buffer.
+ * @param cif0 
+ * @param cif1 
+ * @param cif2 
+ * @param cif3 
+ * @param cif7 
+ * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words that were read is returned.
+ */
+__vrt_api ssize_t vita49_2_parse_cif_fields(uint16_t payload_size, const uint32_t* const buf, size_t payload_offset, struct vita49_2_cif0_fields* const cif0, 
+	struct vita49_2_cif1_fields* cif1, struct vita49_2_cif2_fields* cif2, struct vita49_2_cif3_fields* cif3, struct vita49_2_cif7_fields* cif7);
 
 #endif /* __VITA49_2_PACKET_ELEMENTS_H__ */

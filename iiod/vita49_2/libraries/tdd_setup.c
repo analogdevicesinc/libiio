@@ -219,7 +219,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
         }
 
         // Finding the IIO device
-        if ((error = find_iio_device(ctx, sequence[command].device_name, sequence[command].channel_name, sequence[command].attribute_name, sequence[command].is_output, attr)) < 0)
+        if ((error = vita49_2_find_iio_attribute(ctx, sequence[command].device_name, sequence[command].channel_name, sequence[command].attribute_name, sequence[command].is_output, attr)) < 0)
         {
             fprintf(stderr, "%s execute_sequence(): Failed to execute command. IIO attribute '%s' could not be found.\n", PLUGIN_NAME, sequence[command].attribute_name);
             return -error;

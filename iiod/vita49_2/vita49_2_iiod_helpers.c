@@ -62,7 +62,7 @@ enum vita49_2_warnings_error_codes get_available_attribute_values(struct iio_con
 		channel = iio_device_find_channel(device, channel_name, is_output);
 		if (!channel)
 		{
-			fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", available_options_fd_name, cif_mappings->is_output ? "out" : "in");
+			fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", available_options_fd_name, is_output ? "out" : "in");
 			return -ENOFIELD;
 		}
 
@@ -245,7 +245,7 @@ enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, c
 	return -EGENERIC;
 }
 
-enum vita49_2_warnings_error_codes find_iio_device(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute)
+enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute)
 {
 	// Arguments check
 	if (ctx == NULL || device_name == NULL || channel_name == NULL || attribute_name == NULL)

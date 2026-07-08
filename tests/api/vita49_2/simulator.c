@@ -55,9 +55,9 @@ int main()
     request_iq_packet.command_prologue.common_prologue.stream_id = 1;
     request_iq_packet.command_prologue.common_prologue.has_stream_id = 1;
 
-    request_iq_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI; 
-    request_iq_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST;
-    request_iq_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+    request_iq_packet.command_prologue.common_prologue.class_id.oui = OUI; 
+    request_iq_packet.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST;
+    request_iq_packet.command_prologue.common_prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
     request_iq_packet.command_prologue.common_prologue.has_class_id = 1;
 
     request_iq_packet.command_prologue.control_cam = calloc(1, sizeof(*request_iq_packet.command_prologue.control_cam));
@@ -82,9 +82,9 @@ int main()
     sampling_freq_packet.command_prologue.common_prologue.stream_id = 1;
     sampling_freq_packet.command_prologue.common_prologue.has_stream_id = 1;
 
-    sampling_freq_packet.command_prologue.common_prologue.class_id.lower_word.oui = OUI; 
-    sampling_freq_packet.command_prologue.common_prologue.class_id.upper_word.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTROL;
-    sampling_freq_packet.command_prologue.common_prologue.class_id.upper_word.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+    sampling_freq_packet.command_prologue.common_prologue.class_id.oui = OUI; 
+    sampling_freq_packet.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTROL;
+    sampling_freq_packet.command_prologue.common_prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
     sampling_freq_packet.command_prologue.common_prologue.has_class_id = 1;
 
     sampling_freq_packet.command_prologue.control_cam = calloc(1, sizeof(*sampling_freq_packet.command_prologue.control_cam));
@@ -99,7 +99,7 @@ int main()
     // sampling_freq_packet.command_prologue.control_cam->request_ack_s = 1;
     sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
 
-    sampling_freq_packet.cif0.cif0_word.has_reference_level = 1;
+    sampling_freq_packet.cif0.word.has_reference_level = 1;
     sampling_freq_packet.cif0.sample_rate = 0;
 
 

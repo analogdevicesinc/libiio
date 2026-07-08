@@ -9,6 +9,7 @@ function(add_command_sequence_plugin target)
     target_link_libraries(${target} PRIVATE
         iio
         vita49_2
+        vita49_2_iiod
         iio_common_config
         m
     )
