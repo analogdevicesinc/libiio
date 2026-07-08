@@ -696,6 +696,10 @@ _channel_get_type = _lib.iio_channel_get_type
 _channel_get_type.restype = c_int
 _channel_get_type.argtypes = (_ChannelPtr,)
 
+_channel_refresh_format = _lib.iio_channel_refresh_format
+_channel_refresh_format.restype = c_int
+_channel_refresh_format.argtypes = (_ChannelPtr,)
+
 _block_start = _lib.iio_block_start
 _block_start.restype = c_void_p
 _block_start.argtypes = (_BlockPtr,)
@@ -1053,6 +1057,19 @@ class Channel(_IIO_Object):
         type: iio.ChannelType(Enum)
         """
         return ChannelType(_channel_get_type(self._channel))
+
+    def refresh_format(self):
+        """
+        Refresh the channel's data format from the hardware.
+
+        Call this after changing any attribute that affects channel format
+        (e.g., oversampling_ratio) and before opening a buffer.
+
+        raises: OSError if the format could not be refreshed
+        """
+        ret = _channel_refresh_format(self._channel)
+        if ret < 0:
+            raise OSError(-ret, _strerror(-ret))
 
 
 class Block(_IIO_Object):
