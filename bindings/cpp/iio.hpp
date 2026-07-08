@@ -460,6 +460,7 @@ public:
     iio_data_format const * data_format() const {return iio_channel_get_data_format(p);}
     void convert(void * dst, void const * src) const {iio_channel_convert(p, dst, src);}
     void convert_inverse(void * dst, void const * src) const {iio_channel_convert_inverse(p, dst, src);}
+    void refresh_format() {impl::check(iio_channel_refresh_format(p), "iio_channel_refresh_format");}
 };
 
 /** @brief C++ wrapper for the @ref Stream C-API

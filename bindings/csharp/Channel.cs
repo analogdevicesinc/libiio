@@ -222,6 +222,9 @@ namespace iio
         private static extern IntPtr iio_channel_get_data_format(IntPtr chn);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern int iio_channel_refresh_format(IntPtr chn);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern long iio_channel_get_index(IntPtr chn);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -382,6 +385,22 @@ namespace iio
             handle.Free();
 
             return count;
+        }
+
+        /// <summary>
+        /// Refresh the channel's data format from the hardware.
+        /// Call this after changing any attribute that affects channel format
+        /// (e.g., oversampling_ratio) and before opening a buffer.</summary>
+        /// <exception cref="IioLib.IIOException">The format could not be refreshed.</exception>
+        public void refresh_format()
+        {
+            int ret = iio_channel_refresh_format(this.chn);
+            if (ret < 0)
+                throw new IIOException("Unable to refresh channel format", ret);
+
+            // Update the cached format after successful refresh
+            IntPtr fmt_struct = iio_channel_get_data_format(this.chn);
+            format = (DataFormat)Marshal.PtrToStructure(fmt_struct, typeof(DataFormat));
         }
     }
 }
