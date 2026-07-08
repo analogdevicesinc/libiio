@@ -9,6 +9,7 @@
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
+
 #if defined(_WIN32) || defined(_WIN64)
     #include "winsock2.h"
 #else
@@ -240,11 +241,14 @@ __vrt_api ssize_t vita49_2_parse_common_prologue(const uint32_t* const buf, size
 	return buffer_index;
 }
 
-__vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_command_prologue* const command_prologue, uint32_t* const buf, size_t max_words)
+__vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_command_prologue* const command_prologue, uint32_t* const buf, size_t max_words, bool is_control)
 {
 	if (command_prologue == NULL || buf == NULL || max_words == 0)
 		return -EINVAL;
-
+	
+	if ((is_control && command_prologue->control_cam == NULL) || (!is_control && command_prologue->ack_cam == NULL))
+		return -EINVAL;	
+	
 	ssize_t buffer_index;
 
 	// Common Prologue
@@ -255,8 +259,11 @@ __vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_comm
 	if (buffer_index >= max_words)
 		return -ENOBUFS;
 
-	buf[buffer_index++] = htonl(command_prologue->ack_cam->word);	
-
+	if (is_control)
+		buf[buffer_index++] = htonl(command_prologue->control_cam->word);	
+	else
+		buf[buffer_index++] = htonl(command_prologue->ack_cam->word);	
+	
 	// Message ID
 	if (buffer_index >= max_words)
 		return -ENOBUFS;
@@ -264,49 +271,102 @@ __vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_comm
 	buf[buffer_index++] = htonl(command_prologue->message_id);
 
 	// Controllee ID/UUID
-	if (command_prologue->ack_cam->has_controllee_id)
+	if (is_control)
 	{
-		// Using a 128-bit UUID
-		if (command_prologue->ack_cam->controllee_id_format)
+		if (command_prologue->control_cam->has_controllee_id)
 		{
-			if (buffer_index + 3 >= max_words)
-				return -ENOBUFS;
+			// Using a 128-bit UUID
+			if (command_prologue->control_cam->controllee_id_format)
+			{
+				if (buffer_index + 3 >= max_words)
+					return -ENOBUFS;
 
-			for (uint8_t i = 0; i < 4; i++)
-				buf[buffer_index++] = htonl(command_prologue->controllee_id.uuid128[i]);
-		}
-		// Using a 32-bit ID
-		else
-		{
-			if (buffer_index >= max_words)
-				return -ENOBUFS;
+				for (uint8_t i = 0; i < 4; i++)
+					buf[buffer_index++] = htonl(command_prologue->controllee_id.uuid128[i]);
+			}
+			// Using a 32-bit ID
+			else
+			{
+				if (buffer_index >= max_words)
+					return -ENOBUFS;
 
-			buf[buffer_index++] = htonl(command_prologue->controllee_id.id32);
+				buf[buffer_index++] = htonl(command_prologue->controllee_id.id32);
+			}
 		}
 	}
+	else
+	{
+		if (command_prologue->ack_cam->has_controllee_id)
+		{
+			// Using a 128-bit UUID
+			if (command_prologue->ack_cam->controllee_id_format)
+			{
+				if (buffer_index + 3 >= max_words)
+					return -ENOBUFS;
+
+				for (uint8_t i = 0; i < 4; i++)
+					buf[buffer_index++] = htonl(command_prologue->controllee_id.uuid128[i]);
+			}
+			// Using a 32-bit ID
+			else
+			{
+				if (buffer_index >= max_words)
+					return -ENOBUFS;
+
+				buf[buffer_index++] = htonl(command_prologue->controllee_id.id32);
+			}
+		}
+	}
+	
 
 	// Controller ID/UUID
-	if (command_prologue->ack_cam->has_controller_id)
+	if (is_control)
 	{
-		// Using a 128-bit UUID
-		if (command_prologue->ack_cam->controller_id_format)
+		if (command_prologue->control_cam->has_controller_id)
 		{
-			if (buffer_index + 3 >= max_words)
-				return -ENOBUFS;
+			// Using a 128-bit UUID
+			if (command_prologue->control_cam->controller_id_format)
+			{
+				if (buffer_index + 3 >= max_words)
+					return -ENOBUFS;
 
-			for (uint8_t i = 0; i < 4; i++)
-				buf[buffer_index++] = htonl(command_prologue->controller_id.uuid128[i]);
-		}
-		// Using a 32-bit ID
-		else
-		{
-			if (buffer_index >= max_words)
-				return -ENOBUFS;
+				for (uint8_t i = 0; i < 4; i++)
+					buf[buffer_index++] = htonl(command_prologue->controller_id.uuid128[i]);
+			}
+			// Using a 32-bit ID
+			else
+			{
+				if (buffer_index >= max_words)
+					return -ENOBUFS;
 
-			buf[buffer_index++] = htonl(command_prologue->controller_id.id32);
+				buf[buffer_index++] = htonl(command_prologue->controller_id.id32);
+			}
 		}
 	}
+	else
+	{
+		if (command_prologue->ack_cam->has_controller_id)
+		{
+			// Using a 128-bit UUID
+			if (command_prologue->ack_cam->controller_id_format)
+			{
+				if (buffer_index + 3 >= max_words)
+					return -ENOBUFS;
 
+				for (uint8_t i = 0; i < 4; i++)
+					buf[buffer_index++] = htonl(command_prologue->controller_id.uuid128[i]);
+			}
+			// Using a 32-bit ID
+			else
+			{
+				if (buffer_index >= max_words)
+					return -ENOBUFS;
+
+				buf[buffer_index++] = htonl(command_prologue->controller_id.id32);
+			}
+		}
+	}
+	
 	return buffer_index;
 }
 

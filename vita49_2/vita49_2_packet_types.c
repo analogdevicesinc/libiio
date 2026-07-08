@@ -157,13 +157,13 @@ __vrt_api ssize_t vita49_2_serialize_control_packet(struct vita49_2_control_pack
 	if (pkt == NULL || buf == NULL || max_words == 0)
 		return -EINVAL;
 
-	if (pkt->command_prologue.ack_cam == NULL)
+	if (pkt->command_prologue.control_cam == NULL)
 		return -EINVAL;
 
 	ssize_t buffer_index, ret_value;
 
 	// Command Prologue
-	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words)) < 0)
+	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words, true)) < 0)
 		return buffer_index;
 
 	// Payload (CIF Words + CIF Attribute Data)
@@ -209,7 +209,7 @@ __vrt_api ssize_t vita49_2_serialize_ackX_packet(struct vita49_2_ackX_packet* co
 	ssize_t buffer_index;
 
 	// Command Prologue
-	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words)) < 0)
+	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words, false)) < 0)
 		return buffer_index;
 
 	// Payload (Warning/Error Indicator Fields + Warning/Error Indicators)
@@ -702,7 +702,7 @@ __vrt_api ssize_t vita49_2_serialize_ackV_packet(struct vita49_2_ackV_packet* co
 	ssize_t buffer_index;
 
 	// Command Prologue
-	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words)) < 0)
+	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words, false)) < 0)
 		return buffer_index;
 
 	// Payload (Warning/Error Indicator Fields + Warning/Error Indicators)
@@ -969,7 +969,7 @@ __vrt_api ssize_t vita49_2_serialize_ackS_packet(struct vita49_2_ackS_packet* co
 	ssize_t buffer_index, ret_value;
 
 	// Command Prologue
-	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words)) < 0)
+	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words, false)) < 0)
 		return buffer_index;
 
 	// Payload (CIF Words + CIF Attribute Data)
@@ -1009,13 +1009,13 @@ __vrt_api ssize_t vita49_2_serialize_control_extension_packet(struct vita49_2_co
 	if (pkt == NULL || buf == NULL || max_words == 0)
 		return -EINVAL;
 
-	if (pkt->command_prologue.ack_cam == NULL)
+	if (pkt->command_prologue.control_cam == NULL)
 		return -EINVAL;
 
 	ssize_t buffer_index;
 
 	// Command Prologue
-	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words)) < 0)
+	if ((buffer_index = vita49_2_serialize_command_prologue(&pkt->command_prologue, buf, max_words, true)) < 0)
 		return buffer_index;
 
 	/* Payload of Control Extension Words */

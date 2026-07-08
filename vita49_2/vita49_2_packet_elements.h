@@ -1398,9 +1398,10 @@ __vrt_api ssize_t vita49_2_parse_common_prologue(const uint32_t* const buf, size
  * @param prologue
  * @param buf Pointer to the destination buffer to contain the 32-bit words.
  * @param max_words Size of destination buffer in 32-bit words.
+ * @param is_control True if the packet is a Control Packet.
  * @return ssize_t Returns a negative error code on failure, otherwise a positive integer representing the number of 32-bit words written to the buffer is returned.
  */
-__vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_command_prologue* const prologue, uint32_t* const buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_command_prologue(const struct vita49_2_command_prologue* const prologue, uint32_t* const buf, size_t max_words, bool is_control);
 
 /**
  * @brief Parses the command prologue (common prologue, CAM, Message ID, Controllee ID/UUID, Controller ID/UUID) present in every VITA 49.2 Command Packet, 

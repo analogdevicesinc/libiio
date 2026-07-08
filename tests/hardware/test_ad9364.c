@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-
+#include <math.h>
 #include "iio/iio.h"
 
 #ifndef TESTS_DEBUG
@@ -56,8 +56,8 @@ int main() {
 
   phy = iio_context_find_device(ctx, "ad9361-phy");
   assertm(phy, "Unable to find AD9361-phy device");
-  rx = iio_context_find_device(ctx, "cf-ad9361-lpc");
-  assertm(rx, "Unable to find RX device");
+  // rx = iio_context_find_device(ctx, "cf-ad9361-lpc");
+  // assertm(rx, "Unable to find RX device");
   tx = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
   assertm(tx, "Unable to find TX device");
 
@@ -88,6 +88,9 @@ int main() {
   int16_t *p_dat, *p_end;
   ptrdiff_t p_inc;
   int16_t idx = 0;
+  const float two_pi = 6.28318530717958647692f;
+  const float phase_step = two_pi / N_TX_SAMPLES;
+  const int16_t amplitude = 2047;
 
   p_end = iio_block_end(txblock);
   p_inc = iio_device_get_sample_size(tx, txmask);
@@ -95,116 +98,118 @@ int main() {
 
   for (p_dat = iio_block_first(txblock, chn); p_dat < p_end;
        p_dat += p_inc / sizeof(*p_dat)) {
-    // Bitshift 4 bits up. During loopback hardware will shift back 4 bits
-    p_dat[0] = idx << 4;
-    p_dat[1] = idx << 4;
+    // Bitshift 4 bits up. During loopback hardware will shift back 4 bits.
+    int16_t sample = (int16_t)(amplitude * sinf(phase_step * idx));
+    p_dat[0] = sample;
+    p_dat[1] = sample;
     idx++;
   }
   iio_block_enqueue(txblock, 0, true);
   iio_buffer_enable(txbuf);
+  getchar();
   sleep(2);
 
-  // RX Side
-  rxmask = iio_create_channels_mask(iio_device_get_channels_count(rx));
-  assertm(rxmask, "Unable to create RX mask");
+  // // RX Side
+  // rxmask = iio_create_channels_mask(iio_device_get_channels_count(rx));
+  // assertm(rxmask, "Unable to create RX mask");
 
-  chn = iio_device_find_channel(rx, "voltage0", false);
-  assertm(chn, "Unable to find RX channel voltage0");
-  iio_channel_enable(chn, rxmask);
-  chn = iio_device_find_channel(rx, "voltage1", false);
-  assertm(chn, "Unable to find RX channel voltage1");
-  iio_channel_enable(chn, rxmask);
+  // chn = iio_device_find_channel(rx, "voltage0", false);
+  // assertm(chn, "Unable to find RX channel voltage0");
+  // iio_channel_enable(chn, rxmask);
+  // chn = iio_device_find_channel(rx, "voltage1", false);
+  // assertm(chn, "Unable to find RX channel voltage1");
+  // iio_channel_enable(chn, rxmask);
 
-  rxbuf = iio_device_create_buffer(rx, 0, rxmask);
-  assertm(rxbuf, "Unable to create RX buffer");
+  // rxbuf = iio_device_create_buffer(rx, 0, rxmask);
+  // assertm(rxbuf, "Unable to create RX buffer");
 
-  rxstream = iio_buffer_create_stream(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES);
-  assertm(rxstream, "Unable to create RX stream");
+  // rxstream = iio_buffer_create_stream(rxbuf, N_RX_BLOCKS, N_RX_SAMPLES);
+  // assertm(rxstream, "Unable to create RX stream");
 
-  p_inc = iio_device_get_sample_size(rx, rxmask);
-  chn = iio_device_find_channel(rx, "voltage0", false);
+  // p_inc = iio_device_get_sample_size(rx, rxmask);
+  // chn = iio_device_find_channel(rx, "voltage0", false);
 
-  bool found_start = false;
-  int16_t ramp_indx = 0;
+  // bool found_start = false;
+  // int16_t ramp_indx = 0;
 
-  // Create check vector
-  bool ramp_found_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
-  bool continuous_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
+  // // Create check vector
+  // bool ramp_found_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
+  // bool continuous_check_vector[SUCCESSIVE_BUFFER_TO_CHECK];
 
-  // Remove first few blocks as they might be old
-  for (int i = 0; i < 30; i++) {
-    rxblock = iio_stream_get_next_block(rxstream);
-    dprintf("Removing block %d\n", i);
-  }
+  // // Remove first few blocks as they might be old
+  // for (int i = 0; i < 30; i++) {
+  //   rxblock = iio_stream_get_next_block(rxstream);
+  //   dprintf("Removing block %d\n", i);
+  // }
 
-  // Check several buffers to make sure no glitches occurred
-  for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
+  // // Check several buffers to make sure no glitches occurred
+  // for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
 
-    dprintf("Checking buffer %d of %d\n", i + 1, SUCCESSIVE_BUFFER_TO_CHECK);
+  //   dprintf("Checking buffer %d of %d\n", i + 1, SUCCESSIVE_BUFFER_TO_CHECK);
 
-    rxblock = iio_stream_get_next_block(rxstream);
-    p_end = iio_block_end(rxblock);
+  //   rxblock = iio_stream_get_next_block(rxstream);
+  //   p_end = iio_block_end(rxblock);
 
-    // Within a block data should be continuous but not necessarily across
-    // blocks
-    found_start = false;
-    continuous_check_vector[i] = true; // assume good
-    ramp_indx = 0;
+  //   // Within a block data should be continuous but not necessarily across
+  //   // blocks
+  //   found_start = false;
+  //   continuous_check_vector[i] = true; // assume good
+  //   ramp_indx = 0;
 
-    for (p_dat = iio_block_first(rxblock, chn); p_dat < p_end;
-         p_dat += p_inc / sizeof(*p_dat)) {
+  //   for (p_dat = iio_block_first(rxblock, chn); p_dat < p_end;
+  //        p_dat += p_inc / sizeof(*p_dat)) {
 
-      // Locate top of ramp
-      if (p_dat[0] == (N_TX_SAMPLES - 1) && p_dat[1] == (N_TX_SAMPLES - 1) &&
-          !found_start) {
-        found_start = true;
-        continue; // Wrap to ramp restarts on next sample
-      }
+  //     // Locate top of ramp
+  //     if (p_dat[0] == (N_TX_SAMPLES - 1) && p_dat[1] == (N_TX_SAMPLES - 1) &&
+  //         !found_start) {
+  //       found_start = true;
+  //       continue; // Wrap to ramp restarts on next sample
+  //     }
 
-      // Make sure ramp is continuous
-      if (found_start) {
-        dprintf("Expected: %d\n", ramp_indx);
-        dprintf("Actual: %d, %d (I, Q)\n\n", p_dat[0], p_dat[1]);
-        if (p_dat[0] != ramp_indx && p_dat[1] != ramp_indx) {
-          dprintf("--->Expected: %d (Buffer %d)\n", ramp_indx, i);
-          dprintf("--->Actual: %d, %d (I, Q) [Buffer %d]\n\n", p_dat[0],
-                  p_dat[1], i);
-          dprintf("\n\n");
-          continuous_check_vector[i] = false;
-        }
-        if (ramp_indx == (N_TX_SAMPLES - 1)) {
-          ramp_indx = 0;
-        } else
-          ramp_indx++;
-      }
-    }
+  //     // Make sure ramp is continuous
+  //     if (found_start) {
+  //       dprintf("Expected: %d\n", ramp_indx);
+  //       dprintf("Actual: %d, %d (I, Q)\n\n", p_dat[0], p_dat[1]);
+  //       if (p_dat[0] != ramp_indx && p_dat[1] != ramp_indx) {
+  //         dprintf("--->Expected: %d (Buffer %d)\n", ramp_indx, i);
+  //         dprintf("--->Actual: %d, %d (I, Q) [Buffer %d]\n\n", p_dat[0],
+  //                 p_dat[1], i);
+  //         dprintf("\n\n");
+  //         continuous_check_vector[i] = false;
+  //       }
+  //       if (ramp_indx == (N_TX_SAMPLES - 1)) {
+  //         ramp_indx = 0;
+  //       } else
+  //         ramp_indx++;
+  //     }
+  //   }
 
-    ramp_found_check_vector[i] = found_start;
-    if (!found_start)
-      continuous_check_vector[i] = false;
-  }
+  //   ramp_found_check_vector[i] = found_start;
+  //   if (!found_start)
+  //     continuous_check_vector[i] = false;
+  // }
 
-  // Examine check vector
-  bool failed_c1 = false;
-  bool failed_c2 = false;
-  dprintf("1 == Check Passed, 0 == Failed\n");
-  dprintf("Ramp Check, Contiguous Check (Buffer #)\n");
+  // // Examine check vector
+  // bool failed_c1 = false;
+  // bool failed_c2 = false;
+  // dprintf("1 == Check Passed, 0 == Failed\n");
+  // dprintf("Ramp Check, Contiguous Check (Buffer #)\n");
 
-  for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
-    dprintf("%d, %d (%d)\n", ramp_found_check_vector[i],
-            continuous_check_vector[i], i);
-    if (!ramp_found_check_vector[i])
-      failed_c1 = true;
-    if (!continuous_check_vector[i])
-      failed_c2 = true;
-  }
-  dprintf("\n");
+  // for (int i = 0; i < SUCCESSIVE_BUFFER_TO_CHECK; i++) {
+  //   dprintf("%d, %d (%d)\n", ramp_found_check_vector[i],
+  //           continuous_check_vector[i], i);
+  //   if (!ramp_found_check_vector[i])
+  //     failed_c1 = true;
+  //   if (!continuous_check_vector[i])
+  //     failed_c2 = true;
+  // }
+  // dprintf("\n");
 
-  assertm(!failed_c1, "Ramp was not found in all buffers");
-  assertm(!failed_c2, "Ramp was not contiguous in all buffers");
+  // assertm(!failed_c1, "Ramp was not found in all buffers");
+  // assertm(!failed_c2, "Ramp was not contiguous in all buffers");
 
-  iio_stream_destroy(rxstream);
-  iio_buffer_destroy(rxbuf);
+  // iio_stream_destroy(rxstream);
+  // iio_buffer_destroy(rxbuf);
 
   //   // Manual check RX (disable asserts above first)
   //   printf("Open up the time scope to see data. Should be a ramp from

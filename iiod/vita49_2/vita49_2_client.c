@@ -224,6 +224,7 @@ int start_vita49_2_daemon(struct iio_context *ctx, struct thread_pool *pool)
 static void vita49_2_main(struct thread_pool *pool, void *args)
 {
 	struct vita49_2_pdata *arguments = args;
+	char iio_error_buffer[256];
 	printf("\n");
 
 	// ==============================================================
@@ -424,7 +425,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	struct iio_buffer *rx_buffer = iio_device_create_buffer(rx_device, 0, rx_channel_mask);
 	if (iio_err(rx_buffer) != 0)
 	{
-		fprintf(stderr, "vita49_2_client: Unable to create RX buffer.\n");
+		iio_strerror(iio_err(rx_buffer), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create RX buffer. %s\n", iio_error_buffer);
 		rx_device = NULL;
 		rx_channel_mask = NULL;
 		
@@ -435,7 +437,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	struct iio_stream *rx_stream = iio_buffer_create_stream(rx_buffer, NUM_RX_BLOCKS, NUM_RX_SAMPLES);
 	if (iio_err(rx_stream) != 0)
 	{
-		fprintf(stderr, "vita49_2_client: Unable to create RX stream.\n");
+		iio_strerror(iio_err(rx_stream), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create RX stream. %s\n", iio_error_buffer);
 		rx_device = NULL;
 		rx_channel_mask = NULL;
 		iio_buffer_destroy(rx_buffer);
@@ -502,7 +505,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	struct iio_buffer *tx_buffer = iio_device_create_buffer(tx_device, 0, tx_channel_mask);
 	if (iio_err(tx_buffer) != 0)
 	{
-		fprintf(stderr, "vita49_2_client: Unable to create TX buffer.\n");
+		iio_strerror(iio_err(tx_buffer), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create TX buffer. %s\n", iio_error_buffer);
 		tx_device = NULL;
 		tx_channel_mask = NULL;
 		
@@ -521,7 +525,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	struct iio_block *tx_block = iio_buffer_create_block(tx_buffer, NUM_TX_SAMPLES * BYTES_PER_SAMPLE * NUM_CHANNELS);
 	if (iio_err(tx_block) != 0)
 	{
-		fprintf(stderr, "vita49_2_client: Unable to create TX block.\n");
+		iio_strerror(iio_err(tx_block), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create TX block. %s\n", iio_error_buffer);
 		tx_device = NULL;
 		tx_channel_mask = NULL;
 		iio_buffer_destroy(tx_buffer);
@@ -902,7 +907,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		{
 			received = recvfrom(socket_fd, receive_buffer, sizeof(receive_buffer), 0, (struct sockaddr*)&sender_address, &address_length);
 			destination_address = sender_address;
-			destination_address.sin_port = UDP_PORT;
+			destination_address.sin_port = htons(UDP_PORT);
 
 			// Assume that a 0-length datagram implies a shutdown was called on the socket
 			if (received <= 0)
@@ -3269,6 +3274,9 @@ int _acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* 
 				fprintf(stderr, "vita49_2_process: Encountered an unknown CIF type (%d)\n", cif_mappings->cif_type);
 				continue;
 		}
+
+		if (strcmp(cif_mappings->device_name, "sequence") == 0)
+			continue;
 
 		device = iio_context_find_device(ctx, cif_mappings->device_name);
 		if (!device) 
