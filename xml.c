@@ -415,24 +415,46 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 		}
 	}
 
-	/* Handle IIOD versions that only send <buffer-attribute>. At this point,
+	/* Handle IIOD versions that only send <buffer-attribute> or have
+	 * scan-elements but no explicit <buffer> tags. At this point,
 	 * we need to go all over the channels and add the ones that are scan elements
 	 * to the buffer.
 	 */
-	if (buf_legacy && buf) {
+	if (buf_legacy) {
 		unsigned int c;
+		bool has_scan_elements = false;
 
+		/* Check if any channels have scan-elements */
 		for (c = 0; c < iio_device_get_channels_count(dev); c++) {
 			struct iio_channel *chn = iio_device_get_channel(dev, c);
 
-			if (!iio_channel_is_scan_element(chn))
-				continue;
+			if (iio_channel_is_scan_element(chn)) {
+				has_scan_elements = true;
+				break;
+			}
+		}
 
-			err = iio_buffer_add_scan_element(buf, chn, NULL);
-			if (err < 0) {
-				dev_perror(dev, err,
-						"Unable to add scan element to legacy buffer\n");
-				return err;
+		/* Create buffer if we have scan-elements but no explicit buffer */
+		if (has_scan_elements && !buf) {
+			buf = iio_device_add_buffer(dev, 0);
+			if (!buf)
+				return -ENOMEM;
+		}
+
+		/* Add all scan-elements to the buffer */
+		if (buf) {
+			for (c = 0; c < iio_device_get_channels_count(dev); c++) {
+				struct iio_channel *chn = iio_device_get_channel(dev, c);
+
+				if (!iio_channel_is_scan_element(chn))
+					continue;
+
+				err = iio_buffer_add_scan_element(buf, chn, NULL);
+				if (err < 0) {
+					dev_perror(dev, err,
+							"Unable to add scan element to legacy buffer\n");
+					return err;
+				}
 			}
 		}
 	}
