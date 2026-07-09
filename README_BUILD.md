@@ -4,6 +4,7 @@
 
 - [Instructions applicable to Linux, BSD, and Windows configurations](#instructions-applicable-to-linux-bsd-and-windows-configurations)
   - [Install Prerequisites/Dependencies](#install-prerequisitesdependencies)
+    - [libserialport Installation](#libserialport-installation)
   - [Clone](#clone)
   - [Configure & Build](#configure--build)
   - [Install](#install)
@@ -60,6 +61,7 @@ Install libraries for Backends
 analog@precision:~$ sudo apt-get install libaio-dev libusb-1.0-0-dev
 analog@precision:~$ sudo apt-get install libserialport-dev libavahi-client-dev
 ```
+
 Install to build documentation
 ```shell
 analog@precision:~$ sudo apt-get install doxygen graphviz pandoc
@@ -68,6 +70,63 @@ analog@precision:~$ sudo apt-get install python3 python3-pip python3-venv
 Install to build python backends
 ```shell
 analog@precision:~$ sudo apt-get install python3 python3-pip python3-setuptools
+```
+
+#### libserialport Installation
+
+The **serial backend** allows libiio to communicate with IIO devices over serial (UART) connections. This backend is enabled by default, but requires the libserialport library to be installed.
+
+If libserialport is not found during the CMake configuration, the serial backend will be automatically disabled and you will see a warning message with installation instructions.
+
+**Installation by Platform:**
+
+##### Debian/Ubuntu
+```shell
+sudo apt-get install libserialport-dev
+```
+
+##### Fedora/RHEL/CentOS
+```shell
+# Fedora 22+ and RHEL/CentOS 8+
+sudo dnf install libserialport-devel
+
+# Older RHEL/CentOS 7
+sudo yum install libserialport-devel
+```
+
+##### Arch Linux
+```shell
+sudo pacman -S libserialport
+```
+
+##### openSUSE
+```shell
+sudo zypper install libserialport-devel
+```
+
+##### Alpine Linux
+```shell
+apk add libserialport-dev
+```
+
+##### macOS (Homebrew)
+```shell
+brew install libserialport
+```
+
+##### FreeBSD
+```shell
+pkg install libserialport
+```
+
+##### Windows
+On Windows, libserialport is built as part of the dependency build process. See the [Windows build instructions](#instructions-for-building-on-windows-with-msvc) section for details on building dependencies.
+
+**Minimum Version:** libiio requires libserialport version 0.1.1 or later.
+
+**Disabling the serial backend:** If you don't need serial device support, you can explicitly disable it during CMake configuration:
+```shell
+cmake .. -DWITH_SERIAL_BACKEND=OFF
 ```
 
 ### Clone
@@ -113,7 +172,7 @@ Cmake Options          | Default | Depends on    | Description                  
 `WITH_XML_BACKEND`     |  ON | libxml2       | Enable the XML backend, required when using network, serial, or USB backend  |
 `WITH_USB_BACKEND`     |  ON | libusb        | Enable the libusb backend        |
 `WITH_USB_BACKEND_DYNAMIC` |  ON | Modules + USB backend | Compile the USB backend as a module |
-`WITH_SERIAL_BACKEND`  | OFF | libserialport | Enable the Serial backend        |
+`WITH_SERIAL_BACKEND`  |  ON | libserialport | Enable the Serial backend        |
 `WITH_SERIAL_BACKEND_DYNAMIC` |  ON | Modules + serial backend | Compile the serial backend as a module |
 `WITH_NETWORK_BACKEND` |  ON |               | Supports TCP/IP                  |
 `WITH_NETWORK_BACKEND_DYNAMIC` |  ON | Modules + network backend | Compile the network backend as a module |
