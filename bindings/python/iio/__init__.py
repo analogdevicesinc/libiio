@@ -328,6 +328,21 @@ if "Windows" in _system():
 else:
     # Non-windows, possibly Posix system
     _lib_loc = find_library("iio")
+
+    if _lib_loc is None:
+        # find_library failed - try direct loading for embedded systems
+        # (common on buildroot/yocto systems without gcc/ldconfig)
+        import sys
+        if sys.platform.startswith('linux'):
+            for name in ['libiio.so.1', 'libiio.so']:
+                try:
+                    # Attempt load to verify it's valid
+                    _cdll(name)
+                    _lib_loc = name
+                    break
+                except OSError:
+                    continue
+
     if _lib_loc is not None:
         if _path.islink(_lib_loc):
             _lib_loc = _path.realpath(_lib_loc)
