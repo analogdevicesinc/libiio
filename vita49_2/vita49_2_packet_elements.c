@@ -375,11 +375,13 @@ __vrt_api ssize_t vita49_2_parse_command_prologue(const uint32_t* const buf, siz
 	if (buf == NULL || buf_words == 0 || command_prologue == NULL)
 		return -EINVAL;
 
-	ssize_t buffer_index;
+	ssize_t buffer_index = 0, common_prologue;
 
 	// Common Prologue
-	if ((buffer_index = vita49_2_parse_common_prologue(buf, buf_words, &command_prologue->common_prologue, packet_type)) < 0)
-		return buffer_index;
+	if ((common_prologue = vita49_2_parse_common_prologue(buf, buf_words, &command_prologue->common_prologue, packet_type)) < 0)
+		return common_prologue;
+
+	buffer_index += common_prologue;
 
 	// CAM
 	if (buffer_index >= command_prologue->common_prologue.header.packet_size_words) 
@@ -714,7 +716,7 @@ __vrt_api ssize_t vita49_2_parse_cif0_attributes(uint16_t payload_size, const ui
 		if (offset >= payload_size)
 			return -EINVAL;
 
-		if(vita49_2_get_payload_word(payload, payload_size, offset, cif0->reference_point_id) < 0)
+		if(vita49_2_get_payload_word(payload, payload_size, offset, &cif0->reference_point_id) < 0)
 		{
 			return -1;
 		}
@@ -990,7 +992,7 @@ __vrt_api ssize_t vita49_2_parse_cif0_attributes(uint16_t payload_size, const ui
 
 __vrt_api ssize_t vita49_2_parse_cif_fields(uint16_t payload_size, const uint32_t* const buf, size_t payload_offset, struct vita49_2_cif0_fields* const cif0, struct vita49_2_cif1_fields* cif1, struct vita49_2_cif2_fields* cif2, struct vita49_2_cif3_fields* cif3, struct vita49_2_cif7_fields* cif7)
 {
-	if (payload_size == 0 || buf == NULL)
+	if (payload_size == 0 || buf == NULL || cif0 == NULL)
 		return -EINVAL;
 
 	const uint32_t* const payload = buf + payload_offset;
@@ -1068,11 +1070,14 @@ __vrt_api ssize_t vita49_2_parse_cif_fields(uint16_t payload_size, const uint32_
 	}
 
 	// CIF0 Attributes
-	if ((ret_value = vita49_2_parse_cif0_attributes(payload_size - offset, payload, offset, cif0)) < 0)
-		return ret_value;
+	if (cif0->word.word != 0)
+	{
+		if ((ret_value = vita49_2_parse_cif0_attributes(payload_size - offset, payload, offset, cif0)) < 0)
+			return ret_value;
 
-	offset += ret_value;
-
+		offset += ret_value;
+	}
+	
 	// CIF1 Attributes
 	// TODO: Parse the CIF 1 fields and populate the CIF 1 struct
 
@@ -1147,5 +1152,5 @@ __vrt_api ssize_t vita49_2_serialize_cif_fields(const struct vita49_2_cif0_field
 
 	// TODO: Logic for serializing CIF1/2/3/7 attribute data
 
-	return buffer_index;
+	return buffer_index - offset;
 }

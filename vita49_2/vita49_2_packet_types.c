@@ -182,15 +182,17 @@ __vrt_api ssize_t vita49_2_serialize_control_packet(struct vita49_2_control_pack
 __vrt_api int vita49_2_parse_control_packet(const uint32_t* const buf, size_t buf_words, struct vita49_2_control_packet* const pkt)
 {
 	if (buf == NULL || pkt == NULL || buf_words == 0)
+	{
 		return -EINVAL;
-
+	}
+	
 	memset(pkt, 0, sizeof(*pkt));
 	ssize_t buffer_index;
 
 	// Command Prologue
 	if ((buffer_index = vita49_2_parse_command_prologue(buf, buf_words, &pkt->command_prologue, VITA49_2_PKT_TYPE_COMMAND)) < 0)
 		return buffer_index;
-	
+
 	// Payload (CIF Fields + Attributes)
 	if ((buffer_index = vita49_2_parse_cif_fields(pkt->command_prologue.common_prologue.header.packet_size_words - buffer_index, buf, buffer_index, &pkt->cif0, pkt->cif1, pkt->cif2, pkt->cif3, pkt->cif7)) < 0)
 		return buffer_index;

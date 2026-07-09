@@ -128,7 +128,7 @@ int main()
         {
             perror("sendto");
         }
-        usleep(4e6);
+        usleep(1e5);
     }
 
     close(fd);

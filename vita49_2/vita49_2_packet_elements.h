@@ -430,61 +430,53 @@ union vita49_2_control_cam_field {
 			uint32_t request_ack_x:1;				/* Requests an AckX packet in response to a Command packet */
 			uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
 
-			/* The following 11 bits must be copied in any associated AckV/X/S Packets */
-			union {
+			/* 
+				The following 11 bits must be copied in any associated AckV/X/S Packets.
+				We can't nest a union to wrap the 11 bits because that creates a new storage unit
+				and breaks the 32-bit word structure.
+			*/
+				uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-				uint32_t associated_bits:11;
-				struct {
-				
-					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+				uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+				uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+				uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+				uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
 
-					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
-					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+				uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+				uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+				uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
 
-					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
-					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-
-					// ADI does not use controllee ID/UUID, however we retain the right to support it at a later time.
-					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
-					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-				
-				};
-			};
+				// ADI does not use controllee ID/UUID, however we retain the right to support it at a later time.
+				uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+				uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
 			/* ======================================================================================= */
 
 		#else
 		
-			/* The following 11 bits must be copied in any associated AckV/X/S Packets */
-			union {
+			/* 
+				The following 11 bits must be copied in any associated AckV/X/S Packets.
+				We can't nest a union to wrap the 11 bits because that creates a new storage unit
+				and breaks the 32-bit word structure.
+			*/	
+				uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+				uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
 
-				uint32_t associated_bits:11;
-				struct {
-				
-					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+				uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+				uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
 
-					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+				uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+				uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+				uint32_t errors:1;						/* Permit execution of fields that generate Errors */
 
-					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+				uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+				uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
-
-					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
-			
-				};
-			};
+				uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 			/* ======================================================================================= */
 
 			uint32_t request_ack_v:1;				/* Requests an AckV packet in response to a Command packet */
@@ -536,55 +528,52 @@ union vita49_2_ack_cam_field {
 			uint32_t ackX_request:1;				/* Set to 1 if this packet is an AckX Packet */
 			uint32_t ackV_request:1;				/* Set to 1 if this packet is an AckV Packet */
 
-			/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM (specified in Table 8.4.1-1) */
-			union {
-				uint32_t associated_bits:11;
+			/* 
+				Set these bits to the same values as the bits in the corresponding Control Packet's CAM.
+				We can't nest a union to wrap the 11 bits because that creates a new storage unit
+				and breaks the 32-bit word structure.
+			*/
+		
+				uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 
-				struct {
-					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
+				uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
+				uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+				uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+				uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+				
+				uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+				uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+				uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
 
-					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
-					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-					
-					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
-					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
-					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-
-					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
-					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-				};
-			};
+				uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+				uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
 			/* ======================================================================================= */
 
 		#else
 
-			/* Set these bits to the same values as the bits in the corresponding Control Packet's CAM */
-			union {
-				uint32_t associated_bits:11;
+			/* 
+				Set these bits to the same values as the bits in the corresponding Control Packet's CAM.
+				We can't nest a union to wrap the 11 bits because that creates a new storage unit
+				and breaks the 32-bit word structure.
+			*/
+				uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
+				uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
 
-				struct {
-					uint32_t has_controllee_id:1; 			/* 1 = Controllee Identifier field is present, 0 = Controllee Identifier field is not present */
-					uint32_t controllee_id_format:1;		/* 1 = Controllee Identifier field uses 128-bit UUID, 0 = Controllee Identifier field uses 32-bit ID */	
+				uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
+				uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
 
-					uint32_t has_controller_id:1; 			/* 1 = Controller Identifier field is present, 0 = Controller Identifier field is not present */
-					uint32_t controller_id_format:1;		/* 1 = Controller Identifier field uses 128-bit UUID, 0 = Controller Identifier field uses 32-bit ID */
+				uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
 
-					uint32_t partial_execution:1;			/* Execute any fields that do NOT have any warnings or errors, and attempt execution of warning and error fields as governed by Ctrl-W and Ctrl-Er. */
+				uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
+				uint32_t errors:1;						/* Permit execution of fields that generate Errors */
 
-					uint32_t warnings:1;					/* Permit execution of fields that generate Warnings */
-					uint32_t errors:1;						/* Permit execution of fields that generate Errors */
+				uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
 
-					uint32_t action_bits:2;					/* 00 = No-Action Mode, 01 = Dry Run Mode which is unsupported by ADI, 10 = Execute Mode, 11 = Reserved */
+				uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
 
-					uint32_t nack:1;						/* NACK bit - set to 1 in a Control Packet to indicate that AckV and/or AckX packets are generated ONLY when Warnings or Errors have occured. If set to 0, AckV and AckX are provided in all cases (assuming request_ack_x or request_ack_v have been asserted). */	
-
-					uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
-				};
-			};
+				uint32_t reserved_21:1;					/* Reserved bit - should be set to 0 on generation and ignored on parsing */
 			/* ======================================================================================= */
 
 
@@ -759,7 +748,7 @@ union vita49_2_control_extension_description {
 		#if __BYTE_ORDER__ == __ORDER_LITTLE_ENDIAN__
 			
 			// Data Metadata
-			uint32_t data_length:8;				// Used if the data type is a string and thus the length is otherwise unknown.
+			uint32_t data_length:8;				// Number of 32-bit words that the data occupies. Used if the data type is a string and thus the length is otherwise unknown.
 			uint32_t encoding:2;				// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
 			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
 
@@ -780,7 +769,7 @@ union vita49_2_control_extension_description {
 			// Data Metadata
 			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
 			uint32_t encoding:2;				// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
-			uint32_t data_length:8;				// Used if the data type is a string and thus the length is otherwise unknown.
+			uint32_t data_length:8;				// Number of 32-bit words that the data occupies. Used if the data type is a string and thus the length is otherwise unknown.
 
 		#endif
 	} explicit;
