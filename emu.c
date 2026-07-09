@@ -792,12 +792,34 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 		}
 	}
 
+	/* Handle legacy XML formats that have scan-elements but no explicit
+	 * <buffer> tags. Check if any channels have scan-elements and create
+	 * a buffer if needed.
+	 */
 	if (buf_legacy) {
 		struct iio_buffer *buf = iio_device_get_buffer(dev, 0);
+		unsigned int c;
+		bool has_scan_elements = false;
 
+		/* Check if any channels have scan-elements */
+		for (c = 0; c < iio_device_get_channels_count(dev); c++) {
+			struct iio_channel *chn = iio_device_get_channel(dev, c);
+
+			if (iio_channel_is_scan_element(chn)) {
+				has_scan_elements = true;
+				break;
+			}
+		}
+
+		/* Create buffer if we have scan-elements but no explicit buffer */
+		if (has_scan_elements && !buf) {
+			buf = iio_device_add_buffer(dev, 0);
+			if (!buf)
+				return -ENOMEM;
+		}
+
+		/* Add all scan-elements to the buffer */
 		if (buf) {
-			unsigned int c;
-
 			for (c = 0; c < iio_device_get_channels_count(dev); c++) {
 				struct iio_channel *chn = iio_device_get_channel(dev, c);
 
