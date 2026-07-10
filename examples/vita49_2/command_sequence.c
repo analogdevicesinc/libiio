@@ -10,6 +10,8 @@
 // This script demonstrates how a sequence of commands can be issued to the VITA subsystem within iiod.
 // This example is based on this article: https://wiki.analog.com/university/tools/pluto/hacking/power_amp
 
+// This example was designed for the ADALM Pluto
+
 #include <vita49_2/vita49_2_packet_types.h>
 #include <vita49_2/vita49_2_packet_elements.h>
 #include <stdio.h>
@@ -59,34 +61,15 @@ int main(int argc, char** argv)
 
         // These attributes don't map to standard CIF fields on the Pluto, hence we'll need to use Control Extension Packets and a modified mapping conf file.
 
-
-    // TODO: Create AckV/X/S Extension Packets
-
+        
     // // In case a subcommand fails in our sequence, it's useful to know the initial values so that we can revert the device.
     // // To obtain those initial attribute values, we can send a Control Packet with the actions bits in the CAM set to "No-Action Mode",
     // // and assert the CAM bit to request an AckS Packet containing the initial values of the attributes we're interested in.
 
-    // // Don't replicate what I'm doing below for a proper setup. Because I have knowledge of the VITA backend within iiod, I'm skipping
-    // // initialization of some fields that I know won't be needed.
-    // struct vita49_2_control_packet initial_values_rq = {0};
-    // initial_values_rq.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
-    // initial_values_rq.command_prologue.common_prologue.header.has_class_id = 1;
-    // initial_values_rq.command_prologue.common_prologue.has_class_id = 1;
-    // initial_values_rq.command_prologue.common_prologue.has_stream_id = 1;
-    // initial_values_rq.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTROL;
-
-    // initial_values_rq.command_prologue.control_cam = calloc(1, sizeof(*initial_values_rq.command_prologue.control_cam));
-    // if (initial_values_rq.command_prologue.control_cam == NULL)
-    // {
-    //     fprintf(stderr, "Failed to allocate memory for CAM field.\n");
-    //     return 1;
-    // }
-
-    // initial_values_rq.command_prologue.control_cam->request_ack_s = 1;
-    // initial_values_rq.cif0.cif0_word.has_sample_rate = 1;
-    // initial_values_rq.cif0.sample_rate = 2083335;
-
-    // ssize_t packet_size;
+    // TODO: Create AckV/X/S Extension Packets
+        
+    // Don't replicate what I'm doing below for a proper setup. Because I have knowledge of the VITA backend within iiod, I'm skipping
+    // initialization of some fields that I know won't be needed.
 
     struct vita49_2_control_extension_packet command = {0};
     command.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_EXT_COMMAND;

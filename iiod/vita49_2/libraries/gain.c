@@ -12,6 +12,9 @@
 
 // This example was designed for the ADALM Pluto.
 
+// To exercise this functionality, run the simulator.c script in examples/vita49_2/ and when prompted, 
+// choose to send a Control Packet to modify gain.
+
 #include <vita49_2/vita49_2_packet_elements.h>
 #include "../vita49_2_iiod_helpers.h"
 

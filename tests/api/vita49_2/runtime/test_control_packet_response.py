@@ -5,8 +5,8 @@
 # Copyright (C) 2026 Analog Devices, Inc.
 # Author: Praveen Perera <praveen.perera@analog.com>
 
-# Uses PyShark to evaluate whether the system appropriately responds to Control Packets under different circumstances
-# (AckV requested, AckV/AckS requested, failing controls, etc.).
+# Uses PyShark to evaluate whether the VITA 49.2 subsystem within IIOD appropriately responds 
+# to Control Packets under different circumstances (AckV requested, AckV/AckS requested, failing controls, etc.).
 
 import pyshark
 from ctypes import pointer
