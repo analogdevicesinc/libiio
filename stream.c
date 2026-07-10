@@ -101,6 +101,10 @@ void iio_stream_destroy(struct iio_stream *stream)
 	}
 
 	free(stream->blocks);
+
+	if (stream->buf_enabled)
+		iio_buffer_stream_stop(stream->buf_stream);
+
 	iio_buffer_close(stream->buf_stream);
 	free(stream);
 }
