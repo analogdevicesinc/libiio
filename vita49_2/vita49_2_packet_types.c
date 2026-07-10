@@ -1184,6 +1184,8 @@ __vrt_api ssize_t vita49_2_serialize_control_extension_packet(struct vita49_2_co
 						return -EINVAL;
 					}
 
+					break;
+
 				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
 
 					if ((buffer_index + 1)>= max_words)
@@ -1263,7 +1265,7 @@ __vrt_api int vita49_2_parse_control_extension_packet(const uint32_t* const buf,
 	ssize_t buffer_index, ret_value;
 
 	// Command Prologue
-	if ((buffer_index = vita49_2_parse_command_prologue(buf, buf_words, &pkt->command_prologue, VITA49_2_PKT_TYPE_COMMAND)) < 0)
+	if ((buffer_index = vita49_2_parse_command_prologue(buf, buf_words, &pkt->command_prologue, VITA49_2_PKT_TYPE_EXT_COMMAND)) < 0)
 		return buffer_index;
 
 

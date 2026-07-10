@@ -98,7 +98,7 @@ int _command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, con
  * @param ctx 
  * @param pkt 
  * @param ackX_packet Can be NULL (optional). Pass an AckX Packet to populate its error fields if necessary. 
- * @param plugin_head 
+ * @param plugin_head Pointer to the head node of the linked list of available plugins.
  * @return int Returns a negative error code on failure, otherwise 0 on success.
  */
 int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct vita49_2_command_plugin_node* plugin_head);
@@ -108,9 +108,10 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
  * 
  * @param ctx 
  * @param pkt 
+ * @param plugin_head Pointer to the head node of the linked list of available plugins. 
  * @return int Returns a negative error code on failure, otherwise 0 on success.
  */
-int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt);
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_command_plugin_node* plugin_head);
 
 /**
  * @brief Finds the "_available" attribute associated with a modifiable IIO attribute and reads the data from it.
@@ -1517,7 +1518,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					switch (control_ext_packet.command_prologue.control_cam->action_bits)
 					{
 						case VITA49_2_CTRL_EXECUTE:
-							if ((ret_value = _execute_command_extensions(arguments->ctx, &control_ext_packet)) < 0)
+							if ((ret_value = _execute_command_extensions(arguments->ctx, &control_ext_packet, plugin_head)) < 0)
 							{
 								fprintf(stderr, "vita49_2_client: Error while executing commands in Control Extension Packet. (%d) %s\n", ret_value, strerror(-ret_value));
 								continue;
@@ -2005,10 +2006,13 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 		// one of the shared libraries that was loaded in at startup.
 		if (strcmp(m->device_name, "sequence") == 0)
 		{
+			bool plugin_found = false;
+
 			for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
 			{
 				if (strcmp(m->attr_name, current_plugin->name) == 0)
 				{
+					plugin_found = true;
 					int error = current_plugin->execute(ctx, (void *)((uint8_t *)&pkt->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), vita49_2_cif0_field_sizes[m->cif_bit]);
 
 					// If the ackX_packet argument isn't NULL, that means we need to report the error
@@ -2081,11 +2085,14 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 				}
 			}
 
+			if (!plugin_found)
+				fprintf(stderr, "vita49_2_client: Failed to find a loaded plugin with the name '%s'.\n", m->attr_name);
+
 			continue;
 		}
 
 		// Otherwise we're not dealing with a sequence and must find the attribute to execute this command
-		if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+		else if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 		{
 			fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute '%s'. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 			continue;
@@ -2324,7 +2331,7 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 	return 0;
 }
 
-int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt)
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_command_plugin_node* plugin_head)
 {
 	// Don't need to check the AckX Packet pointer since it's optional
 	if (!ctx || !pkt)
@@ -2377,8 +2384,123 @@ int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_c
 			if (control_extension_node == NULL)
 				continue;
 
-			// Find device
-			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+			// Checking if the field is trying to invoke a plugin
+			if (strcmp(m->device_name, "sequence") == 0)
+			{
+				bool plugin_found = false;
+
+				// Searching for the correct plugin to execute
+				for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
+				{
+					if (strcmp(m->attr_name, current_plugin->name) == 0)
+					{
+						plugin_found = true;
+						int error;
+						switch (control_extension_node->control_extension.implicit.data_type)
+						{
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.ll), sizeof(long long));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.f), sizeof(float));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.d), sizeof(double));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.b), sizeof(bool));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+							{
+								// This will require some extra work. We need to find the "_available" fd associated with this attribute and get a list of the possible attribute values.
+								char available_range[256];
+
+								if ((ret_value = _find_available_attribute(ctx, CIF_EXT, m->cif_bit, available_range, sizeof(available_range))) < 0)
+								{	
+									fprintf(stderr, "vita49_2_process: Unable to find an '%s_available' attribute. Skipping execution of Control Extension. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
+									break;
+								}
+
+								// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+									// "[min step max]"
+								// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+								// in the brackets:
+									// "500 600 700 750 900"
+
+								// Since we're treating the list of available options as an array and using the control_extension_node->control_extension.option field as an index,
+								// we're unable to suppor the first option.
+
+								// Means we're dealing with the first case
+								if (available_range[0] == '[')
+								{
+									fprintf(stderr, "vita49_2_process: The '%s_available' attribute provides a start-step-stop format rather than a list of distinct values.\n", m->attr_name);
+									break;
+								}
+								
+								int num_options = control_extension_node->control_extension.implicit.option;
+
+								// VLA
+								char *values[num_options];
+								for (int i = 0; i < num_options; i++) 
+									values[i] = NULL;
+
+								int count = 0;
+
+								char *tmp = strdup(available_range);
+								if (tmp == NULL) 
+								{
+									fprintf(stderr, "vita49_2_process: Failed to duplicate string while executing an attribute update for %s\n", m->attr_name);
+									break;
+								}
+
+								char *saveptr = NULL;
+								char *tok = strtok_r(tmp, " \t\r\n", &saveptr);
+								while (tok && count < num_options && count < num_options) 
+								{
+									values[count] = strdup(tok);  // store each token
+									if (!values[count]) 
+									{
+										break;
+									}
+									count++;
+									tok = strtok_r(NULL, " \t\r\n", &saveptr);
+								}
+
+								free(tmp);
+
+								if (values[num_options-1] == NULL)
+								{
+									fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.implicit.option, m->attr_name);
+									break;
+								}
+
+								error = current_plugin->execute(ctx, (void *)(&values[num_options-1]), strlen(values[num_options-1]));
+								break;
+							}
+						}
+
+						// TODO: Once AckV/X/S Extension Packets have been created, add logic to populate the errors field with any errors after running execute
+
+						break;
+					}
+				}
+
+				if (!plugin_found)
+					fprintf(stderr, "vita49_2_client: Failed to find a loaded plugin with the name '%s'.\n", m->attr_name);
+
+				continue;
+			}
+
+			// Otherwise we're not executing a plugin and need to find the device ourselves
+			else if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Implicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 				continue;
@@ -2504,8 +2626,62 @@ int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_c
 		// Iterate through all of the commands
 		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
 		{
-			// Find device
-			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+			// Checking if the field is trying to invoke a plugin
+			if (strcmp(control_extension_node->device_name, "sequence") == 0)
+			{
+				bool plugin_found = false;
+
+				// Searching for the correct plugin to execute
+				for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
+				{
+					if (strcmp(control_extension_node->attribute_name, current_plugin->name) == 0)
+					{
+						plugin_found = true;
+						int error;
+
+						switch (control_extension_node->control_extension.explicit.data_type)
+						{
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.ll), sizeof(long long));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.f), sizeof(float));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.d), sizeof(double));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.b), sizeof(bool));
+								break;
+							}
+							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+							{
+								error = current_plugin->execute(ctx, (void *)(&control_extension_node->string_data), control_extension_node->control_extension.explicit.data_length);
+								break;
+							}
+						}
+
+						// TODO: Once AckV/X/S Extension Packets have been created, add logic to populate the errors field with any errors after running execute
+
+						break;
+					}
+				}
+
+				if (!plugin_found)
+					fprintf(stderr, "vita49_2_client: Failed to find a loaded plugin with the name '%s'.\n", control_extension_node->attribute_name);
+
+				continue;
+			}
+
+			// Otherwise we're not executing a plugin and need to find the device ourselves
+			else if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Explicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 				continue;

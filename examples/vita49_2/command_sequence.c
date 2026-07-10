@@ -206,9 +206,9 @@ int main(int argc, char** argv)
         // FIRST COMMAND
         // =============================================================================
 
-        char c1_attribute_name[] = "adi,frequency-division-duplex-mode-enable";
+        char c1_attribute_name[] = "gain";
         char c1_channel_name[] = "debug";
-        char c1_device_name[] = "ad9361-phy";
+        char c1_device_name[] = "sequence";
 
         command.payload = calloc(1, sizeof(struct vita49_2_control_extension_word_node));
         if (command.payload == NULL)
@@ -217,9 +217,18 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        command.payload->control_extension.explicit.data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B;
-        command.payload->control_extension.explicit.data_length = sizeof(bool);
-        command.payload->data.b = false;
+        command.payload->control_extension.explicit.data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F;
+        command.payload->control_extension.explicit.data_length = sizeof(float);
+        command.payload->control_extension.explicit.encoding = VITA49_2_CONTROL_EXTENSION_ENCODING_NONE;
+
+        int16_t gain1 = 71;
+        int16_t gain2 = -10;
+        
+        command.payload->data.u32 =
+            ((uint32_t)(uint16_t)gain2 << 16) |
+            (uint32_t)(uint16_t)gain1;
+
+        // command.payload->data.b = false;
 
         command.payload->control_extension.explicit.attribute_name_length = sizeof(c1_attribute_name);
         command.payload->control_extension.explicit.channel_name_length = sizeof(c1_channel_name);
@@ -245,99 +254,99 @@ int main(int argc, char** argv)
             return 1;
         }
 
-        // =============================================================================
-        // SECOND COMMAND
-        // =============================================================================
-        char c2_attribute_name[] = "adi,gpo0-slave-rx-enable";
-        char c2_channel_name[] = "debug";
-        char c2_device_name[] = "ad9361-phy";
+        // // =============================================================================
+        // // SECOND COMMAND
+        // // =============================================================================
+        // char c2_attribute_name[] = "adi,gpo0-slave-rx-enable";
+        // char c2_channel_name[] = "debug";
+        // char c2_device_name[] = "ad9361-phy";
 
-        command.payload->data.b = true;
+        // command.payload->data.b = true;
 
-        command.payload->control_extension.explicit.attribute_name_length = sizeof(c2_attribute_name);
-        command.payload->control_extension.explicit.channel_name_length = sizeof(c2_channel_name);
-        command.payload->control_extension.explicit.device_name_length = sizeof(c2_device_name);
+        // command.payload->control_extension.explicit.attribute_name_length = sizeof(c2_attribute_name);
+        // command.payload->control_extension.explicit.channel_name_length = sizeof(c2_channel_name);
+        // command.payload->control_extension.explicit.device_name_length = sizeof(c2_device_name);
 
-        command.payload->device_name = c2_device_name;
-        command.payload->channel_name = c2_channel_name;
-        command.payload->attribute_name = c2_attribute_name;
+        // command.payload->device_name = c2_device_name;
+        // command.payload->channel_name = c2_channel_name;
+        // command.payload->attribute_name = c2_attribute_name;
 
 
-        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
-        {
-            fprintf(stderr, "Failed to serialize second command.\n");
-            return 1;
-        }
+        // if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        // {
+        //     fprintf(stderr, "Failed to serialize second command.\n");
+        //     return 1;
+        // }
 
-        printf("Sending second command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
-        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
-        {
-            fprintf(stderr, "Failed to send packet: %s", strerror(errno));
-            close(fd);
-            return 1;
-        }
+        // printf("Sending second command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
+        // if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        // {
+        //     fprintf(stderr, "Failed to send packet: %s", strerror(errno));
+        //     close(fd);
+        //     return 1;
+        // }
 
-        // =============================================================================
-        // THIRD COMMAND
-        // =============================================================================
-        char c3_attribute_name[] = "adi,gpo1-slave-tx-enable";
-        char c3_channel_name[] = "debug";
-        char c3_device_name[] = "ad9361-phy";
+        // // =============================================================================
+        // // THIRD COMMAND
+        // // =============================================================================
+        // char c3_attribute_name[] = "adi,gpo1-slave-tx-enable";
+        // char c3_channel_name[] = "debug";
+        // char c3_device_name[] = "ad9361-phy";
 
-        command.payload->data.b = true;
+        // command.payload->data.b = true;
 
-        command.payload->control_extension.explicit.attribute_name_length = sizeof(c3_attribute_name);
-        command.payload->control_extension.explicit.channel_name_length = sizeof(c3_channel_name);
-        command.payload->control_extension.explicit.device_name_length = sizeof(c3_device_name);
+        // command.payload->control_extension.explicit.attribute_name_length = sizeof(c3_attribute_name);
+        // command.payload->control_extension.explicit.channel_name_length = sizeof(c3_channel_name);
+        // command.payload->control_extension.explicit.device_name_length = sizeof(c3_device_name);
 
-        command.payload->device_name = c3_device_name;
-        command.payload->channel_name = c3_channel_name;
-        command.payload->attribute_name = c3_attribute_name;
+        // command.payload->device_name = c3_device_name;
+        // command.payload->channel_name = c3_channel_name;
+        // command.payload->attribute_name = c3_attribute_name;
 
-        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
-        {
-            fprintf(stderr, "Failed to serialize third command.\n");
-            return 1;
-        }
+        // if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        // {
+        //     fprintf(stderr, "Failed to serialize third command.\n");
+        //     return 1;
+        // }
 
-        printf("Sending third command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
-        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
-        {
-            fprintf(stderr, "Failed to send packet: %s", strerror(errno));
-            close(fd);
-            return 1;
-        }
+        // printf("Sending third command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
+        // if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        // {
+        //     fprintf(stderr, "Failed to send packet: %s", strerror(errno));
+        //     close(fd);
+        //     return 1;
+        // }
 
-        // =============================================================================
-        // FOURTH COMMAND
-        // =============================================================================
-        char c4_attribute_name[] = "initialize";
-        char c4_channel_name[] = "debug";
-        char c4_device_name[] = "ad9361-phy";
+        // // =============================================================================
+        // // FOURTH COMMAND
+        // // =============================================================================
+        // char c4_attribute_name[] = "initialize";
+        // char c4_channel_name[] = "debug";
+        // char c4_device_name[] = "ad9361-phy";
 
-        command.payload->data.b = true;
+        // command.payload->data.b = true;
 
-        command.payload->control_extension.explicit.attribute_name_length = sizeof(c4_attribute_name);
-        command.payload->control_extension.explicit.channel_name_length = sizeof(c4_channel_name);
-        command.payload->control_extension.explicit.device_name_length = sizeof(c4_device_name);
+        // command.payload->control_extension.explicit.attribute_name_length = sizeof(c4_attribute_name);
+        // command.payload->control_extension.explicit.channel_name_length = sizeof(c4_channel_name);
+        // command.payload->control_extension.explicit.device_name_length = sizeof(c4_device_name);
 
-        command.payload->device_name = c4_device_name;
-        command.payload->channel_name = c4_channel_name;
-        command.payload->attribute_name = c4_attribute_name;
+        // command.payload->device_name = c4_device_name;
+        // command.payload->channel_name = c4_channel_name;
+        // command.payload->attribute_name = c4_attribute_name;
 
-        if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
-        {
-            fprintf(stderr, "Failed to serialize fourth command.\n");
-            return 1;
-        }
+        // if ((packet_size = vita49_2_serialize_control_extension_packet(&command, packet, sizeof(packet)/4)) < 0)
+        // {
+        //     fprintf(stderr, "Failed to serialize fourth command.\n");
+        //     return 1;
+        // }
 
-        printf("Sending fourth command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
-        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
-        {
-            fprintf(stderr, "Failed to send packet: %s", strerror(errno));
-            close(fd);
-            return 1;
-        }
+        // printf("Sending fourth command to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
+        // if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        // {
+        //     fprintf(stderr, "Failed to send packet: %s", strerror(errno));
+        //     close(fd);
+        //     return 1;
+        // }
         
 
         // Unnecessary command, just wanted to test if sending string attributes is handled properly.
