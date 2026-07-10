@@ -104,9 +104,9 @@ struct vita49_2_pdata {
  */
 struct vita49_2_command_plugin_node {
 
-	const char* name;															// Name of the plugin
-	int (*validate)(struct iio_context *ctx, void* data, uint8_t num_words);	// Pointer to a function that validates the commands in the plugin and returns warnings (if any)
-	int (*execute)(struct iio_context *ctx, void* data, uint8_t num_words);		// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
+	const char* name;														// Name of the plugin
+	int (*validate)(struct iio_context *ctx, void* data, size_t length);	// Pointer to a function that validates the commands in the plugin and returns warnings (if any)
+	int (*execute)(struct iio_context *ctx, void* data, size_t length);		// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
 	struct vita49_2_command_plugin_node* next;
 
 };

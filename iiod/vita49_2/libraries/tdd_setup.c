@@ -253,7 +253,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
                     if (-error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
                         return EDEVFAIL;
                     else
-                        return VITA49_2_ERRNO_MAP[error];
+                        return VITA49_2_ERRNO_MAP[-error];
                 }
                 break;
             }
@@ -268,7 +268,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
                     if (-error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
                         return EDEVFAIL;
                     else
-                        return VITA49_2_ERRNO_MAP[error];
+                        return VITA49_2_ERRNO_MAP[-error];
                 }
                 break;
             }
@@ -283,7 +283,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
                     if (-error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
                         return EDEVFAIL;
                     else
-                        return VITA49_2_ERRNO_MAP[error];
+                        return VITA49_2_ERRNO_MAP[-error];
                 }
 
                 break;
@@ -299,7 +299,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
                     if (-error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
                         return EDEVFAIL;
                     else
-                        return VITA49_2_ERRNO_MAP[error];
+                        return VITA49_2_ERRNO_MAP[-error];
                 }
                 break;
             }
@@ -314,7 +314,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
                     if (-error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
                         return EDEVFAIL;
                     else
-                        return VITA49_2_ERRNO_MAP[error];
+                        return VITA49_2_ERRNO_MAP[-error];
                 }
                 break;
             }

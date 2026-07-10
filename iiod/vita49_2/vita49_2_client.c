@@ -2012,7 +2012,7 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 					int error = current_plugin->execute(ctx, (void *)((uint8_t *)&pkt->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), vita49_2_cif0_field_sizes[m->cif_bit]);
 
 					// If the ackX_packet argument isn't NULL, that means we need to report the error
-					if (ackX_packet != NULL && (error < 0))
+					if (ackX_packet != NULL && (error != ENONE))
 					{
 						switch (m->cif_type)
 						{
@@ -2028,7 +2028,7 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 								}
 								else
 								{
-									cif0_errors_buffer[cif0_errors_index++].word = ((1 << ENOEXECUTE) | (1 << VITA49_2_ERRNO_MAP[error]));
+									cif0_errors_buffer[cif0_errors_index++].word = ((1 << ENOEXECUTE) | (1 << error));
 								}
 
 								// The corresponding CIF bit in the warnings field must now also be disabled since a CIF field can't simultaneously
@@ -3026,29 +3026,28 @@ int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_pa
 
 			// If the device name is "sequence", that means this CIF attribute is associated with a shared object/library
 			// that we may/may not have loaded. We need to search for that library.
-			// if (strcmp(m->device_name, "sequence") == 0)
-			// {
-			// 	for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
-			// 	{
-			// 		if (strcmp(m->attr_name, current_plugin->name) == 0)
-			// 		{
-			// 			// int warning = current_plugin->validate(ctx);
+			if (strcmp(m->device_name, "sequence") == 0)
+			{
+				for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
+				{
+					if (strcmp(m->attr_name, current_plugin->name) == 0)
+					{
+						int warning = current_plugin->validate(ctx, (void *)((uint8_t *)&control_packet->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), vita49_2_cif0_field_sizes[m->cif_bit]);
 
-			// 			printf("Warning from library: %d\n", warning);
-			// 				// // Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
-			// 				// // For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
-			// 				// // for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
-			// 				// // the error index as soon as the first mapping is seen.
-			// 				// if (m->next != NULL)
-			// 				// {
-			// 				// 	if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
-			// 				// 		cif0_errors_index--;
-			// 				// }
-			// 			// }
-			// 		}
-			// 	}
-			// }
-			// else
+						if (warning < 0)
+						{
+							warnings->cif0_warnings.word |= (1 << m->cif_bit);
+							cif0_warnings_buffer[cif0_warnings_index++].word = (1 << -warning);
+							warning_generated = true;
+						}
+
+						printf("Warning from library: %d\n", warning);
+
+						break;
+					}
+				}
+			}
+			else
 			{
 				switch (m->cif_bit)
 				{
@@ -3177,9 +3176,6 @@ int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_pa
 						continue;
 				}
 			}
-
-			// Don't increment the index if first pair got it
-			// Increment 
 
 			// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
 			// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
