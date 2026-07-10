@@ -35,7 +35,13 @@ function(add_command_sequence_plugin target)
     )
 endfunction()
 
-# One target per plugin .so
-add_command_sequence_plugin(tdd_setup
-    tdd_setup.c
+file(GLOB plugin_sources CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.c"
 )
+
+foreach(plugin_source IN LISTS plugin_sources)
+    get_filename_component(plugin_target "${plugin_source}" NAME_WE)
+    add_command_sequence_plugin(${plugin_target}
+        "${plugin_source}"
+    )
+endforeach()

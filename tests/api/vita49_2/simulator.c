@@ -99,10 +99,13 @@ int main()
     // sampling_freq_packet.command_prologue.control_cam->request_ack_s = 1;
     sampling_freq_packet.command_prologue.control_cam->action_bits = 2;
 
-    sampling_freq_packet.cif0.word.has_if_band_offset = 1;
-    sampling_freq_packet.cif0.if_band_offset = 3.145;
-    sampling_freq_packet.cif0.sample_rate = 0;
+    // sampling_freq_packet.cif0.word.has_if_band_offset = 1;
+    // sampling_freq_packet.cif0.if_band_offset = 3.145;
+    // sampling_freq_packet.cif0.sample_rate = 0;
 
+    sampling_freq_packet.cif0.word.has_gain = 1;
+    sampling_freq_packet.cif0.gains.gain_stage_1 = 71;
+    sampling_freq_packet.cif0.gains.gain_stage_2 = -10;
 
 
     ssize_t packet_size;

@@ -233,8 +233,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	
 	// Command sequences are a list of consecutive libiio calls. They can be implemented by putting multiple commands into a Control/Control Extension Packet,
 	// sending consecutive Control/Control Extension packets, or through a library file that contains logic to initiate all of the libiio commands.
-	struct vita49_2_command_plugin_node plugin_head = {0};
-	struct vita49_2_command_plugin_node* current_plugin = &plugin_head;
+	struct vita49_2_command_plugin_node* plugin_head = NULL;
+	struct vita49_2_command_plugin_node** next_plugin = &plugin_head;
 
 	// For that last option, we'll load the library files now and keep track of what functionality has been loaded using a linked list.
 	DIR *libraries_directory;
@@ -275,7 +275,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		dlerror();
 
 		// Extracting the symbols
-		current_plugin->validate = dlsym(library_handle, VALIDATE_SYMBOL);
+		int (*validate_fn)(struct iio_context *ctx);
+		validate_fn = dlsym(library_handle, VALIDATE_SYMBOL);
 		char* error = dlerror();
 		if (error != NULL)
 		{
@@ -286,7 +287,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		dlerror();
 
-		current_plugin->execute = dlsym(library_handle, EXECUTE_SYMBOL);
+		int (*execute_fn)(struct iio_context *ctx);
+		execute_fn = dlsym(library_handle, EXECUTE_SYMBOL);
 		error = dlerror();
 		if (error != NULL)
 		{
@@ -299,17 +301,32 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		char* (*get_name)(void);
 		get_name = (char *(*)(void)) dlsym(library_handle, NAME_SYMBOL);
+		error = dlerror();
 		if (error != NULL)
 		{
-			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", EXECUTE_SYMBOL, library_path, error);
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", NAME_SYMBOL, library_path, error);
 			dlclose(library_handle);
 			continue;
 		}
 
-		dlerror();
+		struct vita49_2_command_plugin_node *loaded_plugin = calloc(1, sizeof(*loaded_plugin));
+		if (!loaded_plugin)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to allocate memory for plugin node '%s'. (%d) %s\n", library_path, errno, strerror(errno));
+			dlclose(library_handle);
+			continue;
+		}
 
-		current_plugin->name = get_name();
+		loaded_plugin->name = get_name();
+		loaded_plugin->validate = validate_fn;
+		loaded_plugin->execute = execute_fn;
+		loaded_plugin->next = NULL;
+
+		*next_plugin = loaded_plugin;
+		next_plugin = &loaded_plugin->next;
 	}
+
+	closedir(libraries_directory);
 
 	// ==============================================================
 	// SOCKET CREATION
@@ -1141,7 +1158,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					// back the AckV packet
 					if (control_packet.command_prologue.control_cam->request_ack_v)
 					{
-						if ((ret_value = _validate_commands(arguments->ctx, &control_packet, &ackV_packet.warnings, &plugin_head)) < 0)
+						if ((ret_value = _validate_commands(arguments->ctx, &control_packet, &ackV_packet.warnings, plugin_head)) < 0)
 						{
 							fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet. (%d) %s\n", ret_value, strerror(-ret_value));
 							goto cleanup_ackv;
@@ -1234,7 +1251,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					// If AckX was requested, I need to do some initial setup to see what fields might generate warnings.
 					if (control_packet.command_prologue.control_cam->request_ack_x && control_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
 					{
-						if ((ret_value = _validate_commands(arguments->ctx, &control_packet, &ackX_packet.warnings, &plugin_head)) < 0)
+						if ((ret_value = _validate_commands(arguments->ctx, &control_packet, &ackX_packet.warnings, plugin_head)) < 0)
 						{
 							fprintf(stderr, "vita49_2_client: Failed to acquire Warnings for AckX Packet. (%d) %s\n", ret_value, strerror(-ret_value));
 							ackX_warning_init_error = true;
@@ -1254,7 +1271,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							// AckX Packet Requested
 							if (control_packet.command_prologue.control_cam->request_ack_x && !ackX_warning_init_error)
 							{
-								if ((ret_value = _execute_commands(arguments->ctx, &control_packet, &ackX_packet, &plugin_head)) < 0)
+								if ((ret_value = _execute_commands(arguments->ctx, &control_packet, &ackX_packet, plugin_head)) < 0)
 								{
 									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));	
 									goto cleanup_ackX;
@@ -1341,7 +1358,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							// No AckX Packet requested
 							else
 							{
-								if ((ret_value = _execute_commands(arguments->ctx, &control_packet, NULL, &plugin_head)) < 0)
+								if ((ret_value = _execute_commands(arguments->ctx, &control_packet, NULL, plugin_head)) < 0)
 									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
 							}
 
@@ -1635,7 +1652,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					else if (!_float_compare(current_cif0_ptr->reference_level, previous_cif0_ptr->reference_level))
 						current_cif0_word_ptr->context_field_change = 1;
 
-					else if (!_float_compare(current_cif0_ptr->gain_stage_1, previous_cif0_ptr->gain_stage_1) || !_float_compare(current_cif0_ptr->gain_stage_2, previous_cif0_ptr->gain_stage_2))
+					else if (!_float_compare(current_cif0_ptr->gains.gain_stage_1, previous_cif0_ptr->gains.gain_stage_1) || !_float_compare(current_cif0_ptr->gains.gain_stage_2, previous_cif0_ptr->gains.gain_stage_2))
 						current_cif0_word_ptr->context_field_change = 1;
 
 					else if (current_cif0_ptr->over_range_count != previous_cif0_ptr->over_range_count)
@@ -1933,11 +1950,8 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 		{
 			case CIF0: 
 			{
-				uint32_t cif0_word;
-				memcpy(&cif0_word, &pkt->cif0.word, sizeof(cif0_word));
-			
 				// If true, this means one of the bits in the CIF0 word is the same as the CIF0 bit for this mapping, thus we have a match
-				if (cif0_word & (1 << m->cif_bit))
+				if (pkt->cif0.word.word & (1 << m->cif_bit))
 					break;
 
 				continue;
@@ -1995,7 +2009,7 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 			{
 				if (strcmp(m->attr_name, current_plugin->name) == 0)
 				{
-					int error = current_plugin->execute(ctx, (void *)((uint8_t *)&pkt->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), (vita49_2_cif0_field_sizes[m->cif_bit] + sizeof(uint32_t) - 1)/sizeof(uint32_t));
+					int error = current_plugin->execute(ctx, (void *)((uint8_t *)&pkt->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), vita49_2_cif0_field_sizes[m->cif_bit]);
 
 					// If the ackX_packet argument isn't NULL, that means we need to report the error
 					if (ackX_packet != NULL && (error < 0))

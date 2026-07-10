@@ -1101,15 +1101,10 @@ struct vita49_2_cif0_fields {
 
 	float reference_level;        										/**< Reference Level in dBm */
 
-	union {
-
-		uint64_t gain_words;
-		struct {
-			float gain_stage_1;           										/**< Gain Stage 1 in dB */
-			float gain_stage_2;          										/**< Gain Stage 2 in dB */
-		};
-		
-	};
+	struct vita49_2_gain_field {
+		float gain_stage_1;           										/**< Gain Stage 1 in dB */
+		float gain_stage_2;          										/**< Gain Stage 2 in dB */
+	} gains;
 
 	uint32_t over_range_count;    										/**< Over-Range Count */
 

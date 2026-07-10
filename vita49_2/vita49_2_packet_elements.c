@@ -42,7 +42,7 @@ const size_t vita49_2_cif0_field_offsets[] = {
 	offsetof(struct vita49_2_cif0_fields, timestamp_adjustment),
 	offsetof(struct vita49_2_cif0_fields, sample_rate),
 	offsetof(struct vita49_2_cif0_fields, over_range_count),
-	offsetof(struct vita49_2_cif0_fields, gain_words),
+	offsetof(struct vita49_2_cif0_fields, gains),
 	offsetof(struct vita49_2_cif0_fields, reference_level),
 	offsetof(struct vita49_2_cif0_fields, if_band_offset),
 	offsetof(struct vita49_2_cif0_fields, rf_reference_frequency_offset),
@@ -77,7 +77,7 @@ const size_t vita49_2_cif0_field_sizes [32] = {
     sizeof(((struct vita49_2_cif0_fields *)0)->timestamp_adjustment),
     sizeof(((struct vita49_2_cif0_fields *)0)->sample_rate),
     sizeof(((struct vita49_2_cif0_fields *)0)->over_range_count),
-    sizeof(((struct vita49_2_cif0_fields *)0)->gain_words),
+    sizeof(((struct vita49_2_cif0_fields *)0)->gains),
     sizeof(((struct vita49_2_cif0_fields *)0)->reference_level),
     sizeof(((struct vita49_2_cif0_fields *)0)->if_band_offset),
     sizeof(((struct vita49_2_cif0_fields *)0)->rf_reference_frequency_offset),
@@ -683,7 +683,7 @@ __vrt_api ssize_t vita49_2_serialize_cif0_attributes(const struct vita49_2_cif0_
 				// Gain packs 2 9.7 fixed-point integers into the same 32-bit field.
 				// The upper 16 bits represent Stage 2 gain while the lower 16 bits represent Stage 1 gain.
 
-				buf[buffer_index++] = htonl((uint32_t)((convert_to_9_7(cif0->gain_stage_2) << 16) | (convert_to_9_7(cif0->gain_stage_1))));
+				buf[buffer_index++] = htonl((uint32_t)((convert_to_9_7(cif0->gains.gain_stage_2) << 16) | (convert_to_9_7(cif0->gains.gain_stage_1))));
 				break;
 
 			// Reference Level
@@ -879,11 +879,11 @@ __vrt_api ssize_t vita49_2_parse_cif0_attributes(uint16_t payload_size, const ui
 		{
 			return -1;
 		}
-		int16_t stage1_gain = both_gains >> 16;
-		int16_t stage2_gain = (int16_t)(both_gains);
+		int16_t stage1_gain = (int16_t)(both_gains);
+		int16_t stage2_gain = both_gains >> 16;
 
-		cif0->gain_stage_1 = convert_from_9_7(stage1_gain);
-		cif0->gain_stage_2 = convert_from_9_7(stage2_gain);
+		cif0->gains.gain_stage_1 = convert_from_9_7(stage1_gain);
+		cif0->gains.gain_stage_2 = convert_from_9_7(stage2_gain);
 		offset++;
 	}
 	

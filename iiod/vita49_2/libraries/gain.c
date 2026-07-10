@@ -8,12 +8,7 @@
  */
 
 // This script offers a template for how a library file can be written to execute a sequence of commands
-// that issue hard-coded attribute updates via the VITA subsystem within iiod.
-
-// If you want an example involving command sequence execution with the ability to pass dynamic values to
-// the library, see the gain.c example.
-
-// This example is based on this article: https://wiki.analog.com/university/tools/pluto/hacking/power_amp
+// using dynamic values that are passed to the library at runtime that are then issued over libiio.
 
 // This example was designed for the ADALM Pluto.
 
@@ -27,7 +22,7 @@
 #include <errno.h>
 #include <stdio.h>
 
-#define PLUGIN_NAME "tdd_setup" // Corresponds to the name of the plugin that can be referenced in a Control Extension Packet
+#define PLUGIN_NAME "gain" // Corresponds to the name of the plugin that can be referenced in a Control Extension Packet
 
 #ifdef __cplusplus
 extern "C" {
@@ -64,41 +59,32 @@ struct _command {
 
 // Initialize your command sequence here
 struct _command sequence[] = {
+    // Pluto's RX has to be put in manual gain mode first
     {
-        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B,
+        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S,
+        .string_data = "manual",
+        .device_name = "ad9361-phy",
+        .channel_name = "voltage0",
+        .attribute_name = "gain_control_mode",
+        .is_output = false
+    },
+    {
+        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F,
+        .data.b = true,
+        .string_data = NULL,
+        .device_name = "ad9361-phy",
+        .channel_name = "voltage0",
+        .attribute_name = "hardwaregain",
+        .is_output = false
+    },
+    {
+        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F,
         .data.b = false,
         .string_data = NULL,
         .device_name = "ad9361-phy",
-        .channel_name = "debug",
-        .attribute_name = "adi,frequency-division-duplex-mode-enable",
-        .is_output = false
-    },
-    {
-        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B,
-        .data.b = true,
-        .string_data = NULL,
-        .device_name = "ad9361-phy",
-        .channel_name = "debug",
-        .attribute_name = "adi,gpo0-slave-rx-enable",
-        .is_output = false
-    },
-    {
-        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B,
-        .data.b = true,
-        .string_data = NULL,
-        .device_name = "ad9361-phy",
-        .channel_name = "debug",
-        .attribute_name = "adi,gpo1-slave-tx-enable",
-        .is_output = false
-    },
-    {
-        .data_type = VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B,
-        .data.b = true,
-        .string_data = NULL,
-        .device_name = "ad9361-phy",
-        .channel_name = "debug",
-        .attribute_name = "initialize",
-        .is_output = false
+        .channel_name = "voltage0",
+        .attribute_name = "hardwaregain",
+        .is_output = true
     },
 };
 
@@ -122,29 +108,79 @@ __attribute__((visibility("default"))) char* get_plugin_name()
 }
 
 /**
+ * @brief Copies the new attribute data referenced by the data pointer into the command objects.
+ * 
+ * This is an internal function that's not part of ADI's public API for VITA 49.2 libraries. This is just
+ * an example of how one might implement logic to retrieve the data provided by the data pointer for
+ * command execution using dynamic values.
+ * 
+ * @param data Opaque pointer to memory containing data to be passed to this function.
+ * @param length Number of bytes worth of data that can be accessed by the data pointer.
+ * @return int Negative error code on failure, otherwise 0 is returned.
+ */
+__attribute__((visibility("default"))) int _store_data(void* data, size_t length)
+{
+    // For this example, the data pointer will point to a single 32-bit words.
+        // The lower 16 bits contains the data for the RX hardware gain
+        // The upper 16 bits contains the data for the TX hardware gain
+
+    // This demonstrates the flexibility that ADI VITA 49.2 libraries offer. Here's why...:
+
+        // According to the VITA 49.2 2017 Documentation, the Gain/Attenuation field (see 9.5.3 in the 2017 documentation)
+        // uses a single word to contain 2 9.7 encoded floating point values.
+
+        // The lower 16 bits are mandatory and contain what's called the "Stage 1 Gain". It corresponds to the front-end/RF gain.
+        // The upper 16 bits are optional and contain what's called the "Stage 2 Gain". It corresponds to the back-end/IF gain.
+
+        // "For equipment not requiring gain distribution, Stage 1 Gain provides the gain of the device and Stage 2 Gain is set to 0."
+
+        // This doesn't scale well to complex SDRs that have multiple gain attributes.
+        // Because of that, it's difficult to write a standardized set of logic in iiod's V49.2 subsystem to handle this field
+        // for every ADI SDR.
+
+        // Rather, allowing users to define custom implementations command sequence logic (libraries) to handle this field is a more scaleable
+        // approach that keeps the core VITA 49.2 subsystem logic from becoming bloated.
+
+    // I'm expecting 2 floats worth of data
+    if (length != (2*sizeof(float)) || data == NULL)
+        return -EINVAL;
+
+    struct vita49_2_gain_field* gain = (struct vita49_2_gain_field*)(data);
+    sequence[1].data.f = gain->gain_stage_1;
+    sequence[2].data.f = gain->gain_stage_2;
+
+    return 0;
+}
+
+/**
  * @brief Validates the commands in the sequence.
  * 
  * This function returns as soon as the first warning is discovered in the sequence, meaning any commands following the command
  * that raised the warning are not validated.
- * 
- * Returns a positive bit number associated with a particular warning based on Table 8.4.1.2.1-1 from the VITA 49.2 2017 documentation.
- * See the vita49_2_warnings_error_codes enum definition in vita49_2_packet_elements.h
- * If no warning is generated and all commands are executed, ENONE (0) is returned.
  *  
- * This function interface (name + arguments) can NOT be modified as it is part of the standard interface that the VITA 49.2 subsystem expects. * @param ctx
+ * This function interface (name + arguments) can NOT be modified as it is part of the standard interface that the VITA 49.2 subsystem expects.
  *
  * @param ctx
  * @param data Opaque pointer to memory containing data to be passed to this function.
- * @param num_words Number of 32-bit words worth of data that can be accessed by the data pointer.
- * @return int 
+ * @param length Number of bytes worth of data that can be accessed by the data pointer.
+ * @return enum vita49_2_warnings_error_codes Returns a positive bit number associated with a particular warning based on Table 8.4.1.2.1-1 from the VITA 49.2 2017 documentation.
+ * See the vita49_2_warnings_error_codes enum definition in vita49_2_packet_elements.h
+ * If no warning is generated and all commands are executed, ENONE (0) is returned.
  */
-__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes validate_sequence(const struct iio_context* const ctx, void* data, uint8_t num_words)
+__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes validate_sequence(const struct iio_context* const ctx, void* data, size_t length)
 {
-    // Can ignore validating the data and num_words arguments since they're unused for this example
-    if (ctx == NULL)
+    if (ctx == NULL || data == NULL || length == 0)
         return EBADARGS;
+    
+    int warning;
 
-    int warning = ENONE;
+    if ((warning = _store_data(data, length)) < 0)
+    {
+        fprintf(stderr, "%s validate_sequence(): Failed to store data.\n", PLUGIN_NAME);
+        return warning;
+    }
+    
+    warning = ENONE;
 
     for (size_t command = 0; command < sizeof(sequence)/sizeof(sequence[0]); command++)
     {
@@ -196,25 +232,28 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes valida
  * This function returns as soon as the first execution error is generated in the sequence, meaning any commands following the command
  * that raised the warning are not executed.
  * 
- * Returns the positive bit number associated with a particular warning based on Table 8.4.1.2.1-1 from the VITA 49.2 2017 documentation.
- * See the vita49_2_warnings_error_codes enum definition in vita49_2_packet_elements.h
- * If no warning is generated and all commands are executed, ENONE (0) is returned.
- * 
  * This function interface (name + arguments) can NOT be modified as it is part of the standard interface that the VITA 49.2 subsystem expects.
  * 
  * @param ctx  
  * @param data Opaque pointer to memory containing data to be passed to this function.
- * @param num_words Number of 32-bit words worth of data that can be accessed by the data pointer.
- * @return vita49_2_warnings_error_codes 
+ * @param length Number of bytes worth of data that can be accessed by the data pointer.
+ * @return enum vita49_2_warnings_error_codes Returns the positive bit number associated with a particular warning based on Table 8.4.1.2.1-1 from the VITA 49.2 2017 documentation.
+ * See the vita49_2_warnings_error_codes enum definition in vita49_2_packet_elements.h
+ * If no warning is generated and all commands are executed, ENONE (0) is returned.
  */
-__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execute_sequence(const struct iio_context* const ctx, void* data, uint8_t num_words)
+__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execute_sequence(const struct iio_context* const ctx, void* data, size_t length)
 {
-    // Can ignore validating the data and num_words arguments since they're unused for this example
-    if (ctx == NULL)
+    if (ctx == NULL || data == NULL || length == 0)
         return EBADARGS;
 
     int error;
 	const struct iio_attr *attr;
+
+    if ((error = _store_data(data, length)) < 0)
+    {
+        fprintf(stderr, "%s validate_sequence(): Failed to store data.\n", PLUGIN_NAME);
+        return error;
+    }
 
     for (size_t command = 0; command < sizeof(sequence)/sizeof(sequence[0]); command++)
     {
