@@ -1101,8 +1101,15 @@ struct vita49_2_cif0_fields {
 
 	float reference_level;        										/**< Reference Level in dBm */
 
-	float gain_stage_1;           										/**< Gain Stage 1 in dB */
-	float gain_stage_2;          										/**< Gain Stage 2 in dB */
+	union {
+
+		uint64_t gain_words;
+		struct {
+			float gain_stage_1;           										/**< Gain Stage 1 in dB */
+			float gain_stage_2;          										/**< Gain Stage 2 in dB */
+		};
+		
+	};
 
 	uint32_t over_range_count;    										/**< Over-Range Count */
 
@@ -1131,6 +1138,13 @@ struct vita49_2_cif0_fields {
 
 	struct vita49_2_context_association_lists context_association_lists;	/**< CALs allow a data packet to be associated with multiple context packets from relevant reference points or systems */
 };
+
+// Stores the offsets of each of the data attributes (like reference_point_id, bandwidth, if_reference_frequency, etc.) from
+// a pointer pointing to a vita49_2_cif0_fields struct
+extern const size_t vita49_2_cif0_field_offsets[32];
+
+// Stores the size of each of the attributes in the vita49_2_cif0_fields struct.
+extern const size_t vita49_2_cif0_field_sizes[32];
 
 // TODO: Define a struct to represent CIF1 similarly to how we've defined CIF0 above.
 union vita49_2_cif1_word{

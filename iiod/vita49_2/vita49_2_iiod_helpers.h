@@ -198,10 +198,10 @@ enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, c
  * @param channel_name
  * @param attribute_name
  * @param is_output
- * @param attribute Provide a pointer to an attribute struct which will be updated by this function if the attribute exists.
+ * @param attribute Provide a double pointer to an attribute struct which will be updated by this function if the attribute exists.
  * @return enum vita49_2_warnings_error_codes
  */
-enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute);
+enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr** attribute);
 
 /**
  * @brief Validates a specific command that takes a uint32_t attribute value.

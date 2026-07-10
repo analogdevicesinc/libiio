@@ -245,7 +245,7 @@ enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, c
 	return -EGENERIC;
 }
 
-enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr* attribute)
+enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr** attribute)
 {
 	// Arguments check
 	if (ctx == NULL || device_name == NULL || channel_name == NULL || attribute_name == NULL)
@@ -257,17 +257,17 @@ enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_
 		return -ENOFIELD;
 	}
 
-	attribute = NULL;
+	*attribute = NULL;
 
 	// Attribute we're modifying is associated with the device as a whole
 	if (strcmp(channel_name, "device") == 0)
 	{
-		attribute = iio_device_find_attr(device, attribute_name);
+		*attribute = iio_device_find_attr(device, attribute_name);
 	} 
 	// Attribute we're modifying is a debug attribute (advanced configuration)
 	else if (strcmp(channel_name, "debug") == 0)
 	{
-		attribute = iio_device_find_debug_attr(device, attribute_name);
+		*attribute = iio_device_find_debug_attr(device, attribute_name);
 	}        
 	// Attribute we're modifying is associated with a specific channel so we must find that channel first.
 	else
@@ -278,10 +278,10 @@ enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_
 			return -ENOFIELD;
 		}
 
-		attribute = iio_channel_find_attr(channel, attribute_name);
+		*attribute = iio_channel_find_attr(channel, attribute_name);
 	} 
 
-	if (!attribute) 
+	if (*attribute == NULL) 
 	{
 		return -ENOFIELD;
 	}

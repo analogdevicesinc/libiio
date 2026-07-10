@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <errno.h>
+#include <stdio.h>
 
 #define PLUGIN_NAME "tdd_setup" // Corresponds to the name of the plugin that can be referenced in a Control Extension Packet
 
@@ -129,7 +130,7 @@ __attribute__((visibility("default"))) char* get_plugin_name()
  *
  * @return int 
  */
-__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes validate_sequence(const struct iio_context* const ctx)
+__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes validate_sequence(const struct iio_context* const ctx, void* data, uint8_t num_words)
 {
     if (ctx == NULL)
         return EBADARGS;
@@ -195,16 +196,20 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes valida
  * @param ctx  
  * @return vita49_2_warnings_error_codes 
  */
-__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execute_sequence(const struct iio_context* const ctx)
+__attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execute_sequence(const struct iio_context* const ctx, void* data, uint8_t num_words)
 {
-    if (ctx == NULL)
+    if (ctx == NULL || data == NULL || num_words == 0)
         return EBADARGS;
 
     int error;
 	const struct iio_attr *attr;
 
+    printf("Data: %f is %ld 32-bit words\n", *(double*)(data), num_words);
+
     for (size_t command = 0; command < sizeof(sequence)/sizeof(sequence[0]); command++)
     {
+        attr = NULL;
+
         // Field validity checks
         if (sequence[command].device_name == NULL || sequence[command].channel_name == NULL || sequence[command].attribute_name == NULL)
         {
@@ -219,7 +224,7 @@ __attribute__((visibility("default"))) enum vita49_2_warnings_error_codes execut
         }
 
         // Finding the IIO device
-        if ((error = vita49_2_find_iio_attribute(ctx, sequence[command].device_name, sequence[command].channel_name, sequence[command].attribute_name, sequence[command].is_output, attr)) < 0)
+        if ((error = vita49_2_find_iio_attribute(ctx, sequence[command].device_name, sequence[command].channel_name, sequence[command].attribute_name, sequence[command].is_output, &attr)) < 0)
         {
             fprintf(stderr, "%s execute_sequence(): Failed to execute command. IIO attribute '%s' could not be found.\n", PLUGIN_NAME, sequence[command].attribute_name);
             return -error;

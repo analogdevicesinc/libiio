@@ -6,6 +6,8 @@
  * Author: Praveen Perera <praveen.perera@analog.com>
  */
 
+#include "vita49_2_packet_elements.h"
+
 #include <stddef.h>
 #include <errno.h>
 #include <string.h>
@@ -16,7 +18,75 @@
 	#include <arpa/inet.h>
 #endif
 
-#include "vita49_2_packet_elements.h"
+const size_t vita49_2_cif0_field_offsets[] = {
+	0,	// Reserved Bit 0
+	0,	// CIF1 Enable doesn't have an attribute field
+	0,	// CIF2 Enable doesn't have an attribute field
+	0,	// CIF3 Enable doesn't have an attribute field
+	0,	// Reserved Bit 4
+	0,	// Reserved Bit 5
+	0,	// Reserved Bit 6
+	0,	// CIF7 Enable doesn't have an attribute field
+	offsetof(struct vita49_2_cif0_fields, context_association_lists),
+	offsetof(struct vita49_2_cif0_fields, gps_ascii),
+	offsetof(struct vita49_2_cif0_fields, ephemeris_ref_id),
+	offsetof(struct vita49_2_cif0_fields, relative_ephemeris),
+	offsetof(struct vita49_2_cif0_fields, ecef_ephemeris),
+	offsetof(struct vita49_2_cif0_fields, formatted_ins),
+	offsetof(struct vita49_2_cif0_fields, formatted_gps),
+	offsetof(struct vita49_2_cif0_fields, data_packet_payload_format),
+	offsetof(struct vita49_2_cif0_fields, state_and_event_indicators),
+	offsetof(struct vita49_2_cif0_fields, device_identifier),
+	offsetof(struct vita49_2_cif0_fields, temperature),
+	offsetof(struct vita49_2_cif0_fields, timestamp_calibration_time_int),
+	offsetof(struct vita49_2_cif0_fields, timestamp_adjustment),
+	offsetof(struct vita49_2_cif0_fields, sample_rate),
+	offsetof(struct vita49_2_cif0_fields, over_range_count),
+	offsetof(struct vita49_2_cif0_fields, gain_words),
+	offsetof(struct vita49_2_cif0_fields, reference_level),
+	offsetof(struct vita49_2_cif0_fields, if_band_offset),
+	offsetof(struct vita49_2_cif0_fields, rf_reference_frequency_offset),
+	offsetof(struct vita49_2_cif0_fields, rf_reference_frequency),
+	offsetof(struct vita49_2_cif0_fields, if_reference_frequency),
+	offsetof(struct vita49_2_cif0_fields, bandwidth),
+	offsetof(struct vita49_2_cif0_fields, reference_point_id),
+	0	// Context Field Change doesn't have an attribute field since it's just an indicator
+};
+
+const size_t vita49_2_cif0_field_sizes [32] = {
+	0,	// Reserved Bit 0
+	0,	// CIF1 Enable doesn't have an attribute field
+	0,	// CIF2 Enable doesn't have an attribute field
+	0,	// CIF3 Enable doesn't have an attribute field
+	0,	// Reserved Bit 4
+	0,	// Reserved Bit 5
+	0,	// Reserved Bit 6
+	0,	// CIF7 Enable doesn't have an attribute field
+	sizeof(((struct vita49_2_cif0_fields *)0)->context_association_lists),
+    sizeof(((struct vita49_2_cif0_fields *)0)->gps_ascii),
+    sizeof(((struct vita49_2_cif0_fields *)0)->ephemeris_ref_id),
+    sizeof(((struct vita49_2_cif0_fields *)0)->relative_ephemeris),
+    sizeof(((struct vita49_2_cif0_fields *)0)->ecef_ephemeris),
+    sizeof(((struct vita49_2_cif0_fields *)0)->formatted_ins),
+    sizeof(((struct vita49_2_cif0_fields *)0)->formatted_gps),
+    sizeof(((struct vita49_2_cif0_fields *)0)->data_packet_payload_format),
+    sizeof(((struct vita49_2_cif0_fields *)0)->state_and_event_indicators),
+    sizeof(((struct vita49_2_cif0_fields *)0)->device_identifier),
+    sizeof(((struct vita49_2_cif0_fields *)0)->temperature),
+    sizeof(((struct vita49_2_cif0_fields *)0)->timestamp_calibration_time_int),
+    sizeof(((struct vita49_2_cif0_fields *)0)->timestamp_adjustment),
+    sizeof(((struct vita49_2_cif0_fields *)0)->sample_rate),
+    sizeof(((struct vita49_2_cif0_fields *)0)->over_range_count),
+    sizeof(((struct vita49_2_cif0_fields *)0)->gain_words),
+    sizeof(((struct vita49_2_cif0_fields *)0)->reference_level),
+    sizeof(((struct vita49_2_cif0_fields *)0)->if_band_offset),
+    sizeof(((struct vita49_2_cif0_fields *)0)->rf_reference_frequency_offset),
+    sizeof(((struct vita49_2_cif0_fields *)0)->rf_reference_frequency),
+    sizeof(((struct vita49_2_cif0_fields *)0)->if_reference_frequency),
+	sizeof(((struct vita49_2_cif0_fields *)0)->bandwidth),
+	sizeof(((struct vita49_2_cif0_fields *)0)->reference_point_id),
+	0	// Context Field Change doesn't have an attribute field since it's just an indicator
+};
 
 __vrt_api int64_t convert_to_44_20(double value)
 {

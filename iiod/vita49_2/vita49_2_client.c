@@ -1989,89 +1989,89 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 
 		// We have a match! If the device name is "sequence", that means we need to execute the code in
 		// one of the shared libraries that was loaded in at startup.
-		// if (strcmp(m->device_name, "sequence") == 0)
-		// {
-		// 	for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
-		// 	{
-		// 		if (strcmp(m->attr_name, current_plugin->name) == 0)
-		// 		{
-		// 			int error = current_plugin->execute(ctx);
+		if (strcmp(m->device_name, "sequence") == 0)
+		{
+			for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
+			{
+				if (strcmp(m->attr_name, current_plugin->name) == 0)
+				{
+					int error = current_plugin->execute(ctx, (void *)((uint8_t *)&pkt->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), (vita49_2_cif0_field_sizes[m->cif_bit] + sizeof(uint32_t) - 1)/sizeof(uint32_t));
 
-		// 			// If the ackX_packet argument isn't NULL, that means we need to report the error
-		// 			if (ackX_packet != NULL && (error < 0))
-		// 			{
-		// 				switch (m->cif_type)
-		// 				{
-		// 					case CIF0:
+					// If the ackX_packet argument isn't NULL, that means we need to report the error
+					if (ackX_packet != NULL && (error < 0))
+					{
+						switch (m->cif_type)
+						{
+							case CIF0:
 
-		// 						ackX_packet->errors.cif0_errors.word |= (1 << m->cif_bit);
+								ackX_packet->errors.cif0_errors.word |= (1 << m->cif_bit);
 
-		// 						// Now to write the actual error value
-		// 						if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-		// 						{
-		// 							cif0_errors_buffer[cif0_errors_index].field_not_executed = 1;
-		// 							cif0_errors_buffer[cif0_errors_index++].device_failure = 1;
-		// 						}
-		// 						else
-		// 						{
-		// 							cif0_errors_buffer[cif0_errors_index++].word = ((1 << ENOEXECUTE) | (1 << VITA49_2_ERRNO_MAP[error]));
-		// 						}
+								// Now to write the actual error value
+								if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
+								{
+									cif0_errors_buffer[cif0_errors_index].field_not_executed = 1;
+									cif0_errors_buffer[cif0_errors_index++].device_failure = 1;
+								}
+								else
+								{
+									cif0_errors_buffer[cif0_errors_index++].word = ((1 << ENOEXECUTE) | (1 << VITA49_2_ERRNO_MAP[error]));
+								}
 
-		// 						// The corresponding CIF bit in the warnings field must now also be disabled since a CIF field can't simultaneously
-		// 						// have a warning and an error.
-		// 						ackX_packet->warnings.cif0_warnings.word &= ~(1 << m->cif_bit);
+								// The corresponding CIF bit in the warnings field must now also be disabled since a CIF field can't simultaneously
+								// have a warning and an error.
+								ackX_packet->warnings.cif0_warnings.word &= ~(1 << m->cif_bit);
 
-		// 						// Setting that warning indicator struct to 0 to indicate that it shouldn't be copied during the serialization of the packet
-		// 						// To do that, I need to determine its index which can be figured out by counting how many fields to the left of this field were
-		// 						// also asserted/present in the warnings CIF0 word.
-		// 						uint8_t warning_index = 0;
-		// 						for (int8_t i = 31; i > m->cif_bit; i--)
-		// 						{
-		// 							if (original_warnings_indicator & (1 << i))
-		// 								warning_index++;
-		// 						}
+								// Setting that warning indicator struct to 0 to indicate that it shouldn't be copied during the serialization of the packet
+								// To do that, I need to determine its index which can be figured out by counting how many fields to the left of this field were
+								// also asserted/present in the warnings CIF0 word.
+								uint8_t warning_index = 0;
+								for (int8_t i = 31; i > m->cif_bit; i--)
+								{
+									if (original_warnings_indicator & (1 << i))
+										warning_index++;
+								}
 
-		// 						memset(&ackX_packet->warnings.warnings_payload[warning_index], 0, sizeof(ackX_packet->warnings.warnings_payload[warning_index]));
+								memset(&ackX_packet->warnings.warnings_payload[warning_index], 0, sizeof(ackX_packet->warnings.warnings_payload[warning_index]));
 
-		// 						break;
+								break;
 
-		// 					case CIF1:
-		// 						// TODO: Logic for CIF1 error fields
-		// 						break;
+							case CIF1:
+								// TODO: Logic for CIF1 error fields
+								break;
 
-		// 					case CIF2:
-		// 						// TODO: Logic for CIF2 error fields
-		// 						break;
+							case CIF2:
+								// TODO: Logic for CIF2 error fields
+								break;
 
-		// 					case CIF3:
-		// 						// TODO: Logic for CIF3 error fields
-		// 						break;
+							case CIF3:
+								// TODO: Logic for CIF3 error fields
+								break;
 
-		// 					case CIF7:
-		// 						// TODO: Logic for CIF7 error fields
-		// 						break;
-		// 				}
+							case CIF7:
+								// TODO: Logic for CIF7 error fields
+								break;
+						}
 
-		// 				// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
-		// 				// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
-		// 				// for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
-		// 				// the error index as soon as the first mapping is seen.
-		// 				if (m->next != NULL)
-		// 				{
-		// 					if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
-		// 						cif0_errors_index--;
-		// 				}
-		// 			}
+						// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
+						// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
+						// for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
+						// the error index as soon as the first mapping is seen.
+						if (m->next != NULL)
+						{
+							if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
+								cif0_errors_index--;
+						}
+					}
 
-		// 			break;
-		// 		}
-		// 	}
+					break;
+				}
+			}
 
-		// 	continue;
-		// }
+			continue;
+		}
 
 		// Otherwise we're not dealing with a sequence and must find the attribute to execute this command
-		if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, attr)) < 0)
+		if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 		{
 			fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute '%s'. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 			continue;
@@ -2364,7 +2364,7 @@ int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_c
 				continue;
 
 			// Find device
-			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, attr)) < 0)
+			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Implicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 				continue;
@@ -2491,7 +2491,7 @@ int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_c
 		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
 		{
 			// Find device
-			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, attr)) < 0)
+			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Explicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 				continue;
