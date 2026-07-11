@@ -1,12 +1,12 @@
 [build-system]
-requires = ["setuptools>=40.6.0"]
+requires = ["setuptools>=77.0.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "pylibiio"
 dynamic = ["version", "readme"]
 description = "Analog Devices python interfaces for hardware with Industrial I/O drivers"
-license = { text = "LGPL-2-or-later" }
+license = "LGPL-2.1-or-later"
 classifiers = [
     "Intended Audience :: Developers",
     "Operating System :: OS Independent",
