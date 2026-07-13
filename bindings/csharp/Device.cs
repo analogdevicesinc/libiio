@@ -86,7 +86,7 @@ namespace iio
         public readonly string name;
 
         /// <summary>The label of this device.</summary>
-        public string label { get; private set; }
+        public string label { get; private set; };
 
         /// <summary>True if the device is a hardware monitoring device, False if it is a IIO device.</summary>
         public bool hwmon { get; private set; }
