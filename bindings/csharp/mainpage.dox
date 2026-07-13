@@ -6,25 +6,46 @@
 <a href="../index.html">Back to libIIO</a> 
 
 @section license License
-Libiio and the C# bindings have been developed and is released under the terms of the GNU Lesser General Public
-License, version 2 or (at your option) any later version.
-This open-source license allows anyone to use the library for C# proprietary or
-open-source, commercial or non-commercial applications.
-(if you change the bindings or library, send the source of the bindings and library along with the binary).
+libiio and the C# bindings have been developed and are released under the terms of the GNU Lesser General Public
+License, version 2.1 or (at your option) any later version.
+This open-source license allows anyone to use the library in proprietary or open-source applications,
+commercial or non-commercial. If you modify the bindings or library, you must provide the modified source
+code along with any binary distribution.
 
-The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1 and the iio-utils license can be found at: https://opensource.org/licenses/GPL-2.0
+The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1
 
 @section code_model Code Model
-The basic bricks of the libiio API, and therefore the C# bindings are the the iio namespace, and the classes of that nameplace: iio.Channel, iio.Context, iio.Device, iio.IOBuffer, iio.Trigger, and iio.Attr (channel or device attributes).
+The basic building blocks of the C# bindings are the core classes organized within the iio namespace:
 
-![Caption text](doc/codemodel.svg)
+- **iio.Context** - Represents a libiio context for accessing IIO devices
+- **iio.Device** - Represents an IIO device with its channels and attributes
+- **iio.Channel** - Represents an input or output channel of a device
+- **iio.Trigger** - Represents a trigger device for synchronized data capture
+- **iio.IOBuffer** - Provides buffered I/O operations for device channels
+- **iio.Attr** - Represents device and channel attributes (parameters)
+- **iio.Block** - Represents a memory block for efficient data transfers
+- **iio.Stream** - Provides streaming data access for continuous acquisition
+- **iio.EventStream** - Handles asynchronous event notifications from devices
+- **iio.Scan** - Discovers available IIO contexts on the network
 
-@section creating_context Creating a context
+![libiio C# bindings class diagram](doc/codemodel.svg)
 
-Creating a context is quite easy with the iio.Context class:
+@section creating_context Creating a Context
+
+A context is the entry point for accessing IIO devices. You can create contexts for different backends:
 
 ~~~{.cs}
-Context ctx = new Context("ip:10.44.2.241");
+// Local context (uses the local IIO devices)
+Context ctx = new Context();
+
+// Network context (connect to a remote iiod server)
+Context ctx = new Context("ip:192.168.1.10");
+
+// USB context (connect via USB)
+Context ctx = new Context("usb:1.2.3");
+
+// Serial context
+Context ctx = new Context("serial:/dev/ttyUSB0,115200");
 ~~~
 
 @subsection navigation Navigation
@@ -37,12 +58,13 @@ Context ctx = new Context("ip:10.44.2.241");
    }
 ~~~
 
-@subsubsection channel_obj Channel objects
+@subsubsection channel_obj Channel Objects
 
-Each iio.Channel can be either input, or output. This information can be retrieved with iio.Channel.output
-As for the Device objects, the iio.Channel object features an ID and optionally a name
-The ID can be obtained with iio.Channel.id, and the name can be obtained with iio.Channel.name.
-Important note: two iio_channel can have the same ID, as long as one is input and the other is output.
+Each iio.Channel can be either an input or output channel. This information can be retrieved using the
+iio.Channel.output property. Like Device objects, Channel objects have an ID (accessible via iio.Channel.id)
+and optionally a name (accessible via iio.Channel.name).
+
+**Important**: Two channels can have the same ID as long as one is an input and the other is an output channel.
 
 ~~~{.cs}
     foreach (Channel chn in dev.channels)
@@ -54,27 +76,45 @@ Important note: two iio_channel can have the same ID, as long as one is input an
     }
 ~~~
 
-@subsection list_params Parameters
-Different kinds of parameters are available: parameters that apply to a iio_device, and parameters that apply to one or more iio_channel.
+@subsection list_params Attributes
 
-for Channel attributes: iio.Channel.attrs
+IIO devices and channels expose various parameters through attributes. There are two main types:
+- **Device attributes**: Parameters that apply to an entire device (accessible via iio.Device.attrs)
+- **Channel attributes**: Parameters specific to individual channels (accessible via iio.Channel.attrs)
+
+**Channel Attributes Example:**
 
 ~~~{.cs}
-    foreach (Attr attr in chn.attrs)
-    {
-        Console.WriteLine("\t\t\t\t" + attr.name);
-        if (attr.name.CompareTo("frequency") == 0)
-        {
-            Console.WriteLine("Attribute content: " + attr.read());
-        }
-    }
+// Iterate through all channel attributes
+foreach (var kvp in chn.attrs)
+{
+    Console.WriteLine("Attribute: " + kvp.Key);
+    Console.WriteLine("  Value: " + kvp.Value.read());
+}
+
+// Access a specific attribute by name
+if (chn.attrs.ContainsKey("frequency"))
+{
+    string value = chn.attrs["frequency"].read();
+    Console.WriteLine("Frequency: " + value);
+}
 ~~~
 
-For Device Attributes: iio.Device.attrs
+**Device Attributes Example:**
 
 ~~~{.cs}
-    foreach (Attr attr in dev.attrs)
-       Console.WriteLine("\t\t\t" + attr.name);
+// Iterate through all device attributes
+foreach (var kvp in dev.attrs)
+{
+    Console.WriteLine("Device attribute: " + kvp.Key);
+    Console.WriteLine("  Value: " + kvp.Value.read());
+}
+
+// Access a specific attribute directly
+if (dev.attrs.ContainsKey("sampling_frequency"))
+{
+    dev.attrs["sampling_frequency"].write("1000000");
+}
 ~~~
 
 
