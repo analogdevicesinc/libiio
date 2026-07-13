@@ -19,9 +19,7 @@ namespace iio
     /// Contains the representation of an IIO device.</summary>
     public class Device
     {
-        /// <summary>Gets the context of the current device.</summary>
-        public readonly Context ctx;
-
+        // P/Invoke declarations
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_device_get_id(IntPtr dev);
 
@@ -76,7 +74,12 @@ namespace iio
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_reg_read(IntPtr dev, uint addr, ref uint value);
 
+        // Internal fields
         internal IntPtr dev;
+
+        // Public fields
+        /// <summary>Gets the context of the current device.</summary>
+        public readonly Context ctx;
 
         /// <summary>An identifier of this device.</summary>
         /// <remarks>The identifier is only valid in this IIO context</remarks>
@@ -84,12 +87,6 @@ namespace iio
 
         /// <summary>The name of this device.</summary>
         public readonly string name;
-
-        /// <summary>The label of this device.</summary>
-        public string label { get; private set; };
-
-        /// <summary>True if the device is a hardware monitoring device, False if it is a IIO device.</summary>
-        public bool hwmon { get; private set; }
 
         /// <summary>A <c>Dictionary</c> of all the attributes that this device has. Key is the attribute name.</summary>
         public readonly IReadOnlyDictionary<string, Attr> attrs;
@@ -106,6 +103,14 @@ namespace iio
         /// <summary>A <c>list</c> of all the <see cref="iio.IOBuffer"/> objects that this device possesses.</summary>
         public readonly IReadOnlyList<IOBuffer> buffers;
 
+        // Public properties
+        /// <summary>The label of this device.</summary>
+        public string label { get; private set; }
+
+        /// <summary>True if the device is a hardware monitoring device, False if it is a IIO device.</summary>
+        public bool hwmon { get; private set; }
+
+        // Constructor
         internal Device(Context ctx, IntPtr dev)
         {
             this.ctx = ctx;
@@ -174,6 +179,7 @@ namespace iio
             hwmon = id[0] == 'h';
         }
 
+        // Public methods
         /// <summary>Get the <see cref="iio.Channel"/> object of the specified name.</summary>
         /// <param name="name">Name, ID, or label of the channel to look for</param>
         /// <param name="output">true if you are looking for an output channel, otherwise false.</param>
@@ -237,6 +243,7 @@ namespace iio
 
             return (uint) ret;
         }
+
         /// <summary>Set a value to one register of this device.</summary>
         /// <param name="addr">The address of the register concerned.</param>
         /// <param name="value">The value that will be used for this register.</param>
