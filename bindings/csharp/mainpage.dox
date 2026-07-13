@@ -6,13 +6,11 @@
 <a href="../index.html">Back to libIIO</a> 
 
 @section license License
-libiio and the C# bindings have been developed and are released under the terms of the GNU Lesser General Public
-License, version 2.1 or (at your option) any later version.
+The C# bindings for libiio are released under the terms of the MIT License.
 This open-source license allows anyone to use the library in proprietary or open-source applications,
-commercial or non-commercial. If you modify the bindings or library, you must provide the modified source
-code along with any binary distribution.
+commercial or non-commercial, with minimal restrictions.
 
-The full terms of the library license can be found at: http://opensource.org/licenses/LGPL-2.1
+The full terms of the license can be found at: https://opensource.org/licenses/MIT
 
 @section code_model Code Model
 The basic building blocks of the C# bindings are the core classes organized within the iio namespace:

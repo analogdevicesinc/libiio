@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: MIT
+/*
+ * libiio - Library for interfacing industrial I/O (IIO) devices
+ *
+ * Copyright (C) 2015 Analog Devices, Inc.
+ */
+
 using System;
 
 namespace LibiioTests

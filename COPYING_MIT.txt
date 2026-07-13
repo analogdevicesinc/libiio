@@ -51,3 +51,26 @@ tinyiiod/tinyiiod.c
 tinyiiod/tinyiiod.h
 utilities.c
 xml.c
+
+C# Bindings:
+
+bindings/csharp/Attr.cs
+bindings/csharp/Block.cs
+bindings/csharp/Channel.cs
+bindings/csharp/ChannelsMask.cs
+bindings/csharp/Context.cs
+bindings/csharp/Device.cs
+bindings/csharp/EventStream.cs
+bindings/csharp/IIOEvent.cs
+bindings/csharp/IOBuffer.cs
+bindings/csharp/IioLib.cs
+bindings/csharp/Scan.cs
+bindings/csharp/Stream.cs
+bindings/csharp/Trigger.cs
+bindings/csharp/UTF8Marshaler.cs
+bindings/csharp/examples/ExampleIIOEvent.cs
+bindings/csharp/examples/ExampleProgram.cs
+bindings/csharp/examples/PlutoExample.cs
+bindings/csharp/tests/IntegrationTests.cs
+bindings/csharp/tests/SmokeTests.cs
+bindings/csharp/tests/TestFramework.cs
