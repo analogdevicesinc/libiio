@@ -50,3 +50,6 @@ Source: "D:\a\1\a\Windows-VS-2022-x64\BUILD_TYPE\libzstd.dll"; DestDir: "{sys}";
 Source: "D:\a\1\a\Windows-VS-2022-x64\libiio-sharp.dll"; DestDir: "{commoncf}\libiio"; Flags: replacesameversion
 Source: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\VCREDIST_VERSION\x64\Microsoft.VC143.CRT\msvcp140.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
 Source: "C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Redist\MSVC\VCREDIST_VERSION\x64\Microsoft.VC143.CRT\vcruntime140.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: onlyifdoesntexist
+
+[Registry]
+Root: HKLM; Subkey: "SYSTEM\CurrentControlSet\Control\Session Manager\Environment"; ValueType: string; ValueName: "LIBIIO_VERSION"; ValueData: "@VERSION@"; Flags: uninsdeletevalue
