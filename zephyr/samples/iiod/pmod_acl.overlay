@@ -8,18 +8,20 @@
 
 / {
 	iio-context {
-		#address-cells = <1>;
-		#size-cells = <0>;
+		iio-sensors {
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		iio-device@1 {
-			compatible = "iio,sensor";
-			reg = <1>;
-			sensor-device = <&adxl345_pmod_acl>;
-			sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X
-					   IIO_SENSOR_CHAN_ACCEL_Y
-					   IIO_SENSOR_CHAN_ACCEL_Z>;
-			buffer-name = "buffer0";
-			io-name = "adxl345";
+			adxl345@0 {
+				compatible = "iio,sensor";
+				reg = <0>;
+				sensor-device = <&adxl345_pmod_acl>;
+				sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X
+						   IIO_SENSOR_CHAN_ACCEL_Y
+						   IIO_SENSOR_CHAN_ACCEL_Z>;
+				buffer-name = "buffer0";
+				io-name = "pmod-adxl345";
+			};
 		};
 	};
 };

@@ -6,15 +6,17 @@
 
 / {
 	iio-context {
-		#address-cells = <1>;
-		#size-cells = <0>;
+		iio-adcs {
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		iio-device@0 {
-			compatible = "iio,adc";
-			reg = <0>;
-			io-channels = <&adc 0>;
-			io-channel-names = "adc_in_ch0";
-			io-name = "max32-adc";
+			max32-adc@0 {
+				compatible = "iio,adc";
+				reg = <0>;
+				io-channels = <&adc 0>;
+				io-channel-names = "adc_in_ch0";
+				io-name = "max32-adc";
+			};
 		};
 	};
 };
@@ -24,7 +26,7 @@
 };
 
 &adc {
-	/*clocks = */ 
+	/*clocks = */
 	pinctrl-0 = <&adc_clk_ext_p0_9>;
 	pinctrl-names = "default";
 

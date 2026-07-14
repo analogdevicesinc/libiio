@@ -40,24 +40,23 @@
 / {
 	/* IIO Context for libiio */
 	iio-context {
-		#address-cells = <1>;
-		#size-cells = <0>;
+		iio-sensors {
+			#address-cells = <1>;
+			#size-cells = <0>;
 
-		/* IIO Device wrapper for ADXL345 */
-		iio-device@1 {
-			compatible = "iio,sensor";
-			reg = <1>;
-			sensor-device = <&adxl345>;
-			/* Expose 3-axis accelerometer channels via IIO
-			 * ADXL345 provides X, Y, Z acceleration data
-			 */
-			sensor-channels = <
-				IIO_SENSOR_CHAN_ACCEL_X
-				IIO_SENSOR_CHAN_ACCEL_Y
-				IIO_SENSOR_CHAN_ACCEL_Z
-			>;
-			buffer-name = "buffer0";
-			io-name = "adxl345";
+			/* ADXL345 3-axis Accelerometer */
+			adxl345@0 {
+				compatible = "iio,sensor";
+				reg = <0>;
+				sensor-device = <&adxl345>;
+				sensor-channels = <
+					IIO_SENSOR_CHAN_ACCEL_X
+					IIO_SENSOR_CHAN_ACCEL_Y
+					IIO_SENSOR_CHAN_ACCEL_Z
+				>;
+				buffer-name = "buffer0";
+				io-name = "adxl345";
+			};
 		};
 	};
 };

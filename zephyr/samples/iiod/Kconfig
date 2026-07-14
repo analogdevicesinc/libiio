@@ -13,6 +13,13 @@ config LIBIIO_IIOD_SENSOR_EMUL
 	help
 	  Enable sensor emulator IIO device driver.
 
+config LIBIIO_IIOD_MULTI_SENSOR_EMUL
+	bool "Enable multi-sensor emulator (two ADLTC2990 instances)"
+	help
+	  Enable two emulated ADLTC2990 sensor instances. Demonstrates that
+	  the reg property and @N unit-address are required when multiple
+	  nodes share the same compatible and name within an iio-sensors bus.
+
 config LIBIIO_IIOD_SENSOR_ADXL345
 	bool "Enable adxl345 sensor"
 	help
