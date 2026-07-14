@@ -27,6 +27,11 @@ if(CONFIG_LIBIIO_IIOD_SENSOR_EMUL)
   list(APPEND EXTRA_CONF_FILE sensor-emul.conf)
 endif()
 
+if(CONFIG_LIBIIO_IIOD_MULTI_SENSOR_EMUL)
+  list(APPEND EXTRA_DTC_OVERLAY_FILE multi-sensor-emul.overlay)
+  list(APPEND EXTRA_CONF_FILE sensor-emul.conf)
+endif()
+
 if(CONFIG_LIBIIO_IIOD_SENSOR_ADXL345)
   list(APPEND EXTRA_DTC_OVERLAY_FILE adxl345.overlay)
   list(APPEND EXTRA_CONF_FILE adxl345.conf)
