@@ -171,6 +171,7 @@ Project Pages
    :maxdepth: 1
 
    install
+   migration
    theory
    usage
    examples
