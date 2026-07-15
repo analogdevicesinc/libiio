@@ -22,7 +22,6 @@
 // This example borrows heavily from Travis' test_ad9364.c code.
 
 #include <vita49_2/vita49_2_packet_types.h>
-#include "iio/iio.h"
 
 #include <errno.h>
 #include <arpa/inet.h>
@@ -31,7 +30,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <math.h>
 #include <unistd.h>
 
 #define DESTINATION_IP "192.168.2.1"
@@ -39,113 +37,12 @@
 // Commonly used convention for sending VITA 49.2 packets over UDP
 #define VITA49_2_UDP_PORT 4991
 
-// User Set
-#define N_TX_SAMPLES 128
-#define RX_OVERSAMPLE 4
-#define SUCCESSIVE_BUFFER_TO_CHECK 31
-#define N_RX_BLOCKS 4
-
-// Calculated/Constant
-#define N_RX_SAMPLES N_TX_SAMPLES *RX_OVERSAMPLE
-#define N_CHANNELS 2
-#define BYTES_PER_SAMPLE 2
-
-// Use (void) to silence unused warnings.
-#define assertm(exp, msg) assert(((void)msg, exp))
-
-struct iio_context *ctx;
-struct iio_device *phy, *tx;
-const struct iio_attr *attr;
-struct iio_channel *chn;
-struct iio_channels_mask *txmask;
-struct iio_buffer *txbuf;
-struct iio_block *txblock;
-
-#define DEFAULT_SLEEP 3
+#define DEFAULT_SLEEP 0.5
 
 int main(int argc, char** argv) 
 {
     int err;
     int fd = -1;
-    char error_msg[256];
-
-    // Grab a handle to the device
-    ctx = iio_create_context(NULL, "ip:" DESTINATION_IP);
-    phy = iio_context_find_device(ctx, "ad9361-phy");
-    assertm(phy, "Unable to find AD9361-phy device");
-
-    // Handle to TX
-    tx = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
-    assertm(tx, "Unable to find TX device");
-
-    // Configure device into loopback mode
-    attr = iio_device_find_debug_attr(phy, "loopback");
-    assertm(attr, "Unable to find loopback attribute");
-    iio_attr_write_string(attr, "1");
-
-    // TX Side
-    txmask = iio_create_channels_mask(iio_device_get_channels_count(tx));
-    assertm(txmask, "Unable to create TX mask");
-
-    chn = iio_device_find_channel(tx, "voltage0", true);
-    assertm(chn, "Unable to find TX channel");
-    iio_channel_enable(chn, txmask);
-    // chn = iio_device_find_channel(tx, "voltage1", true);
-    // assertm(chn, "Unable to find TX channel");
-    // iio_channel_enable(chn, txmask);
-
-    txbuf = iio_device_create_buffer(tx, 0, txmask);
-    assertm(txbuf, "Unable to create TX buffer");
-
-    txblock = iio_buffer_create_block(txbuf, N_TX_SAMPLES * BYTES_PER_SAMPLE *
-                                                N_CHANNELS);
-    assertm(txblock, "Unable to create TX block");
-
-    // Generate sine wave signal on both I and Q channels
-    int16_t *p_dat, *p_end;
-    ptrdiff_t p_inc;
-    int16_t idx = 0;
-    const float two_pi = 6.28318530717958647692f;
-
-    // I'm not specificying a specific frequency like 100 kHz, rather I'm specifying that a complete cycle of the sinusoid
-    // is capture in this buffer. From there, the frequency of the transmitted signal is just the sampling rate of the AD9361
-    // divided by the number of samples.
-        // So if the sampling rate is 3 MHz and the TX buffer is 128 samples, 3E6/128 = 23,400 meaning the buffer is played
-        // back 23,400 times a second, hence the signal being transmitted is at 23.4 kHz.
-    // const float phase_step = two_pi / N_TX_SAMPLES;
-    const float phase_step = (two_pi) / 128;
-
-    const int16_t amplitude = 2047;
-
-    p_end = iio_block_end(txblock);
-    p_inc = iio_device_get_sample_size(tx, txmask);
-    chn = iio_device_find_channel(tx, "voltage0", true);
-
-    for (p_dat = iio_block_first(txblock, chn); p_dat < p_end; p_dat += p_inc / sizeof(*p_dat)) 
-    {
-        // Bitshift 4 bits up. During loopback hardware will shift back 4 bits.
-        p_dat[0] = (int16_t)(amplitude * cosf(phase_step * idx));;
-        p_dat[1] = (int16_t)(amplitude * sinf(phase_step * idx));;
-        idx++;
-    }
-
-    // Load the data onto the Pluto
-    if ((err = iio_block_enqueue(txblock, 0, true)) < 0)
-    {
-        iio_strerror(err, error_msg, sizeof(error_msg));
-        fprintf(stderr, "Could not enqueue TX block. (%d) %s\n", err, error_msg);
-        goto cleanup;
-    }
-
-    if ((err = iio_buffer_enable(txbuf)) < 0)
-    {
-        iio_strerror(err, error_msg, sizeof(error_msg));
-        fprintf(stderr, "Could not enable TX buffer. (%d) %s\n", err, error_msg);
-        goto cleanup;
-    }
-
-    getchar();
-
 
     // Socket for sending VITA 49.2 Control Packets
     struct sockaddr_in addr;
@@ -200,12 +97,11 @@ int main(int argc, char** argv)
 
     int sleep_us;
     if (argc == 1)
-        sleep_us = DEFAULT_SLEEP;
+        sleep_us = DEFAULT_SLEEP*1e6;
     else
-        sleep_us = atoi(argv[1]);
+        sleep_us = atoi(argv[1])*1e1;
 
-    printf("Sending I/Q samples request every %d seconds\n", sleep_us);
-    sleep_us *= 1e6;
+    printf("Sending I/Q samples request every %d useconds\n", sleep_us);
 
     // Request samples on an interval
     while (1)
@@ -223,8 +119,6 @@ int main(int argc, char** argv)
     cleanup:
     if (fd != -1)
         close(fd);
-    iio_block_destroy(txblock);
-    iio_buffer_destroy(txbuf);
 
     return 0;
 }

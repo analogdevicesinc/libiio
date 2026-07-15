@@ -104,7 +104,8 @@ if(WITH_VITA49_2_BACKEND)
     add_executable(simulator vita49_2/simulator.c)
     add_executable(command_sequence vita49_2/command_sequence.c)
     add_executable(sine_wave vita49_2/sine_wave.c)
-    set_target_properties(command_sequence simulator sine_wave PROPERTIES
+    add_executable(continuous_stream vita49_2/continuous_stream.c)
+    set_target_properties(command_sequence simulator sine_wave continuous_stream PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/vita49_2"
         C_STANDARD 99
         C_STANDARD_REQUIRED ON
@@ -113,6 +114,7 @@ if(WITH_VITA49_2_BACKEND)
     target_link_libraries(command_sequence PRIVATE vita49_2 iio)
     target_link_libraries(simulator PRIVATE vita49_2 iio)
     target_link_libraries(sine_wave PRIVATE vita49_2 iio m)
+    target_link_libraries(continuous_stream PRIVATE vita49_2)
 endif()
 
 set_target_properties(

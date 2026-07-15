@@ -22,7 +22,8 @@
 #endif
 
 
-__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words)
+__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words, const struct iio_channel *i_channel, const struct iio_channel *q_channel)
+// __vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words)
 {
 	if (pkt == NULL || buf == NULL || max_words == 0)
 		return -EINVAL;
@@ -42,9 +43,19 @@ __vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* co
 		if ((buffer_index + pkt->payload_num_words) > (max_words - (pkt->has_trailer ? 1 : 0))) 
 			return -ENOBUFS;
 
+		// We have to convert from hardware format to host format
+		union vita49_2_iq_item item = {0};
+		union vita49_2_iq_item before;
+
+
 		for (uint16_t payload_index = 0; payload_index < pkt->payload_num_words; payload_index++)
 		{
-			buf[buffer_index + payload_index] = htonl(pkt->payload[payload_index].word);
+			before.word = pkt->payload[payload_index].word;
+			
+			// buf[buffer_index + payload_index] = htonl(pkt->payload[payload_index].word);
+			// iio_channel_convert(i_channel, &item.in_phase, &pkt->payload[payload_index].in_phase);
+			// iio_channel_convert(q_channel, &item.quadrature, &pkt->payload[payload_index].quadrature);
+			buf[buffer_index + payload_index] = htonl(item.word);
 		}
 		buffer_index += pkt->payload_num_words;
 	}

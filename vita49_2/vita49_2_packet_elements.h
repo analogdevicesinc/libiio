@@ -12,10 +12,22 @@
 #ifndef __VITA49_2_PACKET_ELEMENTS_H__
 #define __VITA49_2_PACKET_ELEMENTS_H__
 
+#if !defined(__cplusplus) && !defined(static_assert)
+# if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#  define static_assert _Static_assert
+# else
+#  define __VITA49_2_STATIC_ASSERT_JOIN(a, b) a##b
+#  define __VITA49_2_STATIC_ASSERT_MAKE(a, b) __VITA49_2_STATIC_ASSERT_JOIN(a, b)
+#  define static_assert(cond, msg) \
+	typedef char __VITA49_2_STATIC_ASSERT_MAKE(vita49_2_static_assert_, __LINE__)[(cond) ? 1 : -1]
+# endif
+#endif
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <sys/types.h>
+#include <assert.h>
 
 // "Organizationally Unique Identifier". ADI has several OUIs, I just chose the first one: https://regauth.standards.ieee.org/standards-ra-web/pub/view.html#registries
 // OUI is one of the component fields of the Class ID field.
@@ -384,13 +396,13 @@ union vita49_2_iq_item {
 			// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
 			// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
 			
-			uint32_t quadrature:16; 		/* 16-bit signed Q component */
-			uint32_t in_phase:16; 			/* 16-bit signed I component */
+			uint16_t quadrature; 		/* 16-bit signed Q component */
+			uint16_t in_phase; 			/* 16-bit signed I component */
 
 		#else
 
-			uint32_t in_phase:16; 			/* 16-bit signed I component */
-			uint32_t quadrature:16; 		/* 16-bit signed Q component */
+			uint16_t in_phase; 			/* 16-bit signed I component */
+			uint16_t quadrature; 		/* 16-bit signed Q component */
 			
 			// uint32_t event_tags:8; 		/* Event Tags are unused in ADI's implementation, however we retain the right to support them at a later time */
 			// uint32_t channel_tags:8; 	/* Channel Tags associate a Data Item with a particular channel*/
@@ -399,6 +411,8 @@ union vita49_2_iq_item {
 	};
 
 };
+
+static_assert(sizeof(union vita49_2_iq_item) == 4, "IQ item doesn't equal 32 bits.");
 
 /**
  * @union vita49_2_cam_field

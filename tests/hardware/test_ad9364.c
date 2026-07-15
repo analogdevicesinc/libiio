@@ -56,8 +56,8 @@ int main() {
 
   phy = iio_context_find_device(ctx, "ad9361-phy");
   assertm(phy, "Unable to find AD9361-phy device");
-  // rx = iio_context_find_device(ctx, "cf-ad9361-lpc");
-  // assertm(rx, "Unable to find RX device");
+  rx = iio_context_find_device(ctx, "cf-ad9361-lpc");
+  assertm(rx, "Unable to find RX device");
   tx = iio_context_find_device(ctx, "cf-ad9361-dds-core-lpc");
   assertm(tx, "Unable to find TX device");
 

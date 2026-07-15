@@ -42,11 +42,10 @@
 
 // A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
 // However UDP has a max packet size of 65535 bytes (not words!), so we actually have to divide by 4.
-#define NUM_RX_SAMPLES 65440/4 
-#define NUM_RX_BLOCKS 4
+#define NUM_RX_SAMPLES 8800/4 
+#define NUM_RX_BLOCKS 32
 
 #define NUM_TX_SAMPLES 128
-#define NUM_RX_BLOCKS 4
 
 #define NUM_CHANNELS 2 		// One for the I-component and one for the Q-component
 #define BYTES_PER_SAMPLE 4 	// I and Q-components are both 16-bit signed integers
@@ -363,6 +362,25 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	fprintf(stderr, "vita49_2_client: VITA 49.2 Packet Listener started.\n");
 
 
+	int tcp_socket;
+	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (tcp_socket == -1) {
+        printf("Socket creation failed.\n");
+        return -1;
+    }
+
+	struct sockaddr_in server_addr;
+    server_addr.sin_family = AF_INET;
+    server_addr.sin_port = htons(4991); // Port 80
+    server_addr.sin_addr.s_addr = inet_addr("192.168.2.11"); // Example IP
+
+    // 3. Connect (Client role)
+    if (connect(tcp_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+        printf("Connection failed.\n");
+        return -1;
+    }
+    
+
 	// ==================================================================================
 	// CREATING BUFFER + STREAM FOR I/Q DATA (High level iio_stream API from Libiio v1.x)
 	// ==================================================================================
@@ -385,7 +403,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	char rx_device_name[] = "cf-ad9361-lpc";
 	char tx_device_name[] = "cf-ad9361-dds-core-lpc";
 
-	struct iio_channel *channel, *i_channel;
+	struct iio_channel *q_channel_rx, *i_channel_rx, *channel, *i_channel;
 
 	// ==============================================================
 	// CONFIGURING RX DEVICE
@@ -401,6 +419,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Skip the rest of the setup for RX and proceed with TX
 		goto tx_configuration;
 	}
+
 	
 	// Now to enable the channels. We only care about I/Q data, so we don't need to capture data from all of the channels on a device.
 	// To accomplish that, I'll use a channel mask.
@@ -415,8 +434,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	}
 
 	// Adding I (voltage0) and Q (voltage1) to the mask
-	channel = iio_device_find_channel(rx_device, "voltage0", false);
-	if (channel == NULL)
+	i_channel_rx = iio_device_find_channel(rx_device, "voltage0", false);
+	if (i_channel_rx == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for RX device.\n");
 		rx_device = NULL;
@@ -425,10 +444,10 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		goto tx_configuration;
 	}
 
-	iio_channel_enable(channel, rx_channel_mask);
+	iio_channel_enable(i_channel_rx, rx_channel_mask);
 
-	i_channel = iio_device_find_channel(rx_device, "voltage1", false);
-	if (i_channel == NULL)
+	q_channel_rx = iio_device_find_channel(rx_device, "voltage1", false);
+	if (q_channel_rx == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
 		rx_device = NULL;
@@ -437,7 +456,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		goto tx_configuration;
 	}
 
-	iio_channel_enable(i_channel, rx_channel_mask);
+	iio_channel_enable(q_channel_rx, rx_channel_mask);
 
 	// Creating a buffer
 	struct iio_buffer *rx_buffer = iio_device_create_buffer(rx_device, 0, rx_channel_mask);
@@ -1064,6 +1083,11 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							continue;
 						}
 
+						unsigned long long count = 0;
+						struct timespec start, end;
+						while (1)
+						{
+
 						// Timestamp for a packet that has multiple samples should be when the first sample was recorded.
 						// I have no good way of determining latency of a call to libiio to grab data, so I'll record the timestamp
 						// before the data has been retrieved.
@@ -1071,9 +1095,10 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 						// Fetching a block from the stream
 						rx_block = iio_stream_get_next_block(rx_stream);
-						if (iio_err(rx_block) != 0)
+						if ((ret_value = iio_err(rx_block)) < 0)
 						{
-							fprintf(stderr, "vita49_2_client: Encountered an error while trying to query I/Q data.\n");
+							iio_strerror(ret_value, iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+							fprintf(stderr, "vita49_2_client: Encountered an error while trying to query I/Q data. (%d) %s\n", -ret_value, iio_error_buffer);
 
 							// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
 							continue;
@@ -1085,7 +1110,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 						// I don't need to check that this payload pushes over the 65535 word limit because I specified
 						// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
-						time_data_packet.payload = (union vita49_2_iq_item *)(iio_block_first(rx_block, i_channel));
+						time_data_packet.payload = (union vita49_2_iq_item *)(iio_block_first(rx_block, i_channel_rx));
 						ssize_t sample_size_bytes = iio_device_get_sample_size(rx_device, rx_channel_mask);
 
 						// Means there was an error with capturing the data if the sample size is less than 0 bytes or more than 4 bytes.
@@ -1097,7 +1122,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 							break;
 						}
 
-						ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block) + sample_size_bytes) - (uint32_t *)(iio_block_first(rx_block, i_channel))) * sample_size_bytes)/4;
+						// ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block) + sample_size_bytes) - (uint32_t *)(iio_block_first(rx_block, i_channel))) * sample_size_bytes)/4;
+						ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel_rx))) * sample_size_bytes)/4;
 
 						// If this failed as well, then we shouldn't send the packet at all
 						if (payload_size_words <= 0)
@@ -1141,16 +1167,33 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						}
 
 						// Now to write that data to a buffer and send it
-						time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4);
+						time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4, i_channel_rx, q_channel_rx);
+						// time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4);
 						if (time_data_packet_size <= 0)
 						{
 							fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet. (%d) %s\n", time_data_packet_size, (time_data_packet_size < 0) ? strerror(time_data_packet_size) : "");
 							continue;							
 						}
 
-						if (sendto(socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-							fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
-
+						// if (sendto(socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+						// 	fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
+						
+						if (send(tcp_socket, send_buffer, time_data_packet_size*4, 0) <= 0)
+							fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over TCP. (%d) %s\n", errno, strerror(errno));
+						else
+						{
+							// printf("Sent packet %llu\n", count);
+							count++;
+							if (count % 100 == 0)
+							{
+								clock_gettime(CLOCK_MONOTONIC, &end);
+								double time = (end.tv_sec - start.tv_sec) + 
+														(end.tv_nsec - start.tv_nsec) / 1e9;
+								printf("Last 100 packets: %f seconds\n", time);
+								clock_gettime(CLOCK_MONOTONIC, &start);
+							}
+						}
+						}
 						break;
 					}
 
@@ -3216,9 +3259,7 @@ int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_pa
 							cif0_warnings_buffer[cif0_warnings_index++].word = (1 << -warning);
 							warning_generated = true;
 						}
-
-						printf("Warning from library: %d\n", warning);
-
+						
 						break;
 					}
 				}
