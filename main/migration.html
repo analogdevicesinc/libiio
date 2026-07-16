@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="./">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="The new Libiio 1.x breaks the ABI from the v0.x version. This means that a program compiled against libiio v0.x will not run against Libiio 1.x." name="description" />
+
+    <title>Libiio 0.x to 1.x API update guide &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="_static/app.min.css?v=d3f78147" />
+    <link rel="stylesheet" type="text/css" href="_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=748bb8f3" />
+    <script src="_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="_static/app.umd.js?v=26d0298f"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Theory of Operation" href="theory.html" />
+    <link rel="prev" title="Building from Source" href="install/source.html" />
+   
+  
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="main">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://analog.com" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Docs</label>
+        
+        <a id="logo" href="index.html">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="./index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Libiio 0.x to 1.x API update guide</a><ul>
+<li><a class="reference internal" href="#headers">Headers</a></li>
+<li><a class="reference internal" href="#error-handling">Error handling</a></li>
+<li><a class="reference internal" href="#context-parameters">Context parameters</a></li>
+<li><a class="reference internal" href="#context-creation">Context creation</a><ul>
+<li><a class="reference internal" href="#version-functions">Version functions</a></li>
+<li><a class="reference internal" href="#iio-context-get-xml-now-allocates">iio_context_get_xml now allocates</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#context-discovery">Context discovery</a></li>
+<li><a class="reference internal" href="#backend-query-api">Backend query API</a></li>
+<li><a class="reference internal" href="#attributes">Attributes</a><ul>
+<li><a class="reference internal" href="#the-iio-attr-object">The iio_attr object</a></li>
+<li><a class="reference internal" href="#availability-helpers">Availability helpers</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#channel-enable-disable">Channel enable / disable</a></li>
+<li><a class="reference internal" href="#buffers">Buffers</a></li>
+<li><a class="reference internal" href="#low-level-data-streaming-api">Low-level data streaming API</a><ul>
+<li><a class="reference internal" href="#accessing-data">Accessing data</a></li>
+<li><a class="reference internal" href="#enqueueing-and-dequeueing-blocks">Enqueueing and dequeueing blocks</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#optional-high-level-data-streaming-api">Optional high-level data streaming API</a></li>
+<li><a class="reference internal" href="#trigger-api">Trigger API</a></li>
+<li><a class="reference internal" href="#timeout-constants">Timeout constants</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="index.html">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="./index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="install.html">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="install/source.html">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Libiio 0.x to 1.x API update guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="theory.html">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="usage.html">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="examples.html">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="api.html">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="api/c/top.html">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/scan.html">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/attributes.html">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/context.html">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/device.html">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/channel.html">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/buffer.html">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/event.html">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/hwmon.html">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="api/c/debug.html">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="bindings.html">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="api/python/index.html">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/python/context.html">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/channel.html">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/python/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="api/python/examples.html">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_readdev.html">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_writedev.html">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="api/python/iio_info.html">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="api/csharp/index.html">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/buffer.html">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/trigger.html">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/event.html">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iioobject.html">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/version.html">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iiocontextparams.html">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/iiologlevel.html">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/csharp/examples.html">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="api/cpp/index.html">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/context.html">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/device.html">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/channel.html">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/buffer.html">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/block.html">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/stream.html">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/bufferstream.html">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/channelsmask.html">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/scan.html">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/eventstream.html">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/event.html">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/attr.html">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/ptr.html">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/cstr.html">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/error.html">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="api/cpp/examples.html">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="tools/index.html">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_attr.html">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_info.html">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_genxml.html">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_rwdev.html">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_reg.html">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="tools/iio_stresstest.html">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="iiod.html">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1"><a class="reference internal" href="training.html">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="related.html">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="libiio-0-x-to-1-x-api-update-guide">
+<h1>Libiio 0.x to 1.x API update guide<a class="headerlink" href="#libiio-0-x-to-1-x-api-update-guide" title="Link to this heading"></a></h1>
+<p>The new Libiio 1.x breaks the ABI from the v0.x version. This means that a
+program compiled against libiio v0.x will not run against Libiio 1.x.</p>
+<p>This is because the new library introduced new functions, removed some others,
+or changed the prototype of some functions. Therefore, to make an application
+compatible with Libiio 1.x, some changes are needed.</p>
+<p>This document aims to list all the changes that are needed for an application
+designed for Libiio 0.x to compile and run against Libiio 1.x.</p>
+<section id="headers">
+<h2>Headers<a class="headerlink" href="#headers" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio.h</span></code> public header has been moved to a <code class="docutils literal notranslate"><span class="pre">iio</span></code> subdirectory. Therefore you
+now have to include <code class="docutils literal notranslate"><span class="pre">&lt;iio/iio.h&gt;</span></code> instead of <code class="docutils literal notranslate"><span class="pre">&lt;iio.h&gt;</span></code>.</p>
+<p>Alongside this file are some new public headers:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;iio/iio-debug.h&gt;</span></code> contains macros that can be used to print messages to the
+standard or error output paths.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;iio/iio-lock.h&gt;</span></code> provides OS-independent mutex and thread routines.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;iio/iio-backend.h&gt;</span></code> provides structure definitions and symbols that can
+be used to develop a plug-in backend for Libiio.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">&lt;iio/iiod-client.h&gt;</span></code> provides all the definitions needed for a plug-in
+backend to interface with the IIOD server.</p></li>
+</ul>
+</section>
+<section id="error-handling">
+<h2>Error handling<a class="headerlink" href="#error-handling" title="Link to this heading"></a></h2>
+<p>Starting from Libiio v1.0, most API functions that return a pointer won’t return
+NULL on error. Instead, they will return an error code encoded into the pointer
+value. The documentation embedded in <code class="docutils literal notranslate"><span class="pre">iio.h</span></code> will specify if a given function
+returns a pointer-encoded error.</p>
+<p>You can get the error code from the pointer using the <code class="docutils literal notranslate"><span class="pre">iio_err</span></code> function.
+If it returns zero, then the pointer is valid and can be used directly.</p>
+<p>Note that the error code, if set, will always be negative. You can get a textual
+representation of the error using <code class="docutils literal notranslate"><span class="pre">iio_strerror</span></code>, or use the log macros
+<code class="docutils literal notranslate"><span class="pre">prm_perror</span></code>, <code class="docutils literal notranslate"><span class="pre">ctx_perror</span></code>, <code class="docutils literal notranslate"><span class="pre">dev_perror</span></code> or <code class="docutils literal notranslate"><span class="pre">chn_perror</span></code> from
+<code class="docutils literal notranslate"><span class="pre">&lt;iio/iio-debug.h&gt;</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">errno</span></code> variable is not used anymore to return error codes, so it is now an
+error to check it after a libiio call. With that said, it is not guaranteed that
+libiio won’t modify this variable, as system calls may modify it.</p>
+</section>
+<section id="context-parameters">
+<h2>Context parameters<a class="headerlink" href="#context-parameters" title="Link to this heading"></a></h2>
+<p>Libiio 1.x introduces the notion of context parameters. These are contained in
+the publicly visible <code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code> structure. The following parameters
+can be set:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">timeout_ms</span></code>: the delay in milliseconds after which input/output operations
+(streaming samples, reading attributes, IIOD protocol commands etc.) will
+throw a timed-out error. If set to zero, the backend’s default timeout value is
+used.</p>
+<p>Note that the timeout value can be changed after the context is created, using
+the <code class="docutils literal notranslate"><span class="pre">iio_context_set_timeout</span></code> function.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">out</span></code> and <code class="docutils literal notranslate"><span class="pre">err</span></code>: output paths for the library’s debug and information messages
+(for <code class="docutils literal notranslate"><span class="pre">out</span></code>) and warning and error messages (for <code class="docutils literal notranslate"><span class="pre">err</span></code>). If set to NULL, these
+will default to <code class="docutils literal notranslate"><span class="pre">stdout</span></code> and <code class="docutils literal notranslate"><span class="pre">stderr</span></code> respectively.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">log_level</span></code>: allow configuring the verbosity of Libiio’s output messages.
+If zero, it will default to the log level configured at compilation time.
+Only the messages whose level is lower or equal than this threshold will be
+displayed.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stderr_level</span></code>: Messages whose level is lower or equal than this threshold
+are sent to the error output path; messages whose level is higher are sent to
+the regular output path. If zero, it will default to <code class="docutils literal notranslate"><span class="pre">LEVEL_WARNING</span></code>.</p>
+<p>Note that it is possible to send all messages to the standard output path by
+setting this parameter to <code class="docutils literal notranslate"><span class="pre">LEVEL_NOLOG</span></code>, and also to send all messages to the
+error output by setting this parameter to <code class="docutils literal notranslate"><span class="pre">LEVEL_DEBUG</span></code>.</p>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">flags</span></code>: a bitmask of values from <code class="docutils literal notranslate"><span class="pre">enum</span> <span class="pre">iio_context_flags</span></code>. The only flag
+currently defined is <code class="docutils literal notranslate"><span class="pre">IIO_CTX_XML_INCLUDE_VALUES</span></code>, which causes
+<code class="docutils literal notranslate"><span class="pre">iio_context_get_xml</span></code> to read and serialize current attribute values into the
+XML output (see the section below on <code class="docutils literal notranslate"><span class="pre">iio_context_get_xml</span></code>).</p></li>
+</ul>
+</section>
+<section id="context-creation">
+<h2>Context creation<a class="headerlink" href="#context-creation" title="Link to this heading"></a></h2>
+<p>Libiio context creation is now handled uniquely by the <code class="docutils literal notranslate"><span class="pre">iio_create_context</span></code>
+function. The first parameter is a pointer to a <code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code> structure;
+it is completely optional, and NULL is accepted. The second parameter
+is the URI that identifies the IIO context. The function will now return
+pointer-encoded codes on errors, so you must use <code class="docutils literal notranslate"><span class="pre">iio_err</span></code> to verify that the
+call succeeded.</p>
+<p>Furthermore:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_create_context_from_uri</span></code> is replaced by <code class="docutils literal notranslate"><span class="pre">iio_create_context</span></code>. The same
+URI argument can be passed as-is.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_create_local_context</span></code> is gone. You can still create a local context
+by using the URI <code class="docutils literal notranslate"><span class="pre">local:</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_create_default_context</span></code> is gone. You can still create the default
+context by passing a NULL pointer as the URI parameter.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_create_network_context</span></code> is gone. You can create a network context by
+using the <code class="docutils literal notranslate"><span class="pre">ip:</span></code> URI prefix followed by a hostname, IPv4 or IPv6 address.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_create_xml_context</span></code> is gone. You can create a XML context by using the
+<code class="docutils literal notranslate"><span class="pre">xml:</span></code> URI prefix followed by the path to the XML file on disk.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_create_xml_context_mem</span></code> is gone. You can create a XML context from
+memory by using the <code class="docutils literal notranslate"><span class="pre">xml:</span></code> URI prefix followed by the NULL-terminated XML
+string.</p></li>
+<li><p>There is a new <code class="docutils literal notranslate"><span class="pre">emu:</span></code> URI for connecting to an IIO emulator. There was no
+equivalent creator function in v0.x — the emulator backend is new in v1.0.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_context_clone</span></code> is gone. You can however clone a context by retrieving
+the params with <code class="docutils literal notranslate"><span class="pre">iio_context_get_params</span></code> (or just use NULL if that’s what you
+used for the first context), and the URI by looking up the <code class="docutils literal notranslate"><span class="pre">&quot;uri&quot;</span></code> attribute
+with <code class="docutils literal notranslate"><span class="pre">iio_context_find_attr</span></code> and reading it with <code class="docutils literal notranslate"><span class="pre">iio_attr_get_static_value</span></code>,
+then creating a new context with those two parameters.</p></li>
+</ul>
+<section id="version-functions">
+<h3>Version functions<a class="headerlink" href="#version-functions" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">iio_library_get_version</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_context_get_version</span></code> are gone. They are
+replaced by <code class="docutils literal notranslate"><span class="pre">iio_context_get_version_major</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_context_get_version_minor</span></code>
+and <code class="docutils literal notranslate"><span class="pre">iio_context_get_version_tag</span></code>. When a non-NULL context is passed, these
+functions return the version of the remote IIOD server rather than the local
+library version.</p>
+</section>
+<section id="iio-context-get-xml-now-allocates">
+<h3>iio_context_get_xml now allocates<a class="headerlink" href="#iio-context-get-xml-now-allocates" title="Link to this heading"></a></h3>
+<p>In v0.x, <code class="docutils literal notranslate"><span class="pre">iio_context_get_xml</span></code> returned a pointer to a static string owned by
+the context. In v1.0 it returns a newly allocated string that the caller is
+responsible for freeing with <code class="docutils literal notranslate"><span class="pre">free()</span></code>. Failing to do so will leak memory.</p>
+<p>Additionally, if <code class="docutils literal notranslate"><span class="pre">IIO_CTX_XML_INCLUDE_VALUES</span></code> is set in the <code class="docutils literal notranslate"><span class="pre">flags</span></code> field of
+<code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_context_get_xml</span></code> will also read and serialize the
+current attribute values into the XML output.</p>
+</section>
+</section>
+<section id="context-discovery">
+<h2>Context discovery<a class="headerlink" href="#context-discovery" title="Link to this heading"></a></h2>
+<p>The API provided by libiio to discover remote libiio contexts has changed
+completely. Two different yet similar APIs were provided in libiio v0.x
+(the one based on <code class="docutils literal notranslate"><span class="pre">iio_scan_context</span></code> and the one based on <code class="docutils literal notranslate"><span class="pre">iio_scan_block</span></code>)
+which was redundant and very confusing.</p>
+<p>In libiio 1.0, there is a single scan API based on the <code class="docutils literal notranslate"><span class="pre">iio_scan</span></code> object.</p>
+<p>The function <code class="docutils literal notranslate"><span class="pre">iio_scan</span></code> will create a scan context with the given backends. The
+backends string uses the same format as in v0.x, but use commas instead of
+colons as the delimiter.</p>
+<p>Using the newly created object, you can obtain the number of libiio contexts
+found using <code class="docutils literal notranslate"><span class="pre">iio_scan_get_results_count</span></code>, and get each entry’s description
+string and URI using <code class="docutils literal notranslate"><span class="pre">iio_scan_get_description</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_scan_get_uri</span></code>
+respectively, passing as argument the index of the context you’re interested in.</p>
+<p>Finally, you can use <code class="docutils literal notranslate"><span class="pre">iio_scan_destroy</span></code> to free the <code class="docutils literal notranslate"><span class="pre">iio_scan</span></code> object.</p>
+</section>
+<section id="backend-query-api">
+<h2>Backend query API<a class="headerlink" href="#backend-query-api" title="Link to this heading"></a></h2>
+<p>Three functions related to querying the available backends were renamed to make
+it clearer that they refer to backends compiled into the library, as opposed to
+dynamically loaded plug-in backends:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_has_backend</span></code> now takes an additional <code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code> pointer as its
+first argument (may be NULL).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_get_backends_count</span></code> was renamed to <code class="docutils literal notranslate"><span class="pre">iio_get_builtin_backends_count</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_get_backend</span></code> was renamed to <code class="docutils literal notranslate"><span class="pre">iio_get_builtin_backend</span></code>.</p></li>
+</ul>
+</section>
+<section id="attributes">
+<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<p>The various IIO objects still have attributes. However, the API changed
+slightly. Note also that v1.0 introduces event attributes as a new category,
+exposed on both devices (<code class="docutils literal notranslate"><span class="pre">iio_device_get_event_attr</span></code>,
+<code class="docutils literal notranslate"><span class="pre">iio_device_find_event_attr</span></code>) and channels (<code class="docutils literal notranslate"><span class="pre">iio_channel_get_event_attr</span></code>,
+<code class="docutils literal notranslate"><span class="pre">iio_channel_find_event_attr</span></code>). These did not exist in v0.x.</p>
+<p>In Libiio v0.x, <code class="docutils literal notranslate"><span class="pre">iio_device_attr_read</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_device_debug_attr_read</span></code>,
+<code class="docutils literal notranslate"><span class="pre">iio_device_buffer_attr_read</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_channel_attr_read</span></code> could be used to read
+raw bytes or a string into a buffer. This functionality is now provided by
+<code class="docutils literal notranslate"><span class="pre">iio_attr_read_raw</span></code>, called on a <code class="docutils literal notranslate"><span class="pre">iio_attr</span> <span class="pre">*</span></code> object obtained with one of the
+find functions described in the next section. The typed read functions
+(<code class="docutils literal notranslate"><span class="pre">iio_attr_read_bool</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_attr_read_longlong</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_attr_read_double</span></code>) work
+the same way.</p>
+<p>For C code, the <code class="docutils literal notranslate"><span class="pre">iio_attr_read</span></code> <code class="docutils literal notranslate"><span class="pre">_Generic</span></code> macro dispatches to the correct
+typed function based on the type of the pointer argument (<code class="docutils literal notranslate"><span class="pre">bool</span> <span class="pre">*</span></code>, <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span> <span class="pre">*</span></code>
+or <code class="docutils literal notranslate"><span class="pre">double</span> <span class="pre">*</span></code>). In C++ this macro is not available and you must call the
+explicit typed functions directly. The specific typed functions are present in
+both C and C++, so they can always be used regardless of language.</p>
+<p>The exact same can be said for <code class="docutils literal notranslate"><span class="pre">iio_device_attr_write</span></code>,
+<code class="docutils literal notranslate"><span class="pre">iio_device_debug_attr_write</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_device_buffer_attr_write</span></code> and
+<code class="docutils literal notranslate"><span class="pre">iio_channel_attr_write</span></code>. The raw-string functionality of these functions is
+now provided by <code class="docutils literal notranslate"><span class="pre">iio_attr_write_string</span></code>, and the typed variants
+(<code class="docutils literal notranslate"><span class="pre">iio_attr_write_bool</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_attr_write_longlong</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_attr_write_double</span></code>)
+operate on a <code class="docutils literal notranslate"><span class="pre">iio_attr</span> <span class="pre">*</span></code> object obtained with one of the find functions
+described in the next section.</p>
+<p>For C code, the <code class="docutils literal notranslate"><span class="pre">iio_attr_write</span></code> <code class="docutils literal notranslate"><span class="pre">_Generic</span></code> macro is provided as a convenience:
+it dispatches to the correct typed function based on the type of the <code class="docutils literal notranslate"><span class="pre">val</span></code>
+argument (<code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">long</span> <span class="pre">long</span></code>, <code class="docutils literal notranslate"><span class="pre">double</span></code>, <code class="docutils literal notranslate"><span class="pre">char</span> <span class="pre">*</span></code> or <code class="docutils literal notranslate"><span class="pre">const</span> <span class="pre">char</span> <span class="pre">*</span></code>). In C++
+this macro is not available and you must call the explicit typed functions
+directly. The specific typed functions are present in both C and C++, so they
+can always be used regardless of language.</p>
+<section id="the-iio-attr-object">
+<h3>The iio_attr object<a class="headerlink" href="#the-iio-attr-object" title="Link to this heading"></a></h3>
+<p>In addition to the renamed read/write functions, Libiio 1.0 introduces
+<code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">iio_attr</span></code> as a first-class object. Rather than addressing attributes by
+passing a name string every time you want to read or write, you look up the
+attribute once with <code class="docutils literal notranslate"><span class="pre">iio_device_find_attr</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_channel_find_attr</span></code>,
+<code class="docutils literal notranslate"><span class="pre">iio_buffer_find_attr</span></code> or <code class="docutils literal notranslate"><span class="pre">iio_device_find_debug_attr</span></code>, and then call methods
+directly on the returned pointer.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio_attr</span></code> object exposes two pieces of metadata beyond the value itself:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_attr_get_name</span></code> returns the attribute’s name as it appears in the API.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_attr_get_filename</span></code> returns the underlying sysfs filename, which may
+differ from the name (for example a channel attribute named <code class="docutils literal notranslate"><span class="pre">raw</span></code> may map
+to a file called <code class="docutils literal notranslate"><span class="pre">in_voltage0_raw</span></code>).</p></li>
+</ul>
+<p>For context attributes that have a fixed value baked into the XML description,
+<code class="docutils literal notranslate"><span class="pre">iio_attr_get_static_value</span></code> returns that value without a round-trip to the
+hardware. Note that this only applies to context-level attributes; for device,
+channel, buffer and debug attributes it returns NULL.</p>
+</section>
+<section id="availability-helpers">
+<h3>Availability helpers<a class="headerlink" href="#availability-helpers" title="Link to this heading"></a></h3>
+<p>Many IIO attributes have a companion <code class="docutils literal notranslate"><span class="pre">_available</span></code> sysfs file that lists the
+values the hardware will accept. Libiio 1.0 provides two helper functions to
+parse these without having to implement the parsing yourself.</p>
+<p>When the available file uses the range format <code class="docutils literal notranslate"><span class="pre">[min</span> <span class="pre">step</span> <span class="pre">max]</span></code>, use
+<code class="docutils literal notranslate"><span class="pre">iio_attr_get_range</span></code>, which fills in three <code class="docutils literal notranslate"><span class="pre">double</span></code> values for the minimum,
+step size and maximum.</p>
+<p>When the available file is a space-separated list of discrete values, use
+<code class="docutils literal notranslate"><span class="pre">iio_attr_get_available</span></code>, which allocates an array of string pointers and
+fills in the count. The array must be freed afterwards with
+<code class="docutils literal notranslate"><span class="pre">iio_available_list_free</span></code>.</p>
+</section>
+</section>
+<section id="channel-enable-disable">
+<h2>Channel enable / disable<a class="headerlink" href="#channel-enable-disable" title="Link to this heading"></a></h2>
+<p>Starting from Libiio 1.0, the channel state (enabled or disabled) is no longer
+an intrinsic property. Instead, a <code class="docutils literal notranslate"><span class="pre">iio_channels_mask</span></code> object can be used to
+store the state of each channel of a given device. This mask object can then
+be passed to various API functions.</p>
+<p>The mask object can be created with the function <code class="docutils literal notranslate"><span class="pre">iio_create_channels_mask</span></code>,
+passing the total number of channels of the device, and destroyed with
+<code class="docutils literal notranslate"><span class="pre">iio_channels_mask_destroy</span></code>.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio_channel_enable</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_channel_disable</span></code> functions will now take a
+pointer to a <code class="docutils literal notranslate"><span class="pre">iio_channels_mask</span></code> as argument. The channels must be children of
+the device associated with the mask object.</p>
+<p>The same mask is also required by <code class="docutils literal notranslate"><span class="pre">iio_device_get_sample_size</span></code>, which in v0.x
+derived the sample size from the device’s internal hidden mask. Passing an
+explicit mask gives you full control: you can compute the sample size for any
+combination of channels without changing global state.</p>
+</section>
+<section id="buffers">
+<h2>Buffers<a class="headerlink" href="#buffers" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio_buffer</span></code> object changed greatly since Libiio v0.x, and its API is now
+very different.</p>
+<p>In Libiio 1.0, buffer objects are pre-existing objects exposed by the device
+driver — they are not created by the application. You enumerate them with
+<code class="docutils literal notranslate"><span class="pre">iio_device_get_buffers_count</span></code> and retrieve one by index with
+<code class="docutils literal notranslate"><span class="pre">iio_device_get_buffer</span></code>. For the overwhelming majority of devices there is only
+one buffer, at index 0.</p>
+<p>To open a buffer for streaming, call <code class="docutils literal notranslate"><span class="pre">iio_buffer_open</span></code>, passing the buffer
+object and the channels mask you created earlier. This returns an
+<code class="docutils literal notranslate"><span class="pre">iio_buffer_stream</span></code> object that represents an opened, configured instance of
+that buffer.</p>
+<p>The buffer object gained a few API functions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_attr</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_buffer_find_attr</span></code> provide access to
+buffer-level attributes (replacing the old <code class="docutils literal notranslate"><span class="pre">iio_device_buffer_attr_read</span></code> and
+<code class="docutils literal notranslate"><span class="pre">iio_device_buffer_attr_write</span></code> families).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_scan_elements_count</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_buffer_get_scan_element</span></code> let
+you enumerate the channels that the buffer supports.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_is_output</span></code> tells you whether the buffer feeds data to the hardware
+(TX) or receives data from it (RX).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_set_data</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_buffer_get_data</span></code> store a user pointer on the
+buffer object, consistent with the same pattern on context, device and channel.</p></li>
+</ul>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream</span></code> object exposes:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_start</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_stop</span></code> to start and stop the
+hardware streaming.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_get_channels_mask</span></code> to retrieve the mask that is actually
+in use, which may contain more enabled channels than what was requested if
+the hardware requires it.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_cancel</span></code> to unblock any pending <code class="docutils literal notranslate"><span class="pre">iio_block_dequeue</span></code> calls
+from another thread.</p></li>
+</ul>
+<p>The big change since Libiio v0.x is that the buffer object does not provide
+API functions related to data streaming, or functions to access the data.</p>
+<p>Therefore, these functions have been removed:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_refill</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_buffer_push</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_buffer_push_partial</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_get_poll_fd</span></code> and <code class="docutils literal notranslate"><span class="pre">iio_buffer_set_blocking_mode</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_start</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_buffer_end</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_buffer_first</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_buffer_step</span></code></p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_buffer_foreach_sample</span></code></p></li>
+</ul>
+<p>The v1 equivalent of <code class="docutils literal notranslate"><span class="pre">iio_buffer_cancel</span></code> is <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_cancel</span></code>, called
+on the <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream</span></code> object rather than directly on the buffer.</p>
+</section>
+<section id="low-level-data-streaming-api">
+<h2>Low-level data streaming API<a class="headerlink" href="#low-level-data-streaming-api" title="Link to this heading"></a></h2>
+<p>The streaming process changed completely in Libiio v1.0, although it is
+possible to emulate the old API on top of the new low-level <code class="docutils literal notranslate"><span class="pre">iio_block</span></code> API.</p>
+<p>As its name suggests, the base object for this new API is called <code class="docutils literal notranslate"><span class="pre">iio_block</span></code>.
+A block object can be created with <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_create_block</span></code>. The only
+two arguments needed are a pointer to the <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream</span></code>, and the size (in
+bytes) of the block. A block can later be destroyed with <code class="docutils literal notranslate"><span class="pre">iio_block_destroy</span></code>.</p>
+<section id="accessing-data">
+<h3>Accessing data<a class="headerlink" href="#accessing-data" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio_block</span></code> object contains a “block” of samples (which we won’t be calling
+a “buffer” to avoid confusion with IIO’s buffer objects). The samples can be
+accessed using the following functions:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_block_start</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_block_end</span></code> to get the block’s boundaries;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_block_first</span></code> to get a pointer to a channel’s first sample in the block;</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_block_foreach_sample</span></code> to iterate over the samples contained in the block,
+passing the channels mask so that the iteration knows which channels are active.</p></li>
+</ul>
+<p>Note that there is no <code class="docutils literal notranslate"><span class="pre">iio_block_step</span></code> function, since the step size is
+basically the buffer’s sample size. You can retrieve the step size doing:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iio_channels_mask</span><span class="w"> </span><span class="o">*</span><span class="n">mask</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_buffer_stream_get_channels_mask</span><span class="p">(</span><span class="n">bs</span><span class="p">);</span>
+<span class="kt">size_t</span><span class="w"> </span><span class="n">sample_size</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_device_get_sample_size</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="n">mask</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>You can also use the same mask that was used to open the <code class="docutils literal notranslate"><span class="pre">iio_buffer</span></code>, <em>if</em>
+you know that the hardware will never report a different mask than what was
+requested. In doubt, retrieving the stream’s mask with
+<code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_get_channels_mask</span></code> is the safest option.</p>
+</section>
+<section id="enqueueing-and-dequeueing-blocks">
+<h3>Enqueueing and dequeueing blocks<a class="headerlink" href="#enqueueing-and-dequeueing-blocks" title="Link to this heading"></a></h3>
+<p>Instead of a push / refill mechanism, the new <code class="docutils literal notranslate"><span class="pre">iio_block</span></code> API works with a queue
+mechanism.</p>
+<ul>
+<li><p>To push samples to the hardware, fill a block with the samples using the
+functions described above, then call <code class="docutils literal notranslate"><span class="pre">iio_block_enqueue</span></code>. You can enqueue
+as many blocks as you have available.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_block_enqueue</span></code> takes the number of bytes to transfer and a <code class="docutils literal notranslate"><span class="pre">cyclic</span></code> flag.
+Once a block has been enqueued, it should be considered owned by the hardware,
+and therefore it is forbidden to access or modify the underlying memory. It is
+possible to reuse a block only after it’s been successfully dequeued using
+<code class="docutils literal notranslate"><span class="pre">iio_block_dequeue</span></code>.</p></li>
+<li><p>Don’t forget to call <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_start</span></code>
+to start the streaming process, either before or after enqueueing the first
+blocks.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">iio_block_dequeue</span></code> is a blocking operation, unless the <code class="docutils literal notranslate"><span class="pre">nonblock</span></code> parameter
+is set to true; in which case <code class="docutils literal notranslate"><span class="pre">-EBUSY</span></code> will be returned if the block is not
+yet ready to be dequeued.</p></li>
+<li><p>All blocks are in the “dequeued” state after creation. To refill samples from
+the hardware, you first need to “give back” all the blocks to the hardware,
+using <code class="docutils literal notranslate"><span class="pre">iio_block_enqueue</span></code> with a <code class="docutils literal notranslate"><span class="pre">bytes_used</span></code> value of 0 (which means “use
+the full block size”). The same blocks, after dequeued, will contain the
+samples received from the hardware.</p>
+<p>Note that even though you can enqueue / dequeue the blocks in any order you
+want, the blocks will be filled by the hardware in the order at which they were
+enqueued.</p>
+</li>
+</ul>
+<p>Trying to enqueue an already enqueued block or dequeue an already dequeued
+block is an invalid operation, and will result in a <code class="docutils literal notranslate"><span class="pre">-EPERM</span></code> error being
+returned.</p>
+</section>
+</section>
+<section id="optional-high-level-data-streaming-api">
+<h2>Optional high-level data streaming API<a class="headerlink" href="#optional-high-level-data-streaming-api" title="Link to this heading"></a></h2>
+<p>Additionally to the queue mechanism described above, a different, simpler API
+has been introduced, based on a new <code class="docutils literal notranslate"><span class="pre">iio_stream</span></code> object.</p>
+<p>This different API should be considered <em>optional</em> and is implemented on top of
+the queue mechanism; its purpose is only to simplify data streaming for simple
+applications.</p>
+<p>A <code class="docutils literal notranslate"><span class="pre">iio_stream</span></code> object can be created with <code class="docutils literal notranslate"><span class="pre">iio_buffer_create_stream</span></code>. It takes
+four parameters: a pointer to the <code class="docutils literal notranslate"><span class="pre">iio_buffer</span></code> object, the number of blocks
+to create (a good default is 4), the size in <em>samples</em> of each block, and the
+channels mask.</p>
+<p>This object can later be destroyed with <code class="docutils literal notranslate"><span class="pre">iio_stream_destroy</span></code>. If you need to
+unblock a pending <code class="docutils literal notranslate"><span class="pre">iio_stream_get_next_block</span></code> call from another thread, use
+<code class="docutils literal notranslate"><span class="pre">iio_stream_cancel</span></code> before destroying the stream.</p>
+<p>Finally, data streaming (be it for pushing or receiving samples) is done with
+a single function, <code class="docutils literal notranslate"><span class="pre">iio_stream_get_next_block</span></code>, which will return a pointer to
+a <code class="docutils literal notranslate"><span class="pre">iio_block</span></code> object. The returned pointer is <code class="docutils literal notranslate"><span class="pre">const</span></code>, and pointer-encodes an
+error on failure.</p>
+<p>This <code class="docutils literal notranslate"><span class="pre">iio_block</span></code> can then be read from (if receiving samples), or written to
+(if uploading samples). To receive new samples or request a new block for
+uploading samples, simply call <code class="docutils literal notranslate"><span class="pre">iio_stream_get_next_block</span></code> again.</p>
+<p>Note that when using the <code class="docutils literal notranslate"><span class="pre">iio_stream</span></code> API, it is invalid to call
+<code class="docutils literal notranslate"><span class="pre">iio_block_enqueue</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_block_dequeue</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_start</span></code> or
+<code class="docutils literal notranslate"><span class="pre">iio_buffer_stream_stop</span></code> directly — the stream manages those internally.</p>
+</section>
+<section id="trigger-api">
+<h2>Trigger API<a class="headerlink" href="#trigger-api" title="Link to this heading"></a></h2>
+<p>The signature of <code class="docutils literal notranslate"><span class="pre">iio_device_get_trigger</span></code> changed in v1.0. In v0.x it
+returned an integer error code and filled in the trigger pointer through an
+output parameter. In v1.0, it follows the same pointer-encoded error convention
+as the rest of the API:</p>
+<div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="cm">/* v0.x */</span>
+<span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iio_device</span><span class="w"> </span><span class="o">*</span><span class="n">trigger</span><span class="p">;</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_device_get_trigger</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span><span class="w"> </span><span class="o">&amp;</span><span class="n">trigger</span><span class="p">);</span>
+
+<span class="cm">/* v1.0 */</span>
+<span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iio_device</span><span class="w"> </span><span class="o">*</span><span class="n">trigger</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_device_get_trigger</span><span class="p">(</span><span class="n">dev</span><span class="p">);</span>
+<span class="kt">int</span><span class="w"> </span><span class="n">ret</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_err</span><span class="p">(</span><span class="n">trigger</span><span class="p">);</span>
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">iio_device_set_trigger</span></code> is unchanged.</p>
+</section>
+<section id="timeout-constants">
+<h2>Timeout constants<a class="headerlink" href="#timeout-constants" title="Link to this heading"></a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">iio_context_set_timeout</span></code> function’s parameter type changed from
+<code class="docutils literal notranslate"><span class="pre">unsigned</span> <span class="pre">int</span></code> in v0.x to <code class="docutils literal notranslate"><span class="pre">int</span></code> in v1.0. This was necessary to accommodate
+three new sentinel values:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Constant</p></th>
+<th class="head"><p>Value</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IIO_TIMEOUT_BACKEND</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">0</span></code></p></td>
+<td><p>Use the backend’s built-in default timeout</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">IIO_TIMEOUT_INFINITE</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">-1</span></code></p></td>
+<td><p>Wait indefinitely (no timeout)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">IIO_TIMEOUT_NONBLOCK</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">INT_MIN</span></code></p></td>
+<td><p>Return immediately if no data is ready</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The same sentinel values apply to the <code class="docutils literal notranslate"><span class="pre">timeout_ms</span></code> field of
+<code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code> when creating a context.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="install/source.html" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Building from Source</a>
+    <a href="theory.html" title="Next document (Alt+Shift+RightArrow)" class="next">Theory of Operation</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
