@@ -12,7 +12,6 @@
 #ifndef __VITA49_2_PACKET_TYPES_H__
 #define __VITA49_2_PACKET_TYPES_H__
 
-#include <iio/iio.h>
 #include "vita49_2_packet_elements.h"
 
 #include <stdint.h>
@@ -242,8 +241,7 @@ struct vita49_2_ackX_extension_packet {
  * @param max_words Max size of the destination buffer that the packet gets serialized to.
  * @return ssize_t 
  */
-__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words, const struct iio_channel *i_channel, const struct iio_channel *q_channel);
-// __vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words);
+__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words);
 
 /**
  * @brief Parses a buffer of 32-bit words into a vita49_2_data_packet structure. 

@@ -186,7 +186,7 @@ int main()
             // Unrecognized Option
             default:
                 
-                fprintf(stderr, "Unrecognized option '%d'.\n\n", option);
+                fprintf(stderr, "Unrecognized option '%c'.\n\n", option);
                 continue;
         }
 

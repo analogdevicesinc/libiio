@@ -41,12 +41,8 @@
 
 // User Set
 #define N_TX_SAMPLES 128
-#define RX_OVERSAMPLE 4
-#define SUCCESSIVE_BUFFER_TO_CHECK 31
-#define N_RX_BLOCKS 4
 
 // Calculated/Constant
-#define N_RX_SAMPLES N_TX_SAMPLES *RX_OVERSAMPLE
 #define N_CHANNELS 2
 #define BYTES_PER_SAMPLE 2
 
@@ -61,7 +57,20 @@ struct iio_channels_mask *txmask;
 struct iio_buffer *txbuf;
 struct iio_block *txblock;
 
-#define DEFAULT_SLEEP 3
+#define DEFAULT_SLEEP_S 3
+
+// For TX we want to take a value between -1/+1 and scale it to the full range of the 16-bit DAC
+// which is -32768 to 32767. In case we get values outside of -1/+1, we need to clamp them.
+int16_t float_to_i16_tx(float sample) 
+{
+    if (sample > 1.0 || sample < -1.0)
+        fprintf(stderr, "Warning: Sample '%f' will be clamped because it is outside of the -1.0 to 1.0 range.\n", sample);
+
+    // Clamp to [-1.0, 1.0]
+    float clamped = fmaxf(-1.0f, fminf(1.0f, sample));
+    // Scale to int16_t range
+    return (int16_t)(clamped * 32767.0f);
+}
 
 int main(int argc, char** argv) 
 {
@@ -87,12 +96,15 @@ int main(int argc, char** argv)
     txmask = iio_create_channels_mask(iio_device_get_channels_count(tx));
     assertm(txmask, "Unable to create TX mask");
 
+    // Channel 0 (In-Phase)
     chn = iio_device_find_channel(tx, "voltage0", true);
     assertm(chn, "Unable to find TX channel");
     iio_channel_enable(chn, txmask);
-    // chn = iio_device_find_channel(tx, "voltage1", true);
-    // assertm(chn, "Unable to find TX channel");
-    // iio_channel_enable(chn, txmask);
+
+    // Channel 1 (Quadrature)
+    chn = iio_device_find_channel(tx, "voltage1", true);
+    assertm(chn, "Unable to find TX channel");
+    iio_channel_enable(chn, txmask);
 
     txbuf = iio_device_create_buffer(tx, 0, txmask);
     assertm(txbuf, "Unable to create TX buffer");
@@ -115,17 +127,14 @@ int main(int argc, char** argv)
     // const float phase_step = two_pi / N_TX_SAMPLES;
     const float phase_step = (two_pi) / 128;
 
-    const int16_t amplitude = 2047;
-
     p_end = iio_block_end(txblock);
     p_inc = iio_device_get_sample_size(tx, txmask);
     chn = iio_device_find_channel(tx, "voltage0", true);
 
     for (p_dat = iio_block_first(txblock, chn); p_dat < p_end; p_dat += p_inc / sizeof(*p_dat)) 
     {
-        // Bitshift 4 bits up. During loopback hardware will shift back 4 bits.
-        p_dat[0] = (int16_t)(amplitude * cosf(phase_step * idx));;
-        p_dat[1] = (int16_t)(amplitude * sinf(phase_step * idx));;
+        p_dat[0] = float_to_i16_tx(cosf(phase_step * idx));
+        p_dat[1] = float_to_i16_tx(sinf(phase_step * idx));
         idx++;
     }
 
@@ -143,8 +152,6 @@ int main(int argc, char** argv)
         fprintf(stderr, "Could not enable TX buffer. (%d) %s\n", err, error_msg);
         goto cleanup;
     }
-
-    getchar();
 
 
     // Socket for sending VITA 49.2 Control Packets
@@ -200,12 +207,11 @@ int main(int argc, char** argv)
 
     int sleep_us;
     if (argc == 1)
-        sleep_us = DEFAULT_SLEEP;
+        sleep_us = DEFAULT_SLEEP_S * 1e6;
     else
-        sleep_us = atoi(argv[1]);
+        sleep_us = atoi(argv[1]) * 1e6;
 
     printf("Sending I/Q samples request every %d seconds\n", sleep_us);
-    sleep_us *= 1e6;
 
     // Request samples on an interval
     while (1)

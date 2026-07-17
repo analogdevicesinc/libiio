@@ -4,8 +4,7 @@ add_library(vita49_2 vita49_2_packet_types.c vita49_2_packet_elements.c)
 
 target_include_directories(vita49_2 PUBLIC
     $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}>
-        $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
-    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include/iio>
+    $<BUILD_INTERFACE:${CMAKE_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
 )
 

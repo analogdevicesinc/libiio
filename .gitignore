@@ -16,7 +16,7 @@ cmake_install.cmake
 install_manifest.txt
 Makefile
 build/
-build_64/
+build_*/
 
 Doxyfile
 doxygen_sqlite3.db

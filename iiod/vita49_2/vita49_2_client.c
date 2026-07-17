@@ -35,7 +35,7 @@
 #include <linux/limits.h>
 #include <dlfcn.h>
 
-#define UDP_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
+#define VITA_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
 
 // ====================================================================================================================================
 // Streaming related parameters for the RX and TX I/Q buffers
@@ -53,13 +53,14 @@
 
 #define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent or new VITA 49.2 connections/packet streams.
 
-#define CONTEXT_PACKET_INTERVAL_S 5 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
+#define CONTEXT_PACKET_INTERVAL_S 2 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
 
 #define PLUGINS_DIRECTORY "./"				// Directory containing the plugins used for command sequences
 #define VALIDATE_SYMBOL "validate_sequence" // Name of the function in each command sequence plugin for validating the commands
 #define EXECUTE_SYMBOL "execute_sequence"	// Name of the function in each command sequence plugin for executing the commands
 #define NAME_SYMBOL "get_plugin_name"		// Name of the function that returns the name of the plugin
 
+#define TCP_DESTINATION "192.168.2.11" // Using this for sending packets to DIFI in GNU Radio
 
 // ==============================================================
 // INTERNAL FUNCTION DECLARATIONS ONLY, NOT OUTWARDLY EXPOSED
@@ -334,12 +335,14 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	socket_creation:
 	{}
 
-	int socket_fd;
+	// UDP Socket
+
+	int udp_socket_fd;
 	struct sockaddr_in local_address;
 
 	// Socket creation
-	socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (socket_fd < 0) 
+	udp_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (udp_socket_fd < 0) 
 	{
 		fprintf(stderr, "vita49_2_client: socket creation failed\n");
 		return;
@@ -349,37 +352,42 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	memset(&local_address, 0, sizeof(local_address));
 	local_address.sin_family = AF_INET;
 	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
-	local_address.sin_port = htons(UDP_PORT);
+	local_address.sin_port = htons(VITA_PORT);
 
 	// Binding socket
-	if (bind(socket_fd, (struct sockaddr *)&local_address, sizeof(local_address)) < 0) 
+	if (bind(udp_socket_fd, (struct sockaddr *)&local_address, sizeof(local_address)) < 0) 
 	{
 		fprintf(stderr, "vita49_2_client: UDP socket bind failed\n");
-		close(socket_fd);
+		close(udp_socket_fd);
 		return;
 	}
 
 	fprintf(stderr, "vita49_2_client: VITA 49.2 Packet Listener started.\n");
 
 
-	int tcp_socket;
-	tcp_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (tcp_socket == -1) {
-        printf("Socket creation failed.\n");
-        return -1;
-    }
+	// TCP Socket
 
-	struct sockaddr_in server_addr;
-    server_addr.sin_family = AF_INET;
-    server_addr.sin_port = htons(4991); // Port 80
-    server_addr.sin_addr.s_addr = inet_addr("192.168.2.11"); // Example IP
+	int tcp_socket_fd;
+	tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
 
-    // 3. Connect (Client role)
-    if (connect(tcp_socket, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-        printf("Connection failed.\n");
-        return -1;
+	// If socket creation fails, we'll accept that since the UDP socket succeeded
+    if (tcp_socket_fd == -1) 
+	{
+        printf("TCP socket creation failed.\n");
     }
-    
+	else
+	{
+		struct sockaddr_in server_addr;
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_port = htons(VITA_PORT);
+		server_addr.sin_addr.s_addr = inet_addr(TCP_DESTINATION);
+
+		// Connect. Again if this fails we'll let it pass since UDP succeeded.
+		if (connect(tcp_socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
+		{
+			printf("TCP socket connection failed. (%d) %s\n", errno, strerror(errno));
+		}
+	}
 
 	// ==================================================================================
 	// CREATING BUFFER + STREAM FOR I/Q DATA (High level iio_stream API from Libiio v1.x)
@@ -403,7 +411,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	char rx_device_name[] = "cf-ad9361-lpc";
 	char tx_device_name[] = "cf-ad9361-dds-core-lpc";
 
-	struct iio_channel *q_channel_rx, *i_channel_rx, *channel, *i_channel;
+	struct iio_channel *channel, *i_channel;
 
 	// ==============================================================
 	// CONFIGURING RX DEVICE
@@ -434,8 +442,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	}
 
 	// Adding I (voltage0) and Q (voltage1) to the mask
-	i_channel_rx = iio_device_find_channel(rx_device, "voltage0", false);
-	if (i_channel_rx == NULL)
+	i_channel = iio_device_find_channel(rx_device, "voltage0", false);
+	if (i_channel == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for RX device.\n");
 		rx_device = NULL;
@@ -444,10 +452,10 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		goto tx_configuration;
 	}
 
-	iio_channel_enable(i_channel_rx, rx_channel_mask);
+	iio_channel_enable(i_channel, rx_channel_mask);
 
-	q_channel_rx = iio_device_find_channel(rx_device, "voltage1", false);
-	if (q_channel_rx == NULL)
+	channel = iio_device_find_channel(rx_device, "voltage1", false);
+	if (channel == NULL)
 	{
 		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
 		rx_device = NULL;
@@ -456,7 +464,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		goto tx_configuration;
 	}
 
-	iio_channel_enable(q_channel_rx, rx_channel_mask);
+	iio_channel_enable(channel, rx_channel_mask);
 
 	// Creating a buffer
 	struct iio_buffer *rx_buffer = iio_device_create_buffer(rx_device, 0, rx_channel_mask);
@@ -595,7 +603,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	
 	// Fire for the first time in 5 seconds
 	timer_specs.it_value.tv_nsec = 0;
-	timer_specs.it_value.tv_sec = 5;
+	timer_specs.it_value.tv_sec = 2;
 
 	// Fire the timer on an interval defined by CONTEXT_PACKET_INTERVALS_S after the first time it fires
 	timer_specs.it_interval.tv_nsec = 0;
@@ -625,7 +633,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	wake_up_events[0].revents = 0;
 
 	// The UDP socket
-	wake_up_events[1].fd = socket_fd;
+	wake_up_events[1].fd = udp_socket_fd;
 	wake_up_events[1].events = POLLIN;
 	wake_up_events[1].revents = 0;
 
@@ -911,7 +919,9 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	uint32_t next_ackx_ackv_stream_id = 0;
 	uint32_t next_acks_stream_id = 0;
 
-	while (socket_fd >= 0) 
+	// goto start;
+
+	while (udp_socket_fd >= 0) 
 	{
 		// ==============================================================
 		// WAITING FOR EVENT TO WAKE UP THREAD
@@ -942,9 +952,9 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Data is available on the socket.
 		else if (wake_up_events[1].revents & POLLIN)
 		{
-			received = recvfrom(socket_fd, receive_buffer, sizeof(receive_buffer), 0, (struct sockaddr*)&sender_address, &address_length);
+			received = recvfrom(udp_socket_fd, receive_buffer, sizeof(receive_buffer), 0, (struct sockaddr*)&sender_address, &address_length);
 			destination_address = sender_address;
-			destination_address.sin_port = htons(UDP_PORT);
+			destination_address.sin_port = htons(VITA_PORT);
 
 			// Assume that a 0-length datagram implies a shutdown was called on the socket
 			if (received <= 0)
@@ -1055,13 +1065,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 					// ssize_t ackV_ret_value;
 					bool ackX_warning_init_error = false;		// Indicates if there was an issue while setting the warning fields in the AckX Packet
 
-					// If no CIF mappings were loaded, then we're unable to process any of the commands in the Control Packet, nor can we generate any Ack Packets.
-					if (vita49_2_cif_mappings_list == NULL)
-					{
-						fprintf(stderr, "vita49_2_client: No CIF mappings file has been provided. Received Command Packet is ignored.\n");
-						break;
-					}
-
 					struct vita49_2_control_packet control_packet;
 					if ((ret_value = vita49_2_parse_control_packet(receive_buffer, received/4, &control_packet)) < 0)
 					{
@@ -1085,118 +1088,124 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 						unsigned long long count = 0;
 						struct timespec start, end;
-						while (1)
-						{
 
-						// Timestamp for a packet that has multiple samples should be when the first sample was recorded.
-						// I have no good way of determining latency of a call to libiio to grab data, so I'll record the timestamp
-						// before the data has been retrieved.
-						time_data_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
+						start:
+						// while (1)
+						// {
 
-						// Fetching a block from the stream
-						rx_block = iio_stream_get_next_block(rx_stream);
-						if ((ret_value = iio_err(rx_block)) < 0)
-						{
-							iio_strerror(ret_value, iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
-							fprintf(stderr, "vita49_2_client: Encountered an error while trying to query I/Q data. (%d) %s\n", -ret_value, iio_error_buffer);
+							// Timestamp for a packet that has multiple samples should be when the first sample was recorded.
+							// I have no good way of determining latency of a call to libiio to grab data, so I'll record the timestamp
+							// before the data has been retrieved.
+							time_data_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
 
-							// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
-							continue;
-						}
-
-						// Now we have to write the data in this block to the Signal Data Packet's payload buffer.
-						// Instead of copying memory (wasteful), I'll just map the packet's buffer pointer to the
-						// block that we're reading from.
-
-						// I don't need to check that this payload pushes over the 65535 word limit because I specified
-						// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
-						time_data_packet.payload = (union vita49_2_iq_item *)(iio_block_first(rx_block, i_channel_rx));
-						ssize_t sample_size_bytes = iio_device_get_sample_size(rx_device, rx_channel_mask);
-
-						// Means there was an error with capturing the data if the sample size is less than 0 bytes or more than 4 bytes.
-						// It should either be 4 bytes (meaning the I and Q components are both 16 bits) or 2 bytes (meaning the I and Q components
-						// are both 8 bits)
-						if (sample_size_bytes != 2 && sample_size_bytes != 4)
-						{
-							fprintf(stderr, "vita49_2_client: I/Q sample size is invalid while retrieving I/Q data. Sample Size (bytes) = %zd\n", sample_size_bytes);
-							break;
-						}
-
-						// ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block) + sample_size_bytes) - (uint32_t *)(iio_block_first(rx_block, i_channel))) * sample_size_bytes)/4;
-						ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel_rx))) * sample_size_bytes)/4;
-
-						// If this failed as well, then we shouldn't send the packet at all
-						if (payload_size_words <= 0)
-						{
-							fprintf(stderr, "vita49_2_client: Error while reading I/Q data from the RX block. Number of words read is invalid (%zd)\n", payload_size_words);
-							break;
-						}
-
-						time_data_packet.payload_num_words = payload_size_words;
-
-						// Next we have to set the Stream ID. We can check if it exists in the existing Stream ID table
-						// and insert it if it doesn't.
-						stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
-						stream_entry.host_port = sender_address.sin_port;
-						stream_entry.packet_class_code = VITA49_2_PKT_CLASS_TIME_DATA;
-						stream_entry.stream_id = next_time_data_stream_id;
-
-						// Error occurred
-						if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
-						{
-							fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Signal Time Data Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
-							break;
-						}
-
-						// If the return value is greater than the last_insertion_index, that means a new element was inserted.
-						if (ret_value > last_insertion_index)
-						{
-							time_data_packet.prologue.stream_id = stream_entry.stream_id;
-							time_data_packet.prologue.header.packet_count = 0;
-						
-							device_stream_id_table[ret_value].packet_count = 0;
-
-							last_insertion_index++;
-							next_time_data_stream_id++;
-						}
-						// Otherwise that means the element already existed in the array.
-						else
-						{
-							time_data_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
-							time_data_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
-						}
-
-						// Now to write that data to a buffer and send it
-						time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4, i_channel_rx, q_channel_rx);
-						// time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4);
-						if (time_data_packet_size <= 0)
-						{
-							fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet. (%d) %s\n", time_data_packet_size, (time_data_packet_size < 0) ? strerror(time_data_packet_size) : "");
-							continue;							
-						}
-
-						// if (sendto(socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-						// 	fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
-						
-						if (send(tcp_socket, send_buffer, time_data_packet_size*4, 0) <= 0)
-							fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over TCP. (%d) %s\n", errno, strerror(errno));
-						else
-						{
-							// printf("Sent packet %llu\n", count);
-							count++;
-							if (count % 100 == 0)
+							// Fetching a block from the stream
+							rx_block = iio_stream_get_next_block(rx_stream);
+							if ((ret_value = iio_err(rx_block)) < 0)
 							{
-								clock_gettime(CLOCK_MONOTONIC, &end);
-								double time = (end.tv_sec - start.tv_sec) + 
-														(end.tv_nsec - start.tv_nsec) / 1e9;
-								printf("Last 100 packets: %f seconds\n", time);
-								clock_gettime(CLOCK_MONOTONIC, &start);
+								iio_strerror(ret_value, iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+								fprintf(stderr, "vita49_2_client: Encountered an error while trying to query I/Q data. (%d) %s\n", -ret_value, iio_error_buffer);
+
+								// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
+								continue;
 							}
-						}
-						}
+
+							// Now we have to write the data in this block to the Signal Data Packet's payload buffer.
+							// Instead of copying memory (wasteful), I'll just map the packet's buffer pointer to the
+							// block that we're reading from.
+
+							// I don't need to check that this payload pushes over the 65535 word limit because I specified
+							// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
+							time_data_packet.payload = (union vita49_2_iq_item *)(iio_block_first(rx_block, i_channel));
+							ssize_t sample_size_bytes = iio_device_get_sample_size(rx_device, rx_channel_mask);
+
+							// Means there was an error with capturing the data if the sample size is less than 0 bytes or more than 4 bytes.
+							// It should either be 4 bytes (meaning the I and Q components are both 16 bits) or 2 bytes (meaning the I and Q components
+							// are both 8 bits)
+							if (sample_size_bytes != 2 && sample_size_bytes != 4)
+							{
+								fprintf(stderr, "vita49_2_client: I/Q sample size is invalid while retrieving I/Q data. Sample Size (bytes) = %zd\n", sample_size_bytes);
+								break;
+							}
+
+							ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel))) * sample_size_bytes)/4;
+
+							// If this failed as well, then we shouldn't send the packet at all
+							if (payload_size_words <= 0)
+							{
+								fprintf(stderr, "vita49_2_client: Error while reading I/Q data from the RX block. Number of words read is invalid (%zd)\n", payload_size_words);
+								break;
+							}
+
+							time_data_packet.payload_num_words = payload_size_words;
+
+							// Next we have to set the Stream ID. We can check if it exists in the existing Stream ID table
+							// and insert it if it doesn't.
+							stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+							stream_entry.host_port = sender_address.sin_port;
+							stream_entry.packet_class_code = VITA49_2_PKT_CLASS_TIME_DATA;
+							stream_entry.stream_id = next_time_data_stream_id;
+
+							// Error occurred
+							if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Signal Time Data Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
+								break;
+							}
+
+							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+							if (ret_value > last_insertion_index)
+							{
+								time_data_packet.prologue.stream_id = stream_entry.stream_id;
+								time_data_packet.prologue.header.packet_count = 0;
+							
+								device_stream_id_table[ret_value].packet_count = 0;
+
+								last_insertion_index++;
+								next_time_data_stream_id++;
+							}
+							// Otherwise that means the element already existed in the array.
+							else
+							{
+								time_data_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+								time_data_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+							}
+
+							// Now to write that data to a buffer and send it
+							time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4);
+							if (time_data_packet_size <= 0)
+							{
+								fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet. (%d) %s\n", time_data_packet_size, (time_data_packet_size < 0) ? strerror(time_data_packet_size) : "");
+								continue;							
+							}
+
+							if (sendto(udp_socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
+							else
+							{
+								count++;
+								if (count % 100 == 0)
+								{
+									clock_gettime(CLOCK_MONOTONIC, &end);
+									double time = (end.tv_sec - start.tv_sec) + 
+															(end.tv_nsec - start.tv_nsec) / 1e9;
+									printf("Last 100 packets: %f seconds\n", time);
+									clock_gettime(CLOCK_MONOTONIC, &start);
+								}
+							}
+
+							if (tcp_socket_fd != -1)
+								if (send(tcp_socket_fd, send_buffer, context_packet_size*4, 0) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over TCP. (%d) %s\n", errno, strerror(errno));
+						// }
 						break;
 					}
 
+					// If no CIF mappings were loaded, then we're unable to process any of the commands in the Control Packet, nor can we generate any Ack Packets.
+					if (vita49_2_cif_mappings_list == NULL)
+					{
+						fprintf(stderr, "vita49_2_client: No CIF mappings file has been provided. Received Command Packet is ignored.\n");
+						break;
+					}
 
 					// If an AckV packet was requested, we need to validate the commands in the Control Packet and send
 					// back the AckV packet
@@ -1271,8 +1280,15 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						// Now to write that data to a buffer and send it
 						if ((ackV_packet_size = vita49_2_serialize_ackV_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 							fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet. (%d) %s\n", ackV_packet_size, (ackV_packet_size < 0) ? strerror(-ackV_packet_size) : "");
-						else if (sendto(socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-							fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP. (%d) %s\n", errno, strerror(errno));
+						else
+						{ 
+							if (sendto(udp_socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP. (%d) %s\n", errno, strerror(errno));
+						
+							if (tcp_socket_fd != -1)
+								if (send(tcp_socket_fd, send_buffer, ackV_packet_size*4, 0) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over TCP. (%d) %s\n", errno, strerror(errno));
+						}
 
 						cleanup_ackv:
 						free(ackV_packet.warnings.cif1_warnings);
@@ -1396,8 +1412,15 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								// Now to write that data to a buffer and send it
 								if ((ackX_packet_size = vita49_2_serialize_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 									fprintf(stderr, "vita49_2_client: Failed to serialize AckX Packet. (%d) %s\n", ackX_packet_size, (ackX_packet_size < 0) ? strerror(-ackX_packet_size) : "");
-								else if (sendto(socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-									fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP. (%d) %s\n", errno, strerror(errno));
+								else
+								{
+									if (sendto(udp_socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+										fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP. (%d) %s\n", errno, strerror(errno));
+								
+									if (tcp_socket_fd != -1)
+										if (send(tcp_socket_fd, send_buffer, ackX_packet_size*4, 0) <= 0)
+											fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over TCP. (%d) %s\n", errno, strerror(errno));	
+								}
 							}
 							// No AckX Packet requested
 							else
@@ -1515,9 +1538,15 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						// Now to write that data to a buffer and send it
 						if ((ackS_packet_size = vita49_2_serialize_ackS_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
 							fprintf(stderr, "vita49_2_client: Failed to serialize AckS Packet. (%d) %s\n", ackS_packet_size, (ackS_packet_size < 0) ? strerror(-ackS_packet_size) : "");
-						else if (sendto(socket_fd, send_buffer, ackS_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-							fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP. (%d) %s\n", errno, strerror(errno));
-
+						else 
+						{
+							if (sendto(udp_socket_fd, send_buffer, ackS_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP. (%d) %s\n", errno, strerror(errno));
+							
+							if (tcp_socket_fd != -1)
+								if (send(tcp_socket_fd, send_buffer, context_packet_size*4, 0) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over TCP. (%d) %s\n", errno, strerror(errno));
+						}
 						cleanup_ackS:
 						free(ackS_packet.cif1);
 						free(ackS_packet.cif2);
@@ -1786,10 +1815,14 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 				goto cleanup_context;
 			}
 
-			if (sendto(socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+			if (sendto(udp_socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
 				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP. (%d) %s\n", errno, strerror(errno));
 			else
 				previous_context_packet = context_packet;
+
+			if (tcp_socket_fd != -1)
+				if (send(tcp_socket_fd, send_buffer, context_packet_size*4, 0) <= 0)
+					fprintf(stderr, "vita49_2_client: Failed to send Context Packet over TCP. (%d) %s\n", errno, strerror(errno));
 
 			cleanup_context:
 			free(context_packet.cif1);

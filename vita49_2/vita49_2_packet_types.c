@@ -22,8 +22,7 @@
 #endif
 
 
-__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words, const struct iio_channel *i_channel, const struct iio_channel *q_channel)
-// __vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words)
+__vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* const pkt, uint32_t* const buf, size_t max_words)
 {
 	if (pkt == NULL || buf == NULL || max_words == 0)
 		return -EINVAL;
@@ -36,27 +35,14 @@ __vrt_api ssize_t vita49_2_serialize_data_packet(struct vita49_2_data_packet* co
 
 	ssize_t buffer_index = ret_value;
 
-	// Payload
+	// Payload (leaving it in host order which is most likely little endian since DIFI's parser in GNU Radio assumes the payload is little endian)
 	if (pkt->payload && pkt->payload_num_words > 0) 
 	{
 		// Checking if we have enough space in the buffer for the payload, as well as the trailer (if applicable)
 		if ((buffer_index + pkt->payload_num_words) > (max_words - (pkt->has_trailer ? 1 : 0))) 
 			return -ENOBUFS;
 
-		// We have to convert from hardware format to host format
-		union vita49_2_iq_item item = {0};
-		union vita49_2_iq_item before;
-
-
-		for (uint16_t payload_index = 0; payload_index < pkt->payload_num_words; payload_index++)
-		{
-			before.word = pkt->payload[payload_index].word;
-			
-			// buf[buffer_index + payload_index] = htonl(pkt->payload[payload_index].word);
-			// iio_channel_convert(i_channel, &item.in_phase, &pkt->payload[payload_index].in_phase);
-			// iio_channel_convert(q_channel, &item.quadrature, &pkt->payload[payload_index].quadrature);
-			buf[buffer_index + payload_index] = htonl(item.word);
-		}
+		memcpy(&buf[buffer_index], pkt->payload, pkt->payload_num_words*4);
 		buffer_index += pkt->payload_num_words;
 	}
 

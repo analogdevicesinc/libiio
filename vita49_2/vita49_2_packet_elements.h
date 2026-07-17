@@ -12,6 +12,12 @@
 #ifndef __VITA49_2_PACKET_ELEMENTS_H__
 #define __VITA49_2_PACKET_ELEMENTS_H__
 
+#include <stdint.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <sys/types.h>
+#include <assert.h>
+
 #if !defined(__cplusplus) && !defined(static_assert)
 # if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 #  define static_assert _Static_assert
@@ -22,12 +28,6 @@
 	typedef char __VITA49_2_STATIC_ASSERT_MAKE(vita49_2_static_assert_, __LINE__)[(cond) ? 1 : -1]
 # endif
 #endif
-
-#include <stdint.h>
-#include <stdbool.h>
-#include <stddef.h>
-#include <sys/types.h>
-#include <assert.h>
 
 // "Organizationally Unique Identifier". ADI has several OUIs, I just chose the first one: https://regauth.standards.ieee.org/standards-ra-web/pub/view.html#registries
 // OUI is one of the component fields of the Class ID field.
@@ -262,6 +262,8 @@ union vita49_2_header {
 
 };
 
+static_assert(sizeof(union vita49_2_header) == 4, "VITA 49.2 Header size doesn't equal 32 bits.");
+
 /**
  * @union vita_4_2_trailer
  * @brief VITA 49.2 Trailer (32 bits)
@@ -290,6 +292,8 @@ union vita49_2_trailer {
 	};
 
 };
+
+static_assert(sizeof(union vita49_2_trailer) == 4, "VITA 49.2 Trailer size doesn't equal 32 bits.");
 
 /**
  * @struct vita49_2_class_id
@@ -346,6 +350,8 @@ struct vita49_2_class_id {
 
 	#endif
 };
+
+static_assert(sizeof(struct vita49_2_class_id) == 8, "VITA 49.2 Header size doesn't equal 64 bits.");
 
 
 /**
@@ -412,7 +418,7 @@ union vita49_2_iq_item {
 
 };
 
-static_assert(sizeof(union vita49_2_iq_item) == 4, "IQ item doesn't equal 32 bits.");
+static_assert(sizeof(union vita49_2_iq_item) == 4, "VITA 49.2 IQ item union size doesn't equal 32 bits.");
 
 /**
  * @union vita49_2_cam_field
@@ -511,6 +517,8 @@ union vita49_2_control_cam_field {
 		#endif
 	};
 };
+
+static_assert(sizeof(union vita49_2_control_cam_field) == 4, "VITA 49.2 Control CAM Field union size doesn't equal 32 bits.");
 
 /**
  * @union vita49_2_cam_field
@@ -611,6 +619,8 @@ union vita49_2_ack_cam_field {
 	};
 };
 
+static_assert(sizeof(union vita49_2_ack_cam_field) == 4, "VITA 49.2 Control CAM Field union size doesn't equal 32 bits.");
+
 /**
  * @struct vita49_2_command_prologue
  * @brief VITA 49.2 Command Packet Prologue (exists in all Command-type packets)
@@ -710,6 +720,8 @@ union vita49_2_warning_error_indicators {
 	};
 
 };
+
+static_assert(sizeof(union vita49_2_warning_error_indicators) == 4, "VITA 49.2 Warning/Error Indicators Field union size doesn't equal 32 bits.");
 
 /**
  * @union vita49_2_control_extension_description
