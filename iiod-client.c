@@ -1932,7 +1932,6 @@ int iiod_client_reg_write(struct iiod_client *client, const struct iio_device *d
 	struct iiod_io *io = iiod_responder_get_default_io(client->responder);
 	struct iiod_command cmd;
 	struct iiod_buf buf;
-	int ret;
 
 	cmd.op = IIOD_OP_REG_WRITE;
 	cmd.dev = (uint8_t)iio_device_get_index(dev);
@@ -1941,11 +1940,7 @@ int iiod_client_reg_write(struct iiod_client *client, const struct iio_device *d
 	buf.ptr = &value;
 	buf.size = sizeof(value);
 
-	ret = iiod_io_send_command(io, &cmd, &buf, 1);
-	if (ret < 0)
-		return ret;
-
-	return iiod_io_wait_for_command_done(io);
+	return iiod_io_exec_command(io, &cmd, &buf, NULL);
 }
 
 int iiod_client_nop(struct iiod_client *client)
