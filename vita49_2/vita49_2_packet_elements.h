@@ -200,7 +200,7 @@ enum vita49_2_information_class_codes {
 };
 
 /**
- * @enum vita49_2_control_extension_data_types
+ * @enum vita49_2_control_data_types
  * @brief Common data types used in the libiio VITA 49.2 subsystem.
  * 
  * The Control Extension Packet is for issuing controls that don't map well to CIF fields, such as the "frequency-division-duplex-mode-enable"
@@ -208,9 +208,9 @@ enum vita49_2_information_class_codes {
  * create CIF-like structures, thus we have to rely on indicator bits to tell us how to interpret the payload in a Control Extension Packet
  * such as the datatype for one of the attributes we're trying to modify.
  * 
- * This is not a standard VITA 49.2 definition. This is a custom enum definition for ADI's Control Extension Packets.
+ * This is not a standard VITA 49.2 definition.
  */
-enum vita49_2_control_extension_data_types {
+enum vita49_2_control_data_types {
 	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL 	= 0,	// long long
 	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F		= 1,	// float
 	VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D		= 2,	// double
@@ -753,7 +753,7 @@ union vita49_2_control_extension_description {
 			uint32_t option:3;		// Some attributes have a fixed set of string values/options, such as "gain_control_mode" which can be "manual", "fast_attack", "slow_attack", or "hybrid". The "option" field specifies which option is being used. For example, "manual" would correspond to 0, "fast_attack" would be 1, etc... This numbering is based on the order of the options when printing the "<attribute name>_available" file descriptor (EX: gain_control_mode_available)
 			uint32_t mapping:8;		// The CIF mapping bit this corresponds to in the <device_name>_mapping.conf, EX: 0, 1, 2, 3...
 			uint32_t encoding:2;	// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
-			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
+			uint32_t data_type:3;	// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_data_types enum)
 
 				// Explanation of "4 = String":
 					// Some attributes have a fixed set of string values/options. Rather than packing a string into a VITA packet,
@@ -776,7 +776,7 @@ union vita49_2_control_extension_description {
 			// Data Metadata
 			uint32_t data_length:8;				// Number of 32-bit words that the data occupies. Used if the data type is a string and thus the length is otherwise unknown.
 			uint32_t encoding:2;				// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
-			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
+			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_data_types enum)
 
 			// Attribute Metadata
 			uint32_t is_output:1;				// True if the attribute corresponds to an output
@@ -793,7 +793,7 @@ union vita49_2_control_extension_description {
 			uint32_t is_output:1;				// True if the attribute corresponds to an output
 
 			// Data Metadata
-			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_extension_data_types enum)
+			uint32_t data_type:3;				// 0 = Long Long, 1 = Float, 2 = Double, 3 = Bool, 4 = String (see the vita49_2_control_data_types enum)
 			uint32_t encoding:2;				// 0 = None, 1 = 9.7, 2 = 10.6, 3 = 44.20 (see the vita49_2_control_extension_encoding_types enum)
 			uint32_t data_length:8;				// Number of 32-bit words that the data occupies. Used if the data type is a string and thus the length is otherwise unknown.
 

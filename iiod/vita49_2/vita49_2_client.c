@@ -56,9 +56,9 @@
 #define CONTEXT_PACKET_INTERVAL_S 2 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
 
 #define PLUGINS_DIRECTORY "./"				// Directory containing the plugins used for command sequences
-#define VALIDATE_SYMBOL "validate_sequence" // Name of the function in each command sequence plugin for validating the commands
-#define EXECUTE_SYMBOL "execute_sequence"	// Name of the function in each command sequence plugin for executing the commands
-#define NAME_SYMBOL "get_plugin_name"		// Name of the function that returns the name of the plugin
+#define VALIDATE_SYMBOL "validate_control_packet" 	// Name of the function in each command sequence plugin for validating the commands
+#define EXECUTE_SYMBOL "execute_control_packet"		// Name of the function in each command sequence plugin for executing the commands
+#define IDENTIFY_SYMBOL "identify"					// Name of the function that determines whether there's a device that this plugin is associated with
 
 #define TCP_DESTINATION "192.168.2.11" // Using this for sending packets to DIFI in GNU Radio
 
@@ -78,21 +78,6 @@
 ssize_t _insert_stream_id(struct vita49_2_stream_entry* const array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item);
 
 /**
- * @brief Add a CIF-to-hardware mapping node to the FRONT of the mappings linked list.
- * 
- * @param cif_type CIF0/1/2/3/7
- * @param cif_bit 0 to 31
- * @param device_name
- * @param attr_type Channel/Device/Debug/etc.
- * @param channel_name 
- * @param is_output 
- * @param attr_name 
- * @return int 
- */
-int _command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, const char *device_name, enum vita49_2_attr_type attr_type, const char *channel_name,
-	bool is_output, const char *attr_name);
-
-/**
  * @brief Accepts a parsed Control Packet and executes the commands listed in it.
  * 
  * @param ctx 
@@ -101,7 +86,7 @@ int _command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, con
  * @param plugin_head Pointer to the head node of the linked list of available plugins.
  * @return int Returns a negative error code on failure, otherwise 0 on success.
  */
-int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct vita49_2_command_plugin_node* plugin_head);
+int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct vita49_2_device_plugin_node* plugin_head);
 
 /**
  * @brief Accepts a parsed Control Extension Packet and executes the commands in it.
@@ -111,7 +96,7 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
  * @param plugin_head Pointer to the head node of the linked list of available plugins. 
  * @return int Returns a negative error code on failure, otherwise 0 on success.
  */
-int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_command_plugin_node* plugin_head);
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_device_plugin_node* plugin_head);
 
 /**
  * @brief Finds the "_available" attribute associated with a modifiable IIO attribute and reads the data from it.
@@ -130,11 +115,11 @@ enum vita49_2_warnings_error_codes _find_available_attribute(struct iio_context 
  * 
  * @param ctx
  * @param control_packet 
- * @param warnings 
+ * @param ackX_packet 
  * @param plugin_head 
  * @return int Returns an error code on failure, otherwise 0 on success.
  */
-int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_warnings* const warnings, const struct vita49_2_command_plugin_node* const plugin_head);
+int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet, const struct vita49_2_device_plugin_node* const plugin_head);
 
 /**
  * @brief Looks at the CIF mappings and queries libiio for the current value of the attributes in the CIF mappings and writes them to a Context Packet struct.
@@ -232,10 +217,8 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	// SHARED LIBRARIES/PLUGINS
 	// ==============================================================
 	
-	// Command sequences are a list of consecutive libiio calls. They can be implemented by putting multiple commands into a Control/Control Extension Packet,
-	// sending consecutive Control/Control Extension packets, or through a library file that contains logic to initiate all of the libiio commands.
-	struct vita49_2_command_plugin_node* plugin_head = NULL;
-	struct vita49_2_command_plugin_node** next_plugin = &plugin_head;
+	struct vita49_2_device_plugin_node* plugin_head = NULL;
+	struct vita49_2_device_plugin_node** next_plugin = &plugin_head;
 
 	// For that last option, we'll load the library files now and keep track of what functionality has been loaded using a linked list.
 	DIR *libraries_directory;
@@ -275,10 +258,28 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		dlerror();
 
+		// Not all plugins that are stored on the SoM are guaranteed to correspond to a device that exists in the SoM.
+		// For that, we must first identify if the plugin is associated with a device, and if no we'll skip it.
+		bool (*identify_fn)(const struct iio_context const *ctx);
+		identify_fn = dlsym(library_handle, IDENTIFY_SYMBOL);
+		char* error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", IDENTIFY_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		// Now to check if this plugin is associated with a device locally
+		if (!identify_fn(arguments->ctx))
+			continue;
+
+		dlerror();
+
 		// Extracting the symbols
 		int (*validate_fn)(struct iio_context *ctx);
 		validate_fn = dlsym(library_handle, VALIDATE_SYMBOL);
-		char* error = dlerror();
+		error = dlerror();
 		if (error != NULL)
 		{
 			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", VALIDATE_SYMBOL, library_path, error);
@@ -300,17 +301,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 
 		dlerror();
 
-		char* (*get_name)(void);
-		get_name = (char *(*)(void)) dlsym(library_handle, NAME_SYMBOL);
-		error = dlerror();
-		if (error != NULL)
-		{
-			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", NAME_SYMBOL, library_path, error);
-			dlclose(library_handle);
-			continue;
-		}
-
-		struct vita49_2_command_plugin_node *loaded_plugin = calloc(1, sizeof(*loaded_plugin));
+		struct vita49_2_device_plugin_node *loaded_plugin = calloc(1, sizeof(*loaded_plugin));
 		if (!loaded_plugin)
 		{
 			fprintf(stderr, "vita49_2_client: Failed to allocate memory for plugin node '%s'. (%d) %s\n", library_path, errno, strerror(errno));
@@ -318,7 +309,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 			continue;
 		}
 
-		loaded_plugin->name = get_name();
 		loaded_plugin->validate = validate_fn;
 		loaded_plugin->execute = execute_fn;
 		loaded_plugin->next = NULL;
@@ -1200,13 +1190,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						break;
 					}
 
-					// If no CIF mappings were loaded, then we're unable to process any of the commands in the Control Packet, nor can we generate any Ack Packets.
-					if (vita49_2_cif_mappings_list == NULL)
-					{
-						fprintf(stderr, "vita49_2_client: No CIF mappings file has been provided. Received Command Packet is ignored.\n");
-						break;
-					}
-
 					// If an AckV packet was requested, we need to validate the commands in the Control Packet and send
 					// back the AckV packet
 					if (control_packet.command_prologue.control_cam->request_ack_v)
@@ -1851,61 +1834,6 @@ int vita49_2_command_init(struct iio_context *ctx)
 	return 0;
 }
 
-int vita49_2_command_load_mappings(const char *file_path)
-{
-	FILE *f;
-	char line[256];
-	int count = 0;
-
-	f = fopen(file_path, "r");
-	if (!f) {
-		fprintf(stderr, "vita49_2_client: Failed to open mapping file %s\n", file_path);
-		return -1;
-	}
-
-	while (fgets(line, sizeof(line), f)) 
-	{
-	
-		/* Ignore comments or empty lines */
-		if (line[0] == '#' || line[0] == '\n' || line[0] == '\r')
-			continue;
-
-		char *p = line;
-		char *toks[6];
-		int i;
-		for (i = 0; i < 6; i++) 
-		{
-			toks[i] = strsep(&p, "|\r\n");
-			if (!toks[i]) break;
-		}
-		
-		// Each line should have 6 fields/attributes
-		if (i == 6) 
-		{
-			uint32_t cif_type = strtoul(toks[0], NULL, 16);
-			uint32_t cif_bit = strtoul(toks[1], NULL, 10);
-
-			enum vita49_2_attr_type atype = VITA49_2_ATTR_TYPE_CHANNEL;
-			if (strcmp(toks[3], "device") == 0) 
-				atype = VITA49_2_ATTR_TYPE_DEVICE;
-			else if (strcmp(toks[3], "debug") == 0) 
-				atype = VITA49_2_ATTR_TYPE_DEBUG;
-
-			bool is_out = (strcmp(toks[4], "true") == 0 || strcmp(toks[4], "1") == 0);
-			_command_add_mapping(cif_type, cif_bit, toks[2], atype, toks[3], is_out, toks[5]);
-			count++;
-		} 
-		else 
-		{
-			fprintf(stderr, "vita49_2: Ignoring malformed line (need 6 fields): %s\n", line);
-		}
-	}
-
-	fclose(f);
-	fprintf(stderr, "vita49_2: Loaded %d mappings from %s\n", count, file_path);
-	return count;
-}
-
 void vita49_2_command_cleanup(void)
 {
 	struct vita49_2_cif_mapping *m = vita49_2_cif_mappings_list;
@@ -1956,41 +1884,8 @@ ssize_t _insert_stream_id(struct vita49_2_stream_entry* const array_start, size_
 	return i;
 }
 
-int _command_add_mapping(enum vita49_2_cif_types cif_type, uint32_t cif_bit, 
-			    const char *device_name, enum vita49_2_attr_type attr_type, const char *channel_name,
-			    bool is_output, const char *attr_name)
+int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct vita49_2_device_plugin_node* plugin_head)
 {
-	struct vita49_2_cif_mapping *m = calloc(1, sizeof(*m));
-	if (!m) return -1;
-
-	m->cif_type = cif_type;
-	m->cif_bit = cif_bit;
-	snprintf(m->device_name, sizeof(m->device_name), "%s", device_name);
-	m->attr_type = attr_type;
-	snprintf(m->channel_name, sizeof(m->channel_name), "%s", channel_name ? channel_name : "");
-	m->is_output = is_output;
-	snprintf(m->attr_name, sizeof(m->attr_name), "%s", attr_name);
-
-	m->next = vita49_2_cif_mappings_list;
-	vita49_2_cif_mappings_list = m;
-	
-	const char *type_str = (attr_type == VITA49_2_ATTR_TYPE_DEVICE) ? "device" :
-			       (attr_type == VITA49_2_ATTR_TYPE_DEBUG) ? "debug" : "channel";
-
-	fprintf(stderr, "vita49_2_process: Added mapping CIF%d Bit %d -> %s/[%s]%s/%s\n",
-		cif_type, cif_bit, device_name, type_str, channel_name ? channel_name : "", attr_name);
-	return 0;
-}
-
-int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, struct vita49_2_command_plugin_node* plugin_head)
-{
-	struct iio_device *dev;
-	struct iio_channel *chn;
-	const struct iio_attr *attr;
-	struct vita49_2_cif_mapping *m;
-	int ret_value = 0;
-	uint32_t original_warnings_indicator;
-
 	// Don't need to check the AckX Packet pointer since it's optional
 	if (!ctx || !pkt)
 		return -EINVAL;
@@ -2002,13 +1897,7 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 	if (pkt->command_prologue.control_cam->action_bits != VITA49_2_CTRL_EXECUTE)
 		return -EINVAL;
 
-	if (ackX_packet != NULL)
-		original_warnings_indicator = ackX_packet->warnings.cif0_warnings.word;
-
-	// For keeping track of which CIF0 fields have generated errors
-	union vita49_2_warning_error_indicators cif0_errors_buffer[32] = {0};
-	uint8_t cif0_errors_index = 0;
-
+	int ret_value;
 
 	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
 	// in this packet should be executed.
@@ -2016,398 +1905,15 @@ int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_pac
 	// We're assuming the Control Packet has already been parsed and that the cif0 (and cif1-7) struct has already
 	// been populated with the parsed data.
 
-	// Iterate through all loaded mappings in the linked list. The mappings tell us what fields in the CIFs correspond to what attributes
-	// on this device.
-	for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next) 
-	{
-		// Check if any of the commands in the Control Packet belong to the same CIF "family" and have the same CIF bit
-		// as the current mapping. If none of the Control match with the current mapping, that means this Control Packet
-		// is not targeting the attribute associated with this mapping, so we can move onto the next mapping.
-		switch (m->cif_type)
-		{
-			case CIF0: 
-			{
-				// If true, this means one of the bits in the CIF0 word is the same as the CIF0 bit for this mapping, thus we have a match
-				if (pkt->cif0.word.word & (1 << m->cif_bit))
-					break;
-
-				continue;
-			}
-
-			case CIF1:
-				// CIF1 is not mandatory, so we need to check if this Control Packet uses it
-				if (pkt->cif0.word.cif1_enable && pkt->cif1 != NULL)
-				{
-					// TODO: I haven't defined the CIF1 struct yet. Once it's been defined, we need logic to check if the CIF bit in the current
-					// mapping corresponds to any bits in the CIF1 word
-				}
-
-				continue;
-
-			case CIF2:
-				// CIF2 is not mandatory, so we need to check if this Control Packet uses it
-				if (pkt->cif0.word.cif2_enable && pkt->cif2 != NULL)
-				{
-					// TODO: I haven't defined the CIF2 struct yet. Once it's been defined, we need logic to check if the CIF bit in the current
-					// mapping corresponds to any bits in the CIF2 word
-				}
-
-				continue;
-
-			case CIF3:
-				// CIF3 is not mandatory, so we need to check if this Control Packet uses it
-				if (pkt->cif0.word.cif3_enable && pkt->cif3 != NULL)
-				{
-					// TODO: I haven't defined the CIF3 struct yet. Once it's been defined, we need logic to check if the CIF bit in the current
-					// mapping corresponds to any bits in the CIF3 word
-				}
-
-				continue;
-
-			case CIF7:
-				// CIF7 is not mandatory, so we need to check if this Control Packet uses it
-				if (pkt->cif0.word.cif7_enable && pkt->cif1 != NULL)
-				{
-					// TODO: I haven't defined the CIF7 struct yet. Once it's been defined, we need logic to check if the CIF bit in the current
-					// mapping corresponds to any bits in the CIF7 word
-				}
-
-				continue;
-
-			default:
-				continue;
-		}
-
-		// We have a match! If the device name is "sequence", that means we need to execute the code in
-		// one of the shared libraries that was loaded in at startup.
-		if (strcmp(m->device_name, "sequence") == 0)
-		{
-			bool plugin_found = false;
-
-			for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
-			{
-				if (strcmp(m->attr_name, current_plugin->name) == 0)
-				{
-					plugin_found = true;
-					int error = current_plugin->execute(ctx, (void *)((uint8_t *)&pkt->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), vita49_2_cif0_field_sizes[m->cif_bit]);
-
-					// If the ackX_packet argument isn't NULL, that means we need to report the error
-					if (ackX_packet != NULL && (error != ENONE))
-					{
-						switch (m->cif_type)
-						{
-							case CIF0:
-
-								ackX_packet->errors.cif0_errors.word |= (1 << m->cif_bit);
-
-								// Now to write the actual error value
-								if (error > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-								{
-									cif0_errors_buffer[cif0_errors_index].field_not_executed = 1;
-									cif0_errors_buffer[cif0_errors_index++].device_failure = 1;
-								}
-								else
-								{
-									cif0_errors_buffer[cif0_errors_index++].word = ((1 << ENOEXECUTE) | (1 << error));
-								}
-
-								// The corresponding CIF bit in the warnings field must now also be disabled since a CIF field can't simultaneously
-								// have a warning and an error.
-								ackX_packet->warnings.cif0_warnings.word &= ~(1 << m->cif_bit);
-
-								// Setting that warning indicator struct to 0 to indicate that it shouldn't be copied during the serialization of the packet
-								// To do that, I need to determine its index which can be figured out by counting how many fields to the left of this field were
-								// also asserted/present in the warnings CIF0 word.
-								uint8_t warning_index = 0;
-								for (int8_t i = 31; i > m->cif_bit; i--)
-								{
-									if (original_warnings_indicator & (1 << i))
-										warning_index++;
-								}
-
-								memset(&ackX_packet->warnings.warnings_payload[warning_index], 0, sizeof(ackX_packet->warnings.warnings_payload[warning_index]));
-
-								break;
-
-							case CIF1:
-								// TODO: Logic for CIF1 error fields
-								break;
-
-							case CIF2:
-								// TODO: Logic for CIF2 error fields
-								break;
-
-							case CIF3:
-								// TODO: Logic for CIF3 error fields
-								break;
-
-							case CIF7:
-								// TODO: Logic for CIF7 error fields
-								break;
-						}
-
-						// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
-						// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
-						// for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
-						// the error index as soon as the first mapping is seen.
-						if (m->next != NULL)
-						{
-							if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
-								cif0_errors_index--;
-						}
-					}
-
-					break;
-				}
-			}
-
-			if (!plugin_found)
-				fprintf(stderr, "vita49_2_client: Failed to find a loaded plugin with the name '%s'.\n", m->attr_name);
-
-			continue;
-		}
-
-		// Otherwise we're not dealing with a sequence and must find the attribute to execute this command
-		else if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
-		{
-			fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute '%s'. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
-			continue;
-		}
-
-		// Extract value from parsed CIF structure
-		double val = 0.0;
-
-		// Checking CIF0
-		if (m->cif_type == CIF0)
-		{
-			switch (m->cif_bit)
-			{
-				// Context Field Change Indicator is N/A for Command Packets
-
-				// Reference Point Identifier
-				case (30):
-					// TODO: Need logic to handle this. Travis and I discussed this, and conceivably we might use RPI to say that we're issuing
-					// commands to a separate board/card like a daughter/personality card.
-					break;
-
-				// Bandwidth
-				case (29):
-					val = pkt->cif0.bandwidth;
-					break;
-
-				// IF Reference Frequency
-				case (28):
-					val = pkt->cif0.if_reference_frequency;
-					break;
-
-				// RF Reference Frequency
-				case (27):
-					val = pkt->cif0.rf_reference_frequency;
-					break;
-
-				// RF Reference Frequency Offset
-				case (26):
-					val = pkt->cif0.rf_reference_frequency_offset;
-					break;
-
-				// IF Band Offset
-				case (25):
-					val = pkt->cif0.if_band_offset;
-					break;
-
-				// Reference Level
-				case (24):
-					val = pkt->cif0.reference_level;
-					break;
-
-				// Gain
-				case (23):
-					// TODO: Since Gain consists of Stage 1 and Stage 2 gains, we need logic to figure out which one to use
-					// or if both should be used
-					break;
-
-				// Over-Range Count is N/A for Command Packets
-
-				// Sample Rate
-				case (21):
-					val = pkt->cif0.sample_rate;
-					break;
-
-				// Timestamp Adjustment, Timestamp Calibration Time, Temperature, Device ID, State/Event Indicators, Signal Data Packet Payload Format,
-				// Formatted GPS, Formatted INS, ECEF Ephemeris, Relative Ephemeris, Ephemeris Reference ID, GPS ASCII, Context Association Lists
-				// are N/A for Command Packets
-
-				// Shouldn't get here since we already validated that the CIF of the mapping corresponds to one of the commands
-				// in this Control Packet. Either that, or the functionality to support that field hasn't been implemented yet.
-				default:
-					fprintf(stderr, "vita49_2_client: Unsupported CIF0 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
-					continue;
-			}
-		}
-
-		// Checking CIF1
-		else if (m->cif_type == CIF1)
-		{
-			// TODO: Logic to extract the value from CIF1
-			switch (m->cif_bit)
-			{
-				// Shouldn't get here since we already validated that the CIF of the mapping corresponds to one of the commands
-				// in this Control Packet
-				default:
-					fprintf(stderr, "vita49_2_process: Unsupported CIF1 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
-					continue;
-			}
-		}
-
-		// Checking CIF2
-		else if (m->cif_type == CIF2)
-		{
-			// TODO: Logic to extract the value from CIF2
-			switch (m->cif_bit)
-			{
-				// Shouldn't get here since we already validated that the CIF of the mapping corresponds to one of the commands
-				// in this Control Packet
-				default:
-					fprintf(stderr, "vita49_2_process: Unsupported CIF2 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
-					continue;
-			}
-		}
-
-		// Checking CIF3
-		else if (m->cif_type == CIF3)
-		{
-			// TODO: Logic to extract the value from CIF3
-			switch (m->cif_bit)
-			{
-				// Shouldn't get here since we already validated that the CIF of the mapping corresponds to one of the commands
-				// in this Control Packet
-				default:
-					fprintf(stderr, "vita49_2_process: Unsupported CIF3 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
-					continue;
-			}
-		}
-
-		// Checking CIF7
-		else if (m->cif_type == CIF7)
-		{
-			// TODO: Logic to extract the value from CIF7
-			switch (m->cif_bit)
-			{
-				// Shouldn't get here since we already validated that the CIF of the mapping corresponds to one of the commands
-				// in this Control Packet
-				default:
-					fprintf(stderr, "vita49_2_process: Unsupported CIF7 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
-					continue;
-			}
-		}
-
-		printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", val);
-		if ((ret_value = iio_attr_write_double(attr, val)) < 0)
-		{
-			fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s\n. (%d) %s", val, m->attr_name, ret_value, strerror(-ret_value));
-			ret_value *= -1;
-
-			// If an AckX Packet was passed, then we write the error value.
-			// **IMPORTANT: Every error indicator should have bit 31 ("Field not EXECUTED") asserted since libiio failed to issue the command.
-			if (ackX_packet != NULL)
-			{
-				uint32_t existing_cif_errors;
-
-				switch (m->cif_type)
-				{
-					case CIF0:
-
-						ackX_packet->errors.cif0_errors.word |= (1 << m->cif_bit);
-
-						// Now to write the actual error value
-						if (ret_value > sizeof(VITA49_2_ERRNO_MAP)/sizeof(VITA49_2_ERRNO_MAP[0]))
-						{
-							cif0_errors_buffer[cif0_errors_index].field_not_executed = 1;
-							cif0_errors_buffer[cif0_errors_index++].device_failure = 1;
-						}
-						else
-						{
-							cif0_errors_buffer[cif0_errors_index++].word = ((1 << ENOEXECUTE) | (1 << VITA49_2_ERRNO_MAP[ret_value]));
-						}
-
-						// The corresponding CIF bit in the warnings field must now also be disabled since a CIF field can't simultaneously
-						// have a warning and an error.
-						ackX_packet->warnings.cif0_warnings.word &= ~(1 << m->cif_bit);
-
-						// Setting that warning indicator struct to 0 to indicate that it shouldn't be copied during the serialization of the packet
-						// To do that, I need to determine its index which can be figured out by counting how many fields to the left of this field were
-						// also asserted/present in the warnings CIF0 word.
-						uint8_t warning_index = 0;
-						for (int8_t i = 31; i > m->cif_bit; i--)
-						{
-							if (original_warnings_indicator & (1 << i))
-								warning_index++;
-						}
-
-						memset(&ackX_packet->warnings.warnings_payload[warning_index], 0, sizeof(ackX_packet->warnings.warnings_payload[0]));
-						break;
-
-					case CIF1:
-						// TODO: Logic for CIF1 error fields
-						break;
-
-					case CIF2:
-						// TODO: Logic for CIF2 error fields
-						break;
-
-					case CIF3:
-						// TODO: Logic for CIF3 error fields
-						break;
-
-					case CIF7:
-						// TODO: Logic for CIF7 error fields
-						break;
-				}
-
-				// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
-				// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
-				// for each, so if I encounter consecutive sets, I'll treat them as one collective error which requires me decrementing
-				// the error index as soon as the first mapping is seen.
-				if (m->next != NULL)
-				{
-					if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
-						cif0_errors_index--;
-				}
-			}
-		}
-	}
-
-	// Copying the errors buffer
-	if (cif0_errors_index > 0)
-	{
-		if (ackX_packet->errors.errors_payload == NULL) 
-		{
-			ackX_packet->errors.errors_payload = calloc(cif0_errors_index, sizeof(union vita49_2_warning_error_indicators));
-			if (ackX_packet->errors.errors_payload == NULL)
-				return -ENOMEM;
-		}
-		// We may need to resize the buffer if we have more errors compared to the last AckX Packet that was sent
-		else
-		{
-			void* errors_tmp = realloc(ackX_packet->errors.errors_payload, cif0_errors_index * sizeof(union vita49_2_warning_error_indicators));
-			
-			if (errors_tmp == NULL)
-			{
-				fprintf(stderr, "vita49_2_process: Failed to allocate memory for the error indicators for an AckX Packet. (%d) %s\n", errno, strerror(errno));
-				return -ENOMEM;
-			}
-
-			ackX_packet->errors.errors_payload = (union vita49_2_warning_error_indicators*)(errors_tmp);
-		}
-
-		memcpy(ackX_packet->errors.errors_payload, &cif0_errors_buffer, cif0_errors_index * sizeof(union vita49_2_warning_error_indicators));
-		ackX_packet->errors.errors_payload_num_words = cif0_errors_index;
-	}
+	// If a plugin for this device has been loaded, then we can pass the Control Packet and AckX Packet to it to handle execution
+	if (plugin_head != NULL)
+		if ((ret_value = plugin_head->execute(ctx, pkt, ackX_packet)) < 0)
+			fprintf(stderr, "vita49_2_client: Failed to execute Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
 
 	return 0;
 }
 
-int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_command_plugin_node* plugin_head)
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_device_plugin_node* plugin_head)
 {
 	// Don't need to check the AckX Packet pointer since it's optional
 	if (!ctx || !pkt)
@@ -2460,123 +1966,9 @@ int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_c
 			if (control_extension_node == NULL)
 				continue;
 
-			// Checking if the field is trying to invoke a plugin
-			if (strcmp(m->device_name, "sequence") == 0)
-			{
-				bool plugin_found = false;
 
-				// Searching for the correct plugin to execute
-				for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
-				{
-					if (strcmp(m->attr_name, current_plugin->name) == 0)
-					{
-						plugin_found = true;
-						int error;
-						switch (control_extension_node->control_extension.implicit.data_type)
-						{
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.ll), sizeof(long long));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.f), sizeof(float));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.d), sizeof(double));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.b), sizeof(bool));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
-							{
-								// This will require some extra work. We need to find the "_available" fd associated with this attribute and get a list of the possible attribute values.
-								char available_range[256];
-
-								if ((ret_value = _find_available_attribute(ctx, CIF_EXT, m->cif_bit, available_range, sizeof(available_range))) < 0)
-								{	
-									fprintf(stderr, "vita49_2_process: Unable to find an '%s_available' attribute. Skipping execution of Control Extension. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
-									break;
-								}
-
-								// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-									// "[min step max]"
-								// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-								// in the brackets:
-									// "500 600 700 750 900"
-
-								// Since we're treating the list of available options as an array and using the control_extension_node->control_extension.option field as an index,
-								// we're unable to suppor the first option.
-
-								// Means we're dealing with the first case
-								if (available_range[0] == '[')
-								{
-									fprintf(stderr, "vita49_2_process: The '%s_available' attribute provides a start-step-stop format rather than a list of distinct values.\n", m->attr_name);
-									break;
-								}
-								
-								int num_options = control_extension_node->control_extension.implicit.option;
-
-								// VLA
-								char *values[num_options];
-								for (int i = 0; i < num_options; i++) 
-									values[i] = NULL;
-
-								int count = 0;
-
-								char *tmp = strdup(available_range);
-								if (tmp == NULL) 
-								{
-									fprintf(stderr, "vita49_2_process: Failed to duplicate string while executing an attribute update for %s\n", m->attr_name);
-									break;
-								}
-
-								char *saveptr = NULL;
-								char *tok = strtok_r(tmp, " \t\r\n", &saveptr);
-								while (tok && count < num_options && count < num_options) 
-								{
-									values[count] = strdup(tok);  // store each token
-									if (!values[count]) 
-									{
-										break;
-									}
-									count++;
-									tok = strtok_r(NULL, " \t\r\n", &saveptr);
-								}
-
-								free(tmp);
-
-								if (values[num_options-1] == NULL)
-								{
-									fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.implicit.option, m->attr_name);
-									break;
-								}
-
-								error = current_plugin->execute(ctx, (void *)(&values[num_options-1]), strlen(values[num_options-1]));
-								break;
-							}
-						}
-
-						// TODO: Once AckV/X/S Extension Packets have been created, add logic to populate the errors field with any errors after running execute
-
-						break;
-					}
-				}
-
-				if (!plugin_found)
-					fprintf(stderr, "vita49_2_client: Failed to find a loaded plugin with the name '%s'.\n", m->attr_name);
-
-				continue;
-			}
-
-			// Otherwise we're not executing a plugin and need to find the device ourselves
-			else if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+			// Need to find the device
+			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Implicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 				continue;
@@ -2702,62 +2094,8 @@ int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_c
 		// Iterate through all of the commands
 		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
 		{
-			// Checking if the field is trying to invoke a plugin
-			if (strcmp(control_extension_node->device_name, "sequence") == 0)
-			{
-				bool plugin_found = false;
-
-				// Searching for the correct plugin to execute
-				for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
-				{
-					if (strcmp(control_extension_node->attribute_name, current_plugin->name) == 0)
-					{
-						plugin_found = true;
-						int error;
-
-						switch (control_extension_node->control_extension.explicit.data_type)
-						{
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.ll), sizeof(long long));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.f), sizeof(float));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.d), sizeof(double));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->data.b), sizeof(bool));
-								break;
-							}
-							case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
-							{
-								error = current_plugin->execute(ctx, (void *)(&control_extension_node->string_data), control_extension_node->control_extension.explicit.data_length);
-								break;
-							}
-						}
-
-						// TODO: Once AckV/X/S Extension Packets have been created, add logic to populate the errors field with any errors after running execute
-
-						break;
-					}
-				}
-
-				if (!plugin_found)
-					fprintf(stderr, "vita49_2_client: Failed to find a loaded plugin with the name '%s'.\n", control_extension_node->attribute_name);
-
-				continue;
-			}
-
-			// Otherwise we're not executing a plugin and need to find the device ourselves
-			else if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+			// Need to find the device
+			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
 			{
 				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Explicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
 				continue;
@@ -2945,520 +2283,19 @@ enum vita49_2_warnings_error_codes _find_available_attribute(struct iio_context 
 		return ret_value;
 }
 
-enum vita49_2_warnings_error_codes validate_command_u32(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint32_t new_value)
-{
-	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
-		return -EBADARGS;
-
-	// For storing the output of the attribute/fd
-	char available_range[256];
-	
-	int ret_value = _find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
-	if (ret_value < 0)
-		return -ENOFIELD;
-
-	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-		// "[min step max]"
-	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-	// in the brackets:
-		// "500 600 700 750 900"
-
-	// Means we're dealing with the first case
-	if (available_range[0] == '[')
-	{
-		uint32_t values[3];
-		int successes = sscanf(available_range, "[%" PRIu32 "%" PRIu32 "%" PRIu32 "]", &values[0], &values[1], &values[2]);
-
-		// Checking bounds
-		if (values[0] > new_value || new_value > values[2])
-			return -EOUTRANGE;
-
-		// Checking if new value lands on a proper increment/step.
-		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
-		if (((new_value - values[0]) % values[1]) != 0)
-			return -EPRECISION;
-
-		// Otherwise our new value is valid
-		return 0;
-	}
-	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
-	// see if the provided new value is one of those values
-	else
-	{
-		uint32_t values[10];
-		int successes = sscanf(available_range, "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32 "%" PRIu32,
-		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
-
-		for (uint8_t i = 0; i < sizeof(values)/sizeof(values[0]); i++)
-		{
-			if (new_value == values[i])
-				return 0;
-		}
-
-		return -EOUTRANGE;
-	}
-
-	// Otherwise there was some kind of error
-	return -EGENERIC;
-}
-
-enum vita49_2_warnings_error_codes validate_command_u64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, uint64_t new_value)
-{
-	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
-		return -EBADARGS;
-
-	// For storing the output of the attribute/fd
-	char available_range[1024];
-	
-	int ret_value = _find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
-	if (ret_value < 0)
-		return ENOFIELD;
-
-	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-		// "[min step max]"
-	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-	// in the brackets:
-		// "500 600 700 750 900"
-
-	// Means we're dealing with the first case
-	if (available_range[0] == '[')
-	{
-		uint64_t values[3];
-		int successes = sscanf(available_range, "[%" SCNu64 " %" SCNu64 " %" SCNu64 "]", &values[0], &values[1], &values[2]);
-
-		// Checking bounds
-		if (values[0] > new_value || new_value > values[2])
-			return -EOUTRANGE;
-
-		// Checking if new value lands on a proper increment/step.
-		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
-		if (((new_value - values[0]) % values[1]) != 0)
-			return -EPRECISION;
-
-		// Otherwise our new value is valid
-		return 0;
-	}
-	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
-	// see if the provided new value is one of those values
-	else
-	{
-		uint64_t values[10];
-		int successes = sscanf(available_range, "%" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64 " %" SCNu64,
-		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
-
-		for (uint8_t i = 0; i < successes; i++)
-		{
-			if (new_value == values[i])
-				return 0;
-		}
-
-		return -EOUTRANGE;
-	}
-
-	// Otherwise there was some error
-	return -EGENERIC;
-}
-
-enum vita49_2_warnings_error_codes validate_command_i64(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, int64_t new_value)
-{
-	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
-		return -EBADARGS;
-
-	// For storing the output of the attribute/fd
-	char available_range[1024];
-	
-	int ret_value = _find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
-	if (ret_value < 0)
-		return ENOFIELD;
-
-	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-		// "[min step max]"
-	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-	// in the brackets:
-		// "500 600 700 750 900"
-
-	// Means we're dealing with the first case
-	if (available_range[0] == '[')
-	{
-		int64_t values[3];
-		int successes = sscanf(available_range, "[%" SCNd64 " %" SCNd64 " %" SCNd64 "]", &values[0], &values[1], &values[2]);
-
-		// Checking bounds
-		if (values[0] > new_value || new_value > values[2])
-			return -EOUTRANGE;
-
-		// Checking if new value lands on a proper increment/step.
-		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
-		if (((new_value - values[0]) % values[1]) != 0)
-			return -EPRECISION;
-
-		// Otherwise our new value is valid
-		return 0;
-	}
-	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
-	// see if the provided new value is one of those values
-	else
-	{
-		int64_t values[10];
-		int successes = sscanf(available_range, "%" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64 " %" SCNd64,
-		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
-
-		for (uint8_t i = 0; i < successes; i++)
-		{
-			if (new_value == values[i])
-				return 0;
-		}
-
-		return -EOUTRANGE;
-	}
-
-	// Otherwise there was some error
-	return -EGENERIC;
-}
-
-enum vita49_2_warnings_error_codes validate_command_double(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, double new_value)
-{
-	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
-		return -EBADARGS;
-
-	// For storing the output of the attribute/fd
-	char available_range[1024];
-	
-	int ret_value = _find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
-	if (ret_value < 0)
-		return -ENOFIELD;
-
-	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-		// "[min step max]"
-	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-	// in the brackets:
-		// "500 600 700 750 900"
-
-	// Means we're dealing with the first case
-	if (available_range[0] == '[')
-	{
-		double values[3];
-		int successes = sscanf(available_range, "[%lf %lf %lf]", &values[0], &values[1], &values[2]);
-		
-		// Checking bounds
-		if (values[0] > new_value || new_value > values[2])
-			return -EOUTRANGE;
-
-		// Checking if new value lands on a proper increment/step.
-		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
-		// With double/fps, one extra step is to check if it's below some threshold to qualify as 0.
-		double remainder = fmod((new_value - values[0]), values[1]);
-		if (fabs(remainder) > 1e-9)
-			return -EPRECISION;
-
-		// Otherwise our new value is valid
-		return 0;
-	}
-	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
-	// see if the provided new value is one of those values
-	else
-	{
-		double values[10];
-		int successes = sscanf(available_range, "%lf %lf %lf %lf %lf %lf %lf %lf %lf %lf",
-		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
-
-		for (uint8_t i = 0; i < successes; i++)
-		{
-			if (new_value == values[i])
-				return 0;
-		}
-
-		return -EOUTRANGE;
-	}
-
-	// Otherwise there was some error
-	return -EGENERIC;
-}
-
-enum vita49_2_warnings_error_codes validate_command_float(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, float new_value)
-{
-	if (ctx == NULL || (cif_type < 7 && cif_type > 3) || cif_bit > 32)
-		return -EBADARGS;
-
-	// For storing the output of the attribute/fd
-	char available_range[1024];
-	
-	int ret_value = _find_available_attribute(ctx, cif_type, cif_bit, available_range, sizeof(available_range));
-	if (ret_value < 0)
-		return -ENOFIELD;
-
-	// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
-		// "[min step max]"
-	// The alternative is a set of discrete values in which case the format usually involves more than 3 values
-	// in the brackets:
-		// "[500 600 700 750 900]"
-
-	// Means we're dealing with the first case
-	if (available_range[0] == '[')
-	{
-		float values[3];
-		int successes = sscanf(available_range, "[%f %f %f]", &values[0], &values[1], &values[2]);
-
-		// Checking bounds
-		if (values[0] > new_value || new_value > values[2])
-			return -EOUTRANGE;
-
-		// Checking if new value lands on a proper increment/step.
-		// Simple way to check is to do (new_value - min) and see if that's divisible by the step size.
-		// With double/fps, one extra step is to check if it's below some threshold to qualify as 0.
-		double remainder = fmodf((new_value - values[0]), values[1]);
-		if (fabs(remainder) > 1e-9)
-			return -EPRECISION;
-
-		// Otherwise our new value is valid
-		return 0;
-	}
-	// We're dealing with a fixed sequence of discrete values so we have to iterate over the values and
-	// see if the provided new value is one of those values
-	else
-	{
-		float values[10];
-		int successes = sscanf(available_range, "%f %f %f %f %f %f %f %f %f %f",
-		&values[0], &values[1], &values[2], &values[3], &values[4], &values[5], &values[6], &values[7], &values[8], &values[9]);
-
-		for (uint8_t i = 0; i < successes; i++)
-		{
-			if (new_value == values[i])
-				return 0;
-		}
-
-		return -EOUTRANGE;
-	}
-
-	// Otherwise there was some error
-	return -EGENERIC;
-}
-
-int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_warnings* warnings, const struct vita49_2_command_plugin_node* const plugin_head)
+int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet, const struct vita49_2_device_plugin_node* const plugin_head)
 {	
-	if (!ctx || !control_packet || !warnings)
+	if (ctx == NULL || control_packet == NULL || ackV_packet == NULL)
 		return -EINVAL;
 
-	struct vita49_2_cif_mapping *m;
-	uint32_t cif0_word;
+	int ret_value;
 
-	// For keeping track of which CIF0 fields have generated warnings
-	union vita49_2_warning_error_indicators cif0_warnings_buffer[32] = {0};
-	uint8_t cif0_warnings_index = 0;
+	// If a plugin for this device has been loaded, then we can pass the Control Packet and AckX Packet to it to handle execution
+	if (plugin_head != NULL)
+		if ((ret_value = plugin_head->validate(ctx, control_packet, ackV_packet)) < 0)
+			fprintf(stderr, "vita49_2_client: Failed to validate Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
 
-	// We're assuming the Control Packet has already been parsed and that the cif0 (and cif1-7) struct has already
-	// been populated with the parsed data.
-	memset(cif0_warnings_buffer, 0, sizeof(cif0_warnings_buffer));
-
-	// Iterate over each bit of CIF 0 (that corresponds to an actual command, not the reserved or CIF enable bits)
-	// TODO: Logic to support CIF1/2/3/7 as well
-	for (int cif_bit = 30; cif_bit >= 0; cif_bit--)
-	{
-		// Bits that don't correspond to an actual command:
-			// 31, 22, 20-0
-		if (cif_bit == 22 || cif_bit <= 20)
-			continue;
-
-		// Checking that the bit is asserted/field is enabled
-		memcpy(&cif0_word, &control_packet->cif0.word, sizeof(cif0_word));
-		if (((1 << cif_bit) & cif0_word) == 0)
-			continue;
-
-		// Iterating over each mapping
-		for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next) 
-		{
-			if (m->cif_bit != cif_bit || m->cif_type != CIF0)
-				continue;
-			
-			bool warning_generated = false;
-			
-			// If we get here, that means we have a match. Now we have to extract the new attribute value
-			// from the packet and feed it to the appropriate command validation function based on the type.
-			int ret_value;
-
-			// If the device name is "sequence", that means this CIF attribute is associated with a shared object/library
-			// that we may/may not have loaded. We need to search for that library.
-			if (strcmp(m->device_name, "sequence") == 0)
-			{
-				for (struct vita49_2_command_plugin_node* current_plugin = plugin_head; current_plugin != NULL; current_plugin = current_plugin->next)
-				{
-					if (strcmp(m->attr_name, current_plugin->name) == 0)
-					{
-						int warning = current_plugin->validate(ctx, (void *)((uint8_t *)&control_packet->cif0 + vita49_2_cif0_field_offsets[m->cif_bit]), vita49_2_cif0_field_sizes[m->cif_bit]);
-
-						if (warning < 0)
-						{
-							warnings->cif0_warnings.word |= (1 << m->cif_bit);
-							cif0_warnings_buffer[cif0_warnings_index++].word = (1 << -warning);
-							warning_generated = true;
-						}
-						
-						break;
-					}
-				}
-			}
-			else
-			{
-				switch (m->cif_bit)
-				{
-					// Context Field Change Indicator is N/A for Command Packets
-
-					// Reference Point Identifier
-					case (30):
-						// TODO: Need logic to handle this. Travis and I discussed this, and conceivably we might use RPI to say that we're issuing
-						// commands to a separate board/card like a daughter/personality card.
-
-						// For now we'll return a warning. Errors aren't allowed for AckV.
-						warnings->cif0_warnings.has_reference_point_id = 1;
-						cif0_warnings_buffer[cif0_warnings_index++].erroneous_field = 1;
-						warning_generated = true;
-						break;
-
-					// Bandwidth (double)
-					case (29):
-						
-						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.bandwidth)) != ENONE)
-						{
-							warnings->cif0_warnings.has_bandwidth = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));		
-							warning_generated = true;
-						}
-
-						break;
-
-					// IF Reference Frequency (double)
-					case (28):
-						
-						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.if_reference_frequency)) != ENONE)
-						{
-							warnings->cif0_warnings.has_if_reference_frequency = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));
-							warning_generated = true;
-						}
-						
-						break;
-
-					// RF Reference Frequency (double)
-					case (27):
-
-						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.rf_reference_frequency)) != ENONE)
-						{
-							warnings->cif0_warnings.has_rf_reference_frequency = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));
-							warning_generated = true;
-						}						
-						
-						break;
-
-					// RF Reference Frequency Offset (double)
-					case (26):
-
-						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.rf_reference_frequency_offset)) != ENONE)
-						{
-							warnings->cif0_warnings.has_rf_reference_frequency_offset = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));
-							warning_generated = true;
-						}	
-
-						break;
-
-					// IF Band Offset (double)
-					case (25):
-						
-						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.if_band_offset)) != ENONE)
-						{
-							warnings->cif0_warnings.has_if_band_offset = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));
-							warning_generated = true;
-						}	
-					
-						break;
-
-					// Reference Level (16-bit float)
-					case (24):
-						
-						if ((ret_value = validate_command_float(ctx, 0, cif_bit, control_packet->cif0.reference_level)) != ENONE)
-						{
-							warnings->cif0_warnings.has_reference_level = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));
-							warning_generated = true;
-						}	
-					
-						break;
-
-					// Gain
-					case (23):
-						// TODO: Since Gain consists of Stage 1 and Stage 2 gains, we need logic to figure out which one to use
-						// or if both should be used
-
-						// For now we'll return a warning.
-						warnings->cif0_warnings.has_reference_point_id = 1;
-						cif0_warnings_buffer[cif0_warnings_index++].erroneous_field = 1;
-						warning_generated = true;
-
-						break;
-
-					// Sample Rate (double)
-					case (21):
-
-						if ((ret_value = validate_command_double(ctx, 0, cif_bit, control_packet->cif0.sample_rate)) != ENONE)
-						{
-							warnings->cif0_warnings.has_sample_rate = 1;
-							uint32_t warning_encoding = (1 << (-1 * ret_value));
-							memcpy(&cif0_warnings_buffer[cif0_warnings_index++], &warning_encoding, sizeof(warning_encoding));
-							warning_generated = true;
-						}	
-
-						break;
-
-					// Timestamp Adjustment, Timestamp Calibration Time, Temperature, Device ID, State/Event Indicators, Signal Data Packet Payload Format,
-					// Formatted GPS, Formatted INS, ECEF Ephemeris, Relative Ephemeris, Ephemeris Reference ID, GPS ASCII, Context Association Lists
-					// are N/A for Command Packets
-
-					default:
-						fprintf(stderr, "vita49_2_client: Unsupported CIF0 bit extraction %u for mapping %s.\n", m->cif_bit, m->attr_name);
-						continue;
-				}
-			}
-
-			// Sometimes there's consecutive mappings because an attribute applies to RX and TX devices.
-			// For example sample rate is an attribute for RX and TX. VITA doesn't allow us to create separate fields
-			// for each, so if I encounter consecutive sets, I'll treat them as one collective warning. Since the current mapping
-			// encountered an error (if warning_generated is true), then we can skip the other mappings until we reach one with a different CIF type and bit.
-			if (warning_generated)
-			{
-				while (m->next != NULL)
-				{
-					if (m->cif_type == m->next->cif_type && m->cif_bit == m->next->cif_bit)
-						m = m->next;
-					else
-						break;
-				}
-			}
-		}
-	}
-
-	// TODO: Logic to support CIF1/2/3/7 as well
-
-	// Now to write the warnings (if any) to the AckV Packet's payload
-	if (cif0_warnings_index > 0)
-	{
-		warnings->warnings_payload = calloc(cif0_warnings_index, sizeof(union vita49_2_warning_error_indicators));
-		if (warnings->warnings_payload == NULL)
-			return -ENOMEM;
-
-		memcpy(warnings->warnings_payload, &cif0_warnings_buffer, cif0_warnings_index * sizeof(union vita49_2_warning_error_indicators));
-
-		warnings->warnings_payload_num_words = cif0_warnings_index;
-	}
-
-	return 0;
+	return ret_value;
 }
 
 int _acquire_context_data(struct iio_context *ctx, struct vita49_2_cif0_fields* cif0, struct vita49_2_cif1_fields* cif1, struct vita49_2_cif2_fields* cif2,

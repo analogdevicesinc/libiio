@@ -182,13 +182,32 @@ static const uint8_t VITA49_2_ERRNO_MAP[] = {
     [ERFKILL]           = EHAZPOWER,    /* RF-kill -> hazardous power */
 };
 
+// See https://wiki.analog.com/resources/tools-software/linux-software/libiio_internals
+// for more information about the different types of attributes
+enum vita49_2_attr_type {
+	VITA49_2_ATTR_TYPE_CHANNEL = 0,
+	VITA49_2_ATTR_TYPE_DEVICE,
+	VITA49_2_ATTR_TYPE_DEBUG
+};
+
+
 enum vita49_2_warnings_error_codes get_available_attribute_values(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, char* available_range, size_t buffer_size);
 
 enum vita49_2_warnings_error_codes validate_command_ll(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, long long new_value);
 
-enum vita49_2_warnings_error_codes validate_command_double_h(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, double new_value);
+enum vita49_2_warnings_error_codes validate_command_d(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, double new_value);
 
 enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const char* const new_value);
+
+// Wanted this enum to help with constraining the possible values of the cif_marker variable
+enum vita49_2_cif_types {
+	CIF0 = 0,
+	CIF1 = 1,
+	CIF2 = 2,
+	CIF3 = 3,
+	CIF7 = 7,
+    CIF_EXT = 8     // Custom type defined by ADI for Control Extension Packets to aid with mapping controls to IIO attributes
+};
 
 /**
  * @brief Retrieves a handle to an IIO device (high level wrapper around libiio calls).
@@ -199,7 +218,7 @@ enum vita49_2_warnings_error_codes validate_command_s(struct iio_context *ctx, c
  * @param attribute_name
  * @param is_output
  * @param attribute Provide a double pointer to an attribute struct which will be updated by this function if the attribute exists.
- * @return enum vita49_2_warnings_error_codes
+ * @return enum vita49_2_warnings_error_codes Returns a negative VITA 49.2 warning/error code.
  */
 enum vita49_2_warnings_error_codes vita49_2_find_iio_attribute(const struct iio_context* const ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, const struct iio_attr** attribute);
 

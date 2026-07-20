@@ -28,24 +28,6 @@
 extern "C" {
 #endif
 
-// See https://wiki.analog.com/resources/tools-software/linux-software/libiio_internals
-// for more information about the different types of attributes
-enum vita49_2_attr_type {
-	VITA49_2_ATTR_TYPE_CHANNEL = 0,
-	VITA49_2_ATTR_TYPE_DEVICE,
-	VITA49_2_ATTR_TYPE_DEBUG
-};
-
-// Wanted this enum to help with constraining the possible values of the cif_marker variable
-enum vita49_2_cif_types {
-	CIF0 = 0,
-	CIF1 = 1,
-	CIF2 = 2,
-	CIF3 = 3,
-	CIF7 = 7,
-    CIF_EXT = 8     // Custom type defined by ADI for Control Extension Packets to aid with mapping controls to IIO attributes
-};
-
 /**
  * @struct vita49_2_stream_entry
  * @brief We need a way of keep track of Stream IDs and be able to look up existing Stream IDs, hence we'll have an array of this struct.
@@ -97,17 +79,16 @@ struct vita49_2_pdata {
 };
 
 /**
- * @struct vita49_2_command_plugin_node
+ * @struct vita49_2_device_plugin_node
  * @brief Represents a loadable library for executing custom commands when a Control/Control Extension Packet is received with the
  * appropriate CIF fields enabled or proper payload.
  * 
  */
-struct vita49_2_command_plugin_node {
+struct vita49_2_device_plugin_node {
 
-	const char* name;														// Name of the plugin
-	int (*validate)(struct iio_context *ctx, void* data, size_t length);	// Pointer to a function that validates the commands in the plugin and returns warnings (if any)
-	int (*execute)(struct iio_context *ctx, void* data, size_t length);		// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
-	struct vita49_2_command_plugin_node* next;
+	int (*validate)(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet);	// Pointer to a function that validates the commands in the plugin and returns warnings (if any)
+	int (*execute)(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackX_packet* const ackX_packet);	// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
+	struct vita49_2_device_plugin_node* next;
 
 };
 
@@ -135,15 +116,6 @@ static void vita49_2_main(struct thread_pool *pool, void *arguments);
  * @return int 
  */
 int vita49_2_command_init(struct iio_context *ctx);
-
-/**
- * @brief Load the CIF-to-hardware mappings from a simple CSV configuration file.
- * Format: stream_id,cif0_bit,device_name,channel_name,is_output,attr_name
- * 
- * @param file_path 
- * @return int 
- */
-int vita49_2_command_load_mappings(const char *file_path);
 
 /**
  * @brief Deallocates the linked list of hardware mappings.

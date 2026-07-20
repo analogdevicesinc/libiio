@@ -143,7 +143,7 @@ enum vita49_2_warnings_error_codes validate_command_ll(struct iio_context *ctx, 
 	return -EGENERIC;
 }
 
-enum vita49_2_warnings_error_codes validate_command_double_h(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, double new_value)
+enum vita49_2_warnings_error_codes validate_command_d(struct iio_context *ctx, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, double new_value)
 {
 	if (ctx == NULL || device_name == NULL || channel_name == NULL || attribute_name == NULL)
 		return -EBADARGS;
