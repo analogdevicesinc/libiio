@@ -404,7 +404,7 @@ stages:
     - script: |
         set -e
         mkdir build_tar && cd build_tar
-        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
+        cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -DCMAKE_INSTALL_PREFIX=/ -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
         mv ../CI/azure/macos_tar_fixup.sh .
