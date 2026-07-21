@@ -520,6 +520,36 @@ static int network_reg_write(const struct iio_device *dev, uint32_t address, uin
 	return iiod_client_reg_write(client, dev, address, value);
 }
 
+static int network_refresh_format(const struct iio_channel *chn)
+{
+	const struct iio_device *dev = iio_channel_get_device(chn);
+	const struct iio_context *ctx = iio_device_get_context(dev);
+	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
+	struct iio_data_format new_format;
+	struct iio_channel *chn_rw = (struct iio_channel *)chn;
+	char format_str[256];
+	ssize_t ret;
+
+	ret = iiod_client_refresh_format(pdata->iiod_client, dev, chn,
+	                                   format_str, sizeof(format_str));
+	if (ret < 0)
+		return (int)ret;
+
+	format_str[ret] = '\0';
+
+	ret = iio_parse_format_string(format_str, &new_format);
+	if (ret < 0)
+		return (int)ret;
+
+	new_format.with_scale = chn->format.with_scale;
+	new_format.scale = chn->format.scale;
+	new_format.offset = chn->format.offset;
+
+	chn_rw->format = new_format;
+
+	return 0;
+}
+
 static int network_ping(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
@@ -556,6 +586,8 @@ static const struct iio_backend_ops network_ops = {
 
 	.reg_read = network_reg_read,
 	.reg_write = network_reg_write,
+
+	.refresh_format = network_refresh_format,
 
 	.ping = network_ping,
 };

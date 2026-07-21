@@ -84,6 +84,9 @@ __api int iiod_client_reg_read(struct iiod_client *client, const struct iio_devi
 __api int iiod_client_reg_write(struct iiod_client *client, const struct iio_device *dev,
 		uint32_t address, uint32_t value);
 
+__api int iiod_client_refresh_format(struct iiod_client *client, const struct iio_device *dev,
+		const struct iio_channel *chn, char *format_str, size_t len);
+
 __api __check_ret int iiod_client_nop(struct iiod_client *client);
 
 #undef __api

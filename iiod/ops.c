@@ -661,6 +661,27 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	dev_entry_put(entry);
 }
 
+/* Called by binary protocol handlers when channel format changes.
+ * Signals the RW thread to recalculate sample_size from all channels. */
+void invalidate_sample_size_cache(const struct iio_device *dev)
+{
+	struct iio_device_pdata *dev_pdata;
+	struct DevEntry *entry;
+
+	pthread_mutex_lock(&devlist_lock);
+	dev_pdata = iio_device_get_data((struct iio_device *)dev);
+	entry = dev_pdata->entry;
+
+	if (entry) {
+		pthread_mutex_lock(&entry->thdlist_lock);
+		entry->update_mask = true;
+		pthread_cond_signal(&entry->rw_ready_cond);
+		pthread_mutex_unlock(&entry->thdlist_lock);
+	}
+
+	pthread_mutex_unlock(&devlist_lock);
+}
+
 static struct ThdEntry *parser_lookup_thd_entry(struct parser_pdata *pdata, struct iio_device *dev)
 {
 	struct ThdEntry *t;
