@@ -25,9 +25,13 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     set(OSX_INSTALL_FRAMEWORKSDIR
         "/Library/Frameworks"
         CACHE STRING "Installation directory for frameworks")
-    get_filename_component(
-        OSX_INSTALL_FRAMEWORKSDIR "${OSX_INSTALL_FRAMEWORKSDIR}" REALPATH
-        BASE_DIR "${CMAKE_BINARY_DIR}")
+
+    # For normal installs (OSX_PACKAGE=OFF), use relative path to avoid CMake
+    # errors about absolute install destinations. The absolute path is only
+    # used by pkgbuild when OSX_PACKAGE=ON.
+    if (NOT OSX_PACKAGE AND IS_ABSOLUTE "${OSX_INSTALL_FRAMEWORKSDIR}")
+        set(OSX_INSTALL_FRAMEWORKSDIR "Library/Frameworks")
+    endif()
 
     set(CMAKE_MACOSX_RPATH ON)
     set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
