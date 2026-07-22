@@ -142,6 +142,10 @@ struct iio_block_pdata *local_create_mmap_block(
 	*data = priv->pdata.data;
 	ppdata->mmap_block_mask |= IIO_BIT(priv->idx);
 
+	/* Keep the smallest block size seen on this buffer. */
+	if (!pdata->size || priv->block.size < pdata->size)
+		pdata->size = priv->block.size;
+
 	return &priv->pdata;
 
 out_free_priv:

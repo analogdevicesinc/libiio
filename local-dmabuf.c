@@ -195,6 +195,10 @@ struct iio_block_pdata *local_create_dmabuf(
 
 	pdata->dmabuf_supported = true;
 
+	/* Keep the smallest block size seen on this buffer. */
+	if (!pdata->size || size < pdata->size)
+		pdata->size = size;
+
 	close(devfd);
 
 	return priv;

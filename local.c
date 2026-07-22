@@ -289,16 +289,27 @@ static int local_enable_buffer(
 		struct iio_buffer_pdata *pdata, size_t nb_samples, bool enable, bool cyclic)
 {
 	int ret;
+	size_t bufsize = nb_samples;
 
 	if ((pdata->dmabuf_supported | pdata->mmap_supported) != !nb_samples)
 		return -EINVAL;
 
-	if (enable && nb_samples) {
-		ret = local_set_buffer_size(pdata, nb_samples);
+	/*
+	 * The read/write path sizes length/watermark in samples
+	 * (nb_samples). mmap/dmabuf always pass nb_samples == 0 here, and
+	 * the kernel's DMA buffer core tracks their readiness in bytes, so
+	 * use pdata->size (the byte size of the smallest block allocated)
+	 * instead.
+	 */
+	if (!bufsize && (pdata->dmabuf_supported || pdata->mmap_supported))
+		bufsize = pdata->size;
+
+	if (enable && bufsize) {
+		ret = local_set_buffer_size(pdata, bufsize);
 		if (ret)
 			return ret;
 
-		ret = local_set_watermark(pdata, nb_samples);
+		ret = local_set_watermark(pdata, bufsize);
 		if (ret)
 			return ret;
 	}
