@@ -142,6 +142,8 @@ struct iio_block_pdata *local_create_mmap_block(
 	*data = priv->pdata.data;
 	ppdata->mmap_block_mask |= IIO_BIT(priv->idx);
 
+	pdata->size = size;
+
 	return &priv->pdata;
 
 out_free_priv:
