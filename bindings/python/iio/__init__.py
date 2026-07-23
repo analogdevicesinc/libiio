@@ -599,12 +599,8 @@ _d_is_trigger.restype = c_bool
 _d_is_trigger.argtypes = (_DevicePtr,)
 
 _d_get_trigger = _lib.iio_device_get_trigger
-_d_get_trigger.restype = c_int
-_d_get_trigger.argtypes = (
-    _DevicePtr,
-    _POINTER(_DevicePtr),
-)
-_d_get_trigger.errcheck = _check_negative
+_d_get_trigger.restype = c_void_p
+_d_get_trigger.argtypes = (_DevicePtr,)
 
 _d_set_trigger = _lib.iio_device_set_trigger
 _d_set_trigger.restype = c_int
@@ -1559,9 +1555,15 @@ class Device(_DeviceOrTrigger):
         _d_set_trigger(self._device, trigger._device if trigger else None)
 
     def _get_trigger(self):
-        value = _DevicePtr()
-        _d_get_trigger(self._device, _byref(value))
-        trig = Trigger(self.ctx, value.contents)
+        raw = _d_get_trigger(self._device)
+        if not raw:
+            return None
+        # Check for error-encoded pointer (high address within 4096 of overflow)
+        err = 2 ** (8 * sizeof(c_void_p)) - raw
+        if err < 4096:
+            return None
+        ptr = cast(raw, _DevicePtr)
+        trig = Trigger(self.ctx, ptr)
 
         for dev in self.ctx.devices:
             if trig.id == dev.id:
