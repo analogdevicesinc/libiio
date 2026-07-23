@@ -113,6 +113,9 @@ namespace iio
         // Constructor
         internal Device(Context ctx, IntPtr dev)
         {
+            if (dev == IntPtr.Zero)
+                throw new IIOException("Device pointer is null");
+
             this.ctx = ctx;
             this.dev = dev;
 
@@ -125,36 +128,54 @@ namespace iio
             var channelsList = new List<Channel>();
             for (uint i = 0; i < nb_channels; i++)
             {
-                channelsList.Add(new Channel(this, iio_device_get_channel(dev, i)));
+                IntPtr chn = iio_device_get_channel(dev, i);
+                if (chn == IntPtr.Zero)
+                    throw new IIOException("Unable to get channel at index " + i);
+                channelsList.Add(new Channel(this, chn));
             }
 
             var attrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_attrs; i++)
             {
-                Attr a = new Attr(iio_device_get_attr(dev, i));
+                IntPtr attr_ptr = iio_device_get_attr(dev, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get device attribute at index " + i);
+                Attr a = new Attr(attr_ptr);
                 attrsDict[a.name] = a;
             }
 
             var debugAttrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_debug_attrs; i++)
             {
-                Attr a = new Attr(iio_device_get_debug_attr(dev, i));
+                IntPtr attr_ptr = iio_device_get_debug_attr(dev, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get debug attribute at index " + i);
+                Attr a = new Attr(attr_ptr);
                 debugAttrsDict[a.name] = a;
             }
 
             var eventAttrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_event_attrs; i++)
             {
-                Attr a = new Attr(iio_device_get_event_attr(dev, i));
+                IntPtr attr_ptr = iio_device_get_event_attr(dev, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get event attribute at index " + i);
+                Attr a = new Attr(attr_ptr);
                 eventAttrsDict[a.name] = a;
             }
 
-            id = Marshal.PtrToStringAnsi(iio_device_get_id(dev)); // Device IDs are ASCII (kernel-defined)
+            IntPtr id_ptr = iio_device_get_id(dev);
+            if (id_ptr == IntPtr.Zero)
+                throw new IIOException("Unable to get device ID");
+            id = Marshal.PtrToStringAnsi(id_ptr);
 
             var buffersList = new List<IOBuffer>();
             for (uint i = 0; i < nb_buffers; i++)
             {
-                buffersList.Add(new IOBuffer(this, iio_device_get_buffer(dev, i)));
+                IntPtr buf = iio_device_get_buffer(dev, i);
+                if (buf == IntPtr.Zero)
+                    throw new IIOException("Unable to get buffer at index " + i);
+                buffersList.Add(new IOBuffer(this, buf));
             }
 
             channels = channelsList;
