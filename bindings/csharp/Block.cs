@@ -76,6 +76,8 @@ namespace iio
 
         public int enqueue(uint bytes_used = 0, bool cyclic = false)
         {
+            ThrowIfDisposed();
+
             if (enqueued) {
                 throw new IIOException("Block is already enqueued");
             }
@@ -92,6 +94,8 @@ namespace iio
 
         public int dequeue(bool nonblock = false)
         {
+            ThrowIfDisposed();
+
             if (!enqueued) {
                 throw new IIOException("Block has not been enqueued");
             }
@@ -108,35 +112,66 @@ namespace iio
         /// <remarks>The number of samples written will not exceed the size of the buffer.</remarks>
         public void fill(byte[] array)
         {
-            long length = (long) iio_block_end(hdl) - (long) iio_block_start(hdl);
+            ThrowIfDisposed();
+
+            if (array == null)
+                throw new ArgumentNullException("array");
+
+            IntPtr start = iio_block_start(hdl);
+            IntPtr end = iio_block_end(hdl);
+
+            if (start == IntPtr.Zero || end == IntPtr.Zero)
+                throw new IIOException("Block returned null pointer — block may be in an invalid state");
+
+            long length = (long)end - (long)start;
+            if (length < 0)
+                throw new IIOException("Block has invalid bounds (end < start)");
+
             if (length > array.Length)
-            {
                 length = array.Length;
-            }
-            Marshal.Copy(array, 0, iio_block_start(hdl), (int)length);
+
+            Marshal.Copy(array, 0, start, (int)length);
         }
 
         /// <summary>Extract the samples from the <see cref="iio.IOBuffer"/> object.</summary>
         /// <param name="array">A <c>byte</c> array containing the extracted samples.</param>
         public void read(byte[] array)
         {
-            long length = (long) iio_block_end(hdl) - (long) iio_block_start(hdl);
+            ThrowIfDisposed();
+
+            if (array == null)
+                throw new ArgumentNullException("array");
+
+            IntPtr start = iio_block_start(hdl);
+            IntPtr end = iio_block_end(hdl);
+
+            if (start == IntPtr.Zero || end == IntPtr.Zero)
+                throw new IIOException("Block returned null pointer — block may be in an invalid state");
+
+            long length = (long)end - (long)start;
+            if (length < 0)
+                throw new IIOException("Block has invalid bounds (end < start)");
+
             if (length > array.Length)
-            {
                 length = array.Length;
-            }
-            Marshal.Copy(iio_block_start(hdl), array, 0, (int)length);
+
+            Marshal.Copy(start, array, 0, (int)length);
         }
 
         /// <summary>Gets a pointer to the first sample from the current buffer for a specific channel.</summary>
         /// <param name="ch">The channel for which to find the first sample.</param>
         public IntPtr first(Channel ch)
         {
+            ThrowIfDisposed();
+
             if (ch == null)
-            {
-                throw new IIOException("The channel should not be null!");
-            }
-            return iio_block_first(hdl, ch.chn);
+                throw new ArgumentNullException("ch");
+
+            IntPtr result = iio_block_first(hdl, ch.chn);
+            if (result == IntPtr.Zero)
+                throw new IIOException("Unable to get first sample pointer for channel");
+
+            return result;
         }
     }
 }
