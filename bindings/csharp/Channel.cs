@@ -271,7 +271,13 @@ namespace iio
 
         internal Channel(Device dev, IntPtr chn)
         {
+            if (chn == IntPtr.Zero)
+                throw new IIOException("Channel pointer is null");
+
             IntPtr fmt_struct = iio_channel_get_data_format(chn);
+            if (fmt_struct == IntPtr.Zero)
+                throw new IIOException("Unable to get data format for channel");
+
             uint nb_attrs = iio_channel_get_attrs_count(chn);
             uint nb_event_attrs = iio_channel_get_event_attrs_count(chn);
 
@@ -284,7 +290,10 @@ namespace iio
             var attrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_attrs; i++)
             {
-                Attr a = new Attr(iio_channel_get_attr(chn, i));
+                IntPtr attr_ptr = iio_channel_get_attr(chn, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get channel attribute at index " + i);
+                Attr a = new Attr(attr_ptr);
                 attrsDict[a.name] = a;
             }
             attrs = attrsDict;
@@ -292,7 +301,10 @@ namespace iio
             var eventAttrsDict = new Dictionary<string, Attr>();
             for (uint i = 0; i < nb_event_attrs; i++)
             {
-                Attr a = new Attr(iio_channel_get_event_attr(chn, i));
+                IntPtr attr_ptr = iio_channel_get_event_attr(chn, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get channel event attribute at index " + i);
+                Attr a = new Attr(attr_ptr);
                 eventAttrsDict[a.name] = a;
             }
             event_attrs = eventAttrsDict;
@@ -310,7 +322,11 @@ namespace iio
             IntPtr label_ptr = iio_channel_get_label(this.chn);
             label = label_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(label_ptr);
 
-            id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn)); // Channel IDs are ASCII (kernel-defined)
+            IntPtr id_ptr = iio_channel_get_id(this.chn);
+            if (id_ptr == IntPtr.Zero)
+                throw new IIOException("Unable to get channel ID");
+            id = Marshal.PtrToStringAnsi(id_ptr);
+
             output = iio_channel_is_output(this.chn);
             scan_element = iio_channel_is_scan_element(this.chn);
             index = (uint) iio_channel_get_index(this.chn);
@@ -319,18 +335,27 @@ namespace iio
         /// <summary>Enable the current channel, so that it can be used for I/O operations.</summary>
         public void enable(ChannelsMask mask)
         {
+            if (mask == null)
+                throw new ArgumentNullException("mask");
+
             iio_channel_enable(this.chn, mask.hdl);
         }
 
         /// <summary>Disable the current channel.</summary>
         public void disable(ChannelsMask mask)
         {
+            if (mask == null)
+                throw new ArgumentNullException("mask");
+
             iio_channel_disable(this.chn, mask.hdl);
         }
 
         /// <summary>Returns whether or not the channel has been enabled.</summary>
         public bool is_enabled(ChannelsMask mask)
         {
+            if (mask == null)
+                throw new ArgumentNullException("mask");
+
             return iio_channel_is_enabled(this.chn, mask.hdl);
         }
 
@@ -343,6 +368,9 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The samples could not be read.</exception>
         public byte[] read(Block block, bool raw = false)
         {
+            if (block == null)
+                throw new ArgumentNullException("block");
+
             if (this.output)
                 throw new IIOException("Unable to read from output channel");
 
@@ -370,6 +398,11 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The samples could not be written.</exception>
         public uint write(Block block, byte[] array, bool raw = false)
         {
+            if (block == null)
+                throw new ArgumentNullException("block");
+            if (array == null)
+                throw new ArgumentNullException("array");
+
             if (!this.output)
                 throw new IIOException("Unable to write to an input channel");
 
