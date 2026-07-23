@@ -246,6 +246,7 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The timeout could not be applied.</exception>
         public void set_timeout(int timeout)
         {
+            ThrowIfDisposed();
             int ret = iio_context_set_timeout(hdl, timeout);
             if (ret < 0)
                 throw new IIOException("Unable to set timeout", ret);
@@ -255,6 +256,7 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The context did not respond.</exception>
         public void ping()
         {
+            ThrowIfDisposed();
             int ret = iio_context_ping(hdl);
             if (ret < 0)
                 throw new IIOException("Ping failed", ret);
@@ -267,6 +269,7 @@ namespace iio
         /// <exception cref="IioLib.IIOException">Thrown if the parameters could not be retrieved.</exception>
         public IioContextParams GetContextParams()
         {
+            ThrowIfDisposed();
             IntPtr paramsPtr = iio_context_get_params(hdl);
             if (paramsPtr == IntPtr.Zero)
             {

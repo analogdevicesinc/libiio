@@ -47,15 +47,25 @@ namespace iio
 
         internal Attr(IntPtr attr)
         {
+            if (attr == IntPtr.Zero)
+                throw new IIOException("Attribute pointer is null");
+
             this.attr = attr;
-            this.name = UTF8Marshaler.PtrToStringUTF8(iio_attr_get_name(attr));
-            this.filename = Marshal.PtrToStringAnsi(iio_attr_get_filename(attr)); // Filesystem paths are ASCII
+
+            IntPtr name_ptr = iio_attr_get_name(attr);
+            this.name = name_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(name_ptr);
+
+            IntPtr filename_ptr = iio_attr_get_filename(attr);
+            this.filename = filename_ptr == IntPtr.Zero ? "" : Marshal.PtrToStringAnsi(filename_ptr);
         }
 
         /// <summary>Read the value of this attribute as a <c>string</c>.</summary>
         /// <exception cref="IioLib.IIOException">The attribute could not be read.</exception>
         public string read()
         {
+            if (attr == IntPtr.Zero)
+                throw new IIOException("Attribute handle is invalid");
+
             byte[] buffer = new byte[4096];
             int err = iio_attr_read_raw(attr, buffer, (uint)buffer.Length);
             if (err < 0)
@@ -76,6 +86,9 @@ namespace iio
         /// <exception cref="IioLib.IIOException">The attribute could not be written.</exception>
         public void write(string val)
         {
+            if (attr == IntPtr.Zero)
+                throw new IIOException("Attribute handle is invalid");
+
             IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(val);
             try
             {
