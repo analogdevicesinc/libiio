@@ -194,6 +194,7 @@ struct iio_block_pdata *local_create_dmabuf(
 	}
 
 	pdata->dmabuf_supported = true;
+	pdata->size = size;
 
 	close(devfd);
 
