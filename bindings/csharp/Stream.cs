@@ -51,11 +51,13 @@ namespace iio
 
         public void cancel()
         {
+            ThrowIfDisposed();
             iio_stream_cancel(hdl);
         }
 
         public Block next()
         {
+            ThrowIfDisposed();
             IIOPtr ptr = iio_stream_get_next_block(hdl);
             if (!ptr)
                 throw new IIOException("Unable to get next block", ptr);

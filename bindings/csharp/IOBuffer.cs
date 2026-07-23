@@ -45,6 +45,9 @@ namespace iio
 
         internal IOBuffer(Device dev, IntPtr buffer)
         {
+            if (buffer == IntPtr.Zero)
+                throw new IIOException("Buffer pointer is null");
+
             this.dev = dev;
             this.buf = buffer;
 
@@ -52,7 +55,10 @@ namespace iio
             uint nb_buffer_attrs = iio_buffer_get_attrs_count(buf);
             for (uint i = 0; i < nb_buffer_attrs; i++)
             {
-                Attr a = new Attr(iio_buffer_get_attr(buf, i));
+                IntPtr attr_ptr = iio_buffer_get_attr(buf, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get buffer attribute at index " + i);
+                Attr a = new Attr(attr_ptr);
                 attrsDict[a.name] = a;
             }
             attrs = attrsDict;
@@ -113,6 +119,7 @@ namespace iio
         public bool started {
             get { return is_started; }
             set {
+                ThrowIfDisposed();
                 int err;
                 if (value)
                     err = iio_buffer_stream_start(hdl);
@@ -139,11 +146,13 @@ namespace iio
 
         public void cancel()
         {
+            ThrowIfDisposed();
             iio_buffer_stream_cancel(hdl);
         }
 
         public Block create_block(uint size)
         {
+            ThrowIfDisposed();
             return new Block(this, size);
         }
 
