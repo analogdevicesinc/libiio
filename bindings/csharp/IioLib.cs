@@ -162,6 +162,12 @@ namespace iio
             }
         }
 
+        protected void ThrowIfDisposed()
+        {
+            if (hdl == IntPtr.Zero)
+                throw new ObjectDisposedException(GetType().Name);
+        }
+
         protected abstract void Destroy();
     }
 
