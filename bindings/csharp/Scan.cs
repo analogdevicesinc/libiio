@@ -64,8 +64,14 @@ namespace iio
             var resultsDict = new Dictionary<string, string>();
 
             for (uint i = 0; i < nb_results; i++) {
-                string uri = Marshal.PtrToStringAnsi(iio_scan_get_uri(hdl, i)); // URIs are ASCII (RFC-compliant)
-                string dsc = UTF8Marshaler.PtrToStringUTF8(iio_scan_get_description(hdl, i));
+                IntPtr uri_ptr = iio_scan_get_uri(hdl, i);
+                if (uri_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get scan URI at index " + i);
+
+                IntPtr dsc_ptr = iio_scan_get_description(hdl, i);
+
+                string uri = Marshal.PtrToStringAnsi(uri_ptr);
+                string dsc = dsc_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(dsc_ptr);
 
                 resultsDict[uri] = dsc;
             }

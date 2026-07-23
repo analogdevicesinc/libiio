@@ -174,6 +174,9 @@ namespace iio
             for (uint i = 0; i < nb_devices; i++)
             {
                 IntPtr dev = iio_context_get_device(hdl, i);
+                if (dev == IntPtr.Zero)
+                    throw new IIOException("Unable to get device at index " + i);
+
                 if (iio_device_is_trigger(dev))
                 {
                     devicesList.Add(new Trigger(this, dev));
@@ -193,8 +196,12 @@ namespace iio
             xml = UTF8Marshaler.PtrToStringUTF8(xml_hdl.ptr);
             Marshal.FreeHGlobal(xml_hdl.ptr);
 
-            name = UTF8Marshaler.PtrToStringUTF8(iio_context_get_name(hdl));
-            description = UTF8Marshaler.PtrToStringUTF8(iio_context_get_description(hdl));
+            IntPtr name_ptr = iio_context_get_name(hdl);
+            name = name_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(name_ptr);
+
+            IntPtr desc_ptr = iio_context_get_description(hdl);
+            description = desc_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(desc_ptr);
+
             backend_version = new Version(hdl);
 
             attrs = new Dictionary<string, string>();
@@ -202,7 +209,10 @@ namespace iio
 
             for (uint i = 0; i < nbAttrs; i++)
             {
-                Attr attr = new Attr(iio_context_get_attr(hdl, i));
+                IntPtr attr_ptr = iio_context_get_attr(hdl, i);
+                if (attr_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get context attribute at index " + i);
+                Attr attr = new Attr(attr_ptr);
                 attrs[attr.name] = attr.read();
             }
         }
