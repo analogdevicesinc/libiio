@@ -377,7 +377,7 @@ ssize_t iio_device_get_sample_size(
 
 	for (i = 0; i < dev->nb_channels; i++) {
 		const struct iio_channel *chn = dev->channels[i];
-		unsigned int length = chn->format.length / 8 * chn->format.repeat;
+		unsigned int length;
 
 		if (chn->index < 0)
 			break;
@@ -388,6 +388,11 @@ ssize_t iio_device_get_sample_size(
 			prev = chn;
 			continue;
 		}
+
+		if (chn->is_scan_element)
+			(void)iio_channel_get_data_format(chn);
+
+		length = chn->format.length / 8 * chn->format.repeat;
 
 		if (length > largest)
 			largest = length;
