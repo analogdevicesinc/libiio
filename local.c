@@ -1143,18 +1143,28 @@ static int add_scan_element(void *d, const char *path)
 	if (string_ends_with(attr, "_en"))
 		return iio_buffer_add_scan_element(buffer, chn, attr_path);
 
-	/* _index and _type are very much constant for the channel (even if the channel is
+	/* _index is constant for the channel (even if the channel is
 	 * present in multiple buffers). Hence, if the channel is already marked as a scan, don't
 	 * bother in getting those attributes again.
-	 *
-	 * !\FIXME: In fact, the above is not quite true for _type as we can have multiple scan
-	 * types for the same channel (that can change at runtime). But that is not currently
-	 * supported anyways.
 	 */
 	if (string_ends_with(attr, "_index"))
 		return handle_scan_element_attr(chn, "index", attr_path);
 
-	return handle_scan_element_attr(chn, "type", attr_path);
+	/* _type can change at runtime on some devices (e.g., when oversampling_ratio
+	 * or resolution attributes are modified). Expose it as a channel attribute
+	 * so users can refresh it dynamically.
+	 */
+	if (string_ends_with(attr, "_type")) {
+		/* Add as a channel attribute for dynamic access */
+		ret = iio_channel_add_attr(chn, "type", IIO_ATTR_TYPE_CHANNEL, attr_path);
+		if (ret < 0)
+			return ret;
+
+		/* Also parse and cache initially */
+		return handle_scan_element_attr(chn, "type", attr_path);
+	}
+
+	return -EINVAL;
 }
 
 static bool is_scan_element_attr(const char *name)
