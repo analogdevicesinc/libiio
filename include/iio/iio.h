@@ -1546,8 +1546,17 @@ __api __check_ret __pure long iio_channel_get_index(const struct iio_channel *ch
 
 /** @brief Get a pointer to a channel's data format structure
  * @param chn A pointer to an iio_channel structure
+ *
+ * For scan element channels, this function attempts to refresh the format by
+ * reading the "type" attribute. If the read succeeds, the cached format is
+ * updated. If the read fails or the "type" attribute doesn't exist, the
+ * cached format is returned.
+ *
+ * Note: This function may perform I/O (sysfs read for local backend, network
+ * round-trip for network backends).
+ *
  * @return A pointer to the channel's iio_data_format structure */
-__api __check_ret __cnst const struct iio_data_format *iio_channel_get_data_format(
+__api __check_ret const struct iio_data_format *iio_channel_get_data_format(
 		const struct iio_channel *chn);
 
 /** @brief Convert the sample from hardware format to host format

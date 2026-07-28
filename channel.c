@@ -485,6 +485,26 @@ int iio_parse_channel_type(const char *format_str, struct iio_data_format *fmt)
 
 const struct iio_data_format *iio_channel_get_data_format(const struct iio_channel *chn)
 {
+	const struct iio_attr *attr;
+	char type_str[64];
+	ssize_t ret;
+	struct iio_data_format new_format;
+
+	/* For scan elements, try to refresh format from "type" attribute */
+	if (chn->is_scan_element) {
+		attr = iio_channel_find_attr(chn, "type");
+		if (attr) {
+			ret = iio_attr_read_raw(attr, type_str, sizeof(type_str));
+			if (ret > 0) {
+				if (iio_parse_channel_type(type_str, &new_format) == 0) {
+					memcpy(&((struct iio_channel *)chn)->format,
+					       &new_format, sizeof(new_format));
+				}
+			}
+		}
+	}
+
+	/* Return cached format (either freshly updated or original) */
 	return &chn->format;
 }
 
