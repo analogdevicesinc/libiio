@@ -231,6 +231,7 @@ int iio_dynamic_scan(const struct iio_context_params *params, struct iio_scan *c
 
 void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
+int iio_parse_channel_type(const char *format_str, struct iio_data_format *fmt);
 
 char *iio_strndup(const char *str, size_t n);
 char *iio_strtok_r(char *str, const char *delim, char **saveptr);

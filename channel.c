@@ -440,6 +440,49 @@ long iio_channel_get_index(const struct iio_channel *chn)
 	return chn->index;
 }
 
+int iio_parse_channel_type(const char *format_str, struct iio_data_format *fmt)
+{
+	char endian, sign;
+	int err;
+
+	if (!format_str || !fmt)
+		return -EINVAL;
+
+	/* Parse format string with repeat count: "le:s16/16X4>>0" */
+	if (strchr(format_str, 'X')) {
+		err = iio_sscanf(format_str, "%ce:%c%u/%uX%u>>%u",
+#ifdef _MSC_BUILD
+				&endian, (unsigned int)sizeof(endian),
+				&sign, (unsigned int)sizeof(sign),
+#else
+				&endian, &sign,
+#endif
+				&fmt->bits, &fmt->length, &fmt->repeat, &fmt->shift);
+		if (err != 6)
+			return -EINVAL;
+	} else {
+		/* Parse format string without repeat count: "le:s16/16>>0" */
+		fmt->repeat = 1;
+		err = iio_sscanf(format_str, "%ce:%c%u/%u>>%u",
+#ifdef _MSC_BUILD
+				&endian, (unsigned int)sizeof(endian),
+				&sign, (unsigned int)sizeof(sign),
+#else
+				&endian, &sign,
+#endif
+				&fmt->bits, &fmt->length, &fmt->shift);
+		if (err != 5)
+			return -EINVAL;
+	}
+
+	/* Set format flags */
+	fmt->is_be = (endian == 'b');
+	fmt->is_signed = (sign == 's' || sign == 'S');
+	fmt->is_fully_defined = (sign == 'S' || sign == 'U' || fmt->bits == fmt->length);
+
+	return 0;
+}
+
 const struct iio_data_format *iio_channel_get_data_format(const struct iio_channel *chn)
 {
 	return &chn->format;
