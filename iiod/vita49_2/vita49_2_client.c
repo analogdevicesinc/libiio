@@ -43,7 +43,6 @@
 // A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
 // However UDP has a max packet size of 65535 bytes (not words!), so we actually have to divide by 4.
 #define NUM_RX_SAMPLES 65440/4 
-// #define NUM_RX_SAMPLES 8440/4 
 #define NUM_RX_BLOCKS 32
 
 #define NUM_TX_SAMPLES 128
@@ -64,7 +63,7 @@
 #define RX_DEVICE_NAME_SYMBOL "get_rx_device_name"		// Name of the function in the device plugin that provides the RX device name
 #define TX_DEVICE_NAME_SYMBOL "get_tx_device_name"		// Name of the function in the device plugin that provides the TX device name
 
-#define TCP_DESTINATION "192.168.3.11" // Using this for sending packets to DIFI in GNU Radio
+#define TCP_DESTINATION "192.168.2.11" // Using this for sending packets to DIFI in GNU Radio
 
 // ==============================================================
 // INTERNAL FUNCTION DECLARATIONS ONLY, NOT OUTWARDLY EXPOSED
@@ -403,7 +402,7 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 		// Connect. Again if this fails we'll let it pass since UDP succeeded.
 		if (connect(tcp_socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
 		{
-			printf("vita49_2_client: TCP socket connection failed. (%d) %s\n", errno, strerror(errno));
+			printf("vita49_2_client: TCP socket connection to %s failed. (%d) %s\n", TCP_DESTINATION, errno, strerror(errno));
 		}
 	}
 
@@ -932,8 +931,6 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 	uint32_t next_ackx_ackv_stream_id = 0;
 	uint32_t next_acks_stream_id = 0;
 
-	// goto start;
-
 	while (udp_socket_fd >= 0) 
 	{
 		// ==============================================================
@@ -1104,9 +1101,9 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 						unsigned long long count = 0;
 						struct timespec start, end;
 
-						start:
-						while (1)
-						{
+						// Used a while loop to continuously send Data Packets without having to send constant queries for more I/Q
+						// while (1)
+						// {
 
 							// Timestamp for a packet that has multiple samples should be when the first sample was recorded.
 							// I have no good way of determining latency of a call to libiio to grab data, so I'll record the timestamp
@@ -1192,247 +1189,17 @@ static void vita49_2_main(struct thread_pool *pool, void *args)
 								continue;							
 							}
 
-							// if (sendto(udp_socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-							// 	fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
-							// else
-							// {
-							// 	count++;
-							// 	if (count % 100 == 0)
-							// 	{
-							// 		clock_gettime(CLOCK_MONOTONIC, &end);
-							// 		double time = (end.tv_sec - start.tv_sec) + 
-							// 								(end.tv_nsec - start.tv_nsec) / 1e9;
-							// 		printf("Last 100 packets: %f seconds\n", time);
-							// 		clock_gettime(CLOCK_MONOTONIC, &start);
-							// 	}
-							// }
+							if (sendto(udp_socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
 
 							if (tcp_socket_fd >= 0)
 							{
 								if (send(tcp_socket_fd, send_buffer, time_data_packet_size*4, 0) <= 0)
 									fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over TCP. (%d) %s\n", errno, strerror(errno));
-								else
-								{
-
-									count++;
-									if (count % 100 == 0)
-									{
-										clock_gettime(CLOCK_MONOTONIC, &end);
-										double time = (end.tv_sec - start.tv_sec) + 
-																(end.tv_nsec - start.tv_nsec) / 1e9;
-										printf("Last 100 packets: %f seconds\n", time);
-										clock_gettime(CLOCK_MONOTONIC, &start);
-									}
-
-								}
 							}
 
-
-
-												
-												// if ((ret_value = device_plugin.context(arguments->ctx, &context_packet.cif0, context_packet.cif1, context_packet.cif2, context_packet.cif3, context_packet.cif7, NULL)) < 0)
-												// {
-												// 	fprintf(stderr, "vita49_2_client: Error while acquiring data for Context Packet. (%d) %s\n", ret_value, strerror(-ret_value));
-												// 	goto cleanup_context_1;
-												// }
-
-												// // Writing the remaining information before sending the packet
-												// context_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
-
-												// stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
-												// stream_entry.host_port = sender_address.sin_port;
-												// stream_entry.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTEXT;
-												// stream_entry.stream_id = next_context_stream_id;
-
-												// ssize_t ret_value;
-
-												// // Error occurred
-												// if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
-												// {
-												// 	fprintf(stderr, "vita49_2_client: Error while trying to retrieve Stream ID for the Context Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
-												// 	goto cleanup_context_1;
-												// }
-
-												// // If the return value is greater than the last_insertion_index, that means a new element was inserted.
-												// if (ret_value > last_insertion_index)
-												// {
-												// 	context_packet.prologue.stream_id = stream_entry.stream_id;
-												// 	context_packet.prologue.header.packet_count = 0;
-												
-												// 	device_stream_id_table[ret_value].packet_count = 0;
-
-												// 	last_insertion_index++;
-												// 	next_context_stream_id++;
-												// }
-												// // Otherwise that means the element already existed in the array.
-												// else
-												// {
-												// 	context_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
-												// 	context_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
-												// }
-
-												// // Checking if this Context Packet has changed. There's a CIF0 field called "Context Field Change Indicator" which when asserted
-												// // indicates that the attribute data in this packet has changed since the previous Context Packet.
-
-												// // Pointers to make addressing easier (less typing)
-												// struct vita49_2_cif0_fields *current_cif0_ptr = &context_packet.cif0;
-												// struct vita49_2_cif0_fields *previous_cif0_ptr = &previous_context_packet.cif0;
-												// union vita49_2_cif0_word *current_cif0_word_ptr = &context_packet.cif0.word;
-
-												// current_cif0_word_ptr->context_field_change = 0;
-												// previous_cif0_ptr->word.context_field_change = 0;
-
-												// // First let's check if the previous packet was ever initialized to anything besides 0. If it was only initialized to 0,
-												// // then this represents the first time a Context Packet is being sent, thus "Context Field Change Indicator" should be asserted.
-												// if (previous_context_packet.prologue.header.packet_type != 0)
-												// {
-												// 	// Now to do an attribute-by-attribute comparison of the present CIF0 fields. I can't just use memcmp
-												// 	// because structs have padding bytes which can differ between 2 structs with the same attribute values.
-													
-												// 	// Checking for a difference in what fields are present/enabled
-												// 	if (context_packet.cif0.word.word != previous_context_packet.cif0.word.word)
-												// 		current_cif0_word_ptr->context_field_change = 1;
-
-												// 	// If the same fields are present, we have to compare each field individually to check for differing values
-												// 	else
-												// 	{
-												// 		if (current_cif0_ptr->reference_point_id != previous_cif0_ptr->reference_point_id)
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_double_compare(current_cif0_ptr->bandwidth, previous_cif0_ptr->bandwidth))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_double_compare(current_cif0_ptr->if_reference_frequency, previous_cif0_ptr->if_reference_frequency))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_double_compare(current_cif0_ptr->rf_reference_frequency, previous_cif0_ptr->rf_reference_frequency))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_double_compare(current_cif0_ptr->rf_reference_frequency_offset, previous_cif0_ptr->rf_reference_frequency_offset))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_double_compare(current_cif0_ptr->if_band_offset, previous_cif0_ptr->if_band_offset))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_float_compare(current_cif0_ptr->reference_level, previous_cif0_ptr->reference_level))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_float_compare(current_cif0_ptr->gains.gain_stage_1, previous_cif0_ptr->gains.gain_stage_1) || !_float_compare(current_cif0_ptr->gains.gain_stage_2, previous_cif0_ptr->gains.gain_stage_2))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (current_cif0_ptr->over_range_count != previous_cif0_ptr->over_range_count)
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_double_compare(current_cif0_ptr->sample_rate, previous_cif0_ptr->sample_rate))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (current_cif0_ptr->timestamp_adjustment != previous_cif0_ptr->timestamp_adjustment)
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (current_cif0_ptr->timestamp_calibration_time_int != previous_cif0_ptr->timestamp_calibration_time_int)
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (!_float_compare(current_cif0_ptr->temperature, previous_cif0_ptr->if_band_offset))
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		// Skipping the device identifier struct (that shouldn't change between Context Packets)
-
-												// 		else if (current_cif0_ptr->state_and_event_indicators != previous_cif0_ptr->state_and_event_indicators)
-												// 			current_cif0_word_ptr->context_field_change = 1;
-
-												// 		// Only checking the Data Packet Payload Format struct if it's enabled
-												// 		else if (current_cif0_word_ptr->has_data_packet_payload_format)
-												// 		{
-												// 			if (current_cif0_ptr->data_packet_payload_format.lower_word != previous_cif0_ptr->data_packet_payload_format.lower_word)
-												// 				current_cif0_word_ptr->context_field_change = 1;
-												// 			else
-												// 			{
-												// 				if (current_cif0_ptr->data_packet_payload_format.upper_word != previous_cif0_ptr->data_packet_payload_format.upper_word)
-												// 					current_cif0_word_ptr->context_field_change = 1;
-												// 			}
-												// 		}
-
-												// 		// TODO: Currently the vita49_2_formatted_gps_ins, vita49_2_gps_ascii, vita49_2_ecef_relative_ephemeris, and vita49_2_context_association_lists
-												// 		// structs haven't been fully defined, so I'm unable to implement the comparison logic for that.
-												// 		// Once they've been defined, that logic needs to be added here.
-												// 		else if (current_cif0_word_ptr->has_formatted_gps)
-												// 		{
-												// 			// TODO: See the above TODO
-												// 		}
-
-												// 		else if (current_cif0_word_ptr->has_formatted_ins)
-												// 		{
-												// 			// TODO: See the above TODO
-												// 		}
-
-												// 		else if (current_cif0_word_ptr->has_ecef_ephemeris)
-												// 		{
-												// 			// TODO: See the above TODO
-												// 		}
-
-												// 		else if (current_cif0_word_ptr->has_relative_ephemeris)
-												// 		{
-												// 			// TODO: See the above TODO
-												// 		}
-
-												// 		else if (current_cif0_ptr->ephemeris_ref_id != previous_cif0_ptr->ephemeris_ref_id)
-												// 				current_cif0_word_ptr->context_field_change = 1;
-
-												// 		else if (current_cif0_word_ptr->has_gps_ascii)
-												// 		{
-												// 			// TODO: See the above TODO
-												// 		}
-
-												// 		else if (current_cif0_word_ptr->has_context_association_lists)
-												// 		{
-												// 			// TODO: See the above TODO
-												// 		}
-												// 	}
-
-												// 	// I haven't fully defined the CIF1/2/3/7 structs yet, so the logic for that needs to be implemented
-
-												// 	// TODO: Logic for checking CIF1 fields
-													
-												// 	// TODO: Logic for checking CIF2 fields
-													
-												// 	// TODO: Logic for checking CIF3 fields
-													
-												// 	// TODO: Logic for checking CIF7 fields
-
-												// }
-
-												// if ((context_packet_size = vita49_2_serialize_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
-												// {
-												// 	fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet. (%d) %s\n", context_packet_size, (context_packet_size < 0) ? strerror(-context_packet_size) : "");
-												// 	goto cleanup_context_1;
-												// }
-
-												// if (sendto(udp_socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
-												// 	fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP. (%d) %s\n", errno, strerror(errno));
-												// else
-												// 	previous_context_packet = context_packet;
-
-												// if (tcp_socket_fd >= 0)
-												// 	if (send(tcp_socket_fd, send_buffer, context_packet_size*4, 0) <= 0)
-												// 		fprintf(stderr, "vita49_2_client: Failed to send Context Packet over TCP. (%d) %s\n", errno, strerror(errno));
-
-												// cleanup_context_1:
-												// free(context_packet.cif1);
-												// free(context_packet.cif2);
-												// free(context_packet.cif3);
-												// free(context_packet.cif7);
-
-												// context_packet.cif1 = NULL;
-												// context_packet.cif2 = NULL;
-												// context_packet.cif3 = NULL;
-												// context_packet.cif7 = NULL;
-
-												// memset(&context_packet.cif0, 0, sizeof(context_packet.cif0));
-
-
-
-
-						}
+						// }
+						
 						break;
 					}
 

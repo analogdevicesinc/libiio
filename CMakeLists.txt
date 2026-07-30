@@ -602,7 +602,7 @@ if(WITH_NETWORK_BACKEND)
 			${CMAKE_BINARY_DIR}
 		)
 		target_link_libraries(vita49_2_iiod PRIVATE iio vita49_2 m)
-		add_subdirectory(iiod/vita49_2/libraries)
+		add_subdirectory(iiod/vita49_2/plugins)
 		target_sources(iio PRIVATE iiod/vita49_2/vita49_2_host.c vita49_2/vita49_2_packet_elements.c vita49_2/vita49_2_packet_types.c)
 		target_include_directories(iio PRIVATE 
         ${CMAKE_CURRENT_SOURCE_DIR}/vita49_2

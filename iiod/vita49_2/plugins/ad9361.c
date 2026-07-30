@@ -34,6 +34,11 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Determines whether this plugin is compatible with the current device by looking for DEVICE_NAME in libiio.
+ * @param ctx
+ * @return bool Whether this plugin is compatible.
+ */
 __attribute__((visibility("default"))) bool identify(const struct iio_context* const ctx)
 {
 	if (iio_context_find_device(ctx, DEVICE_NAME) != NULL)
@@ -42,17 +47,33 @@ __attribute__((visibility("default"))) bool identify(const struct iio_context* c
     return false;
 }
 
+/**
+ * @brief Returns a pointer to the RX device name. Avoids having to hard code this name in the client code or in a config file.
+ * @return const char* Returns a pointer to the RX device name string literal in the read-only data segment.
+ */
 __attribute__((visibility("default"))) const char* get_rx_device_name()
 {
     return RX_DEVICE_NAME;
 }
 
+/**
+ * @brief Returns a pointer to the TX device name. Avoids having to hard code this name in the client code or in a config file.
+ * @return const char* Returns a pointer to the TX device name string literal in the read-only data segment.
+ */
 __attribute__((visibility("default"))) const char* get_tx_device_name()
 {
     return TX_DEVICE_NAME;
 }
 
-
+/**
+ * @brief Helper function to record a warning generated from a command.
+ * 
+ * @param warnings 
+ * @param warnings_buffer 
+ * @param cif_type 
+ * @param cif_bit 
+ * @param warning 
+ */
 void _report_warning(struct vita49_2_warnings* const warnings, union vita49_2_warning_error_indicators* const warnings_buffer, enum vita49_2_cif_types cif_type, uint8_t cif_bit, enum vita49_2_warnings_error_codes warning)
 {
     if (warnings == NULL || warnings_buffer == NULL || cif_bit > 31)
@@ -365,6 +386,19 @@ __attribute__((visibility("default"))) int validate_control_packet(const struct 
     return 0;
 }
 
+/**
+ * @brief Helper function for making the correct libiio calls to execute an attribute update.
+ * 
+ * @param ctx 
+ * @param attr 
+ * @param device_name iio device name
+ * @param channel_name iio channel name
+ * @param attribute_name iio attribute name
+ * @param is_output 
+ * @param data_type Double, float, int, bool, etc. See the enum vita49_2_control_data_type definition.
+ * @param data Void pointer to the new attribute value.
+ * @return enum vita49_2_warnings_error_codes 
+ */
 enum vita49_2_warnings_error_codes _update_attribute(const struct iio_context* const ctx, const struct iio_attr* attr, const char* const device_name, const char* const channel_name, const char* const attribute_name, bool is_output, enum vita49_2_control_data_types data_type, const void* const data)
 {
     if (ctx == NULL || attr == NULL || device_name == NULL || channel_name == NULL || attribute_name == NULL)
@@ -472,6 +506,15 @@ enum vita49_2_warnings_error_codes _update_attribute(const struct iio_context* c
     return ENONE;
 }
 
+/**
+ * @brief Helper function to record an error generated from executing a command.
+ * 
+ * @param ackX_packet 
+ * @param errors_buffer 
+ * @param cif_type 
+ * @param cif_bit 
+ * @param error 
+ */
 void _report_error(struct vita49_2_ackX_packet* const ackX_packet, union vita49_2_warning_error_indicators* const errors_buffer, enum vita49_2_cif_types cif_type, uint8_t cif_bit, enum vita49_2_warnings_error_codes error)
 {
     if (ackX_packet == NULL || errors_buffer == NULL || cif_bit > 31)
@@ -567,7 +610,7 @@ void _report_error(struct vita49_2_ackX_packet* const ackX_packet, union vita49_
 }
 
 /**
- * @brief 
+ * @brief Executes the commands in a Control Packet and writes any warnings/errors if a proper handle to a AckX packet is provided.
  * 
  * @param ctx
  * @param control_packet
@@ -815,6 +858,17 @@ __attribute__((visibility("default"))) int execute_control_packet(const struct i
     return 0;
 }
 
+/**
+ * @brief Queries libiio attributes to populate the appropriate CIF fields in a VITA 49.2 Context Packet.
+ * @param ctx
+ * @param cif0
+ * @param cif1 Optional, set to NULL if not applicable.
+ * @param cif2 Optional, set to NULL if not applicable.
+ * @param cif3 Optional, set to NULL if not applicable.
+ * @param cif7 Optional, set to NULL if not applicable.
+ * @param associated_control_packet If an AckS packet is requested, pass a pointer to the associated Control Packet. Otherwise set to NULL if not applicable.
+ * 
+ */
 __attribute__((visibility("default"))) int acquire_context_data(const struct iio_context* const ctx, struct vita49_2_cif0_fields* const cif0, struct vita49_2_cif1_fields* const cif1, 
                 struct vita49_2_cif2_fields* const cif2, struct vita49_2_cif3_fields* const cif3, struct vita49_2_cif7_fields* const cif7, const struct vita49_2_control_packet* const associated_control_packet)
 {
