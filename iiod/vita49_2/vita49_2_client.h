@@ -79,16 +79,17 @@ struct vita49_2_pdata {
 };
 
 /**
- * @struct vita49_2_device_plugin_node
- * @brief Represents a loadable library for executing custom commands when a Control/Control Extension Packet is received with the
- * appropriate CIF fields enabled or proper payload.
- * 
+ * @struct vita49_2_device_plugin
+ * @brief Represents the loadable library associated with this device (AD9361, ADRV9002, etc.) that provides the functionality
+ * for validating commands, executing commands, acquiring Context Packet data, etc.
  */
-struct vita49_2_device_plugin_node {
+struct vita49_2_device_plugin {
 
-	int (*validate)(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet);	// Pointer to a function that validates the commands in the plugin and returns warnings (if any)
-	int (*execute)(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackX_packet* const ackX_packet);	// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
-	struct vita49_2_device_plugin_node* next;
+	int (*validate)(const struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet);	// Pointer to a function that validates the commands in the plugin and returns warnings (if any)
+	int (*execute)(const struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackX_packet* const ackX_packet);	// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
+	int (*context)(const struct iio_context* const ctx, struct vita49_2_cif0_fields* const cif0, struct vita49_2_cif1_fields* const cif1, 
+                struct vita49_2_cif2_fields* const cif2, struct vita49_2_cif3_fields* const cif3, struct vita49_2_cif7_fields* const cif7,
+				const struct vita49_2_control_packet* const associated_control_packet);																			// Pointer to a function that executes the commands in the plugin and returns warnings (if any)
 
 };
 

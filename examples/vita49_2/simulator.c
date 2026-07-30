@@ -28,7 +28,8 @@
 #define STRINGIFY(x) #x
 #define TO_STRING(x) STRINGIFY(x)
 
-#define destination_ip "192.168.2.1"
+#define DEFAULT_DESTINATION "192.168.2.1"
+#define DEFAULT_DESTINATION_2 "192.168.3.1"
 
 // Commonly used convention for sending VITA 49.2 packets over UDP
 #define VITA49_2_UDP_PORT 4991
@@ -38,11 +39,18 @@
 
 #define SAMPLING_RATE 30890000
 
-int main() 
+int main(int argc, char** argv) 
 {
     int fd;
-    struct sockaddr_in addr;
+    struct sockaddr_in addr1, addr2;
     uint32_t packet[1024];
+
+    char* destination_ip = DEFAULT_DESTINATION;
+
+    if (argc > 1)
+        destination_ip = argv[1];
+
+    printf("Using device connected at %s\n\n", destination_ip);
 
     char options[][100] = 
     {
@@ -58,10 +66,15 @@ int main()
         return 1;
     }
 
-    memset(&addr, 0, sizeof(addr));
-    addr.sin_family = AF_INET;
-    addr.sin_port = htons(VITA49_2_UDP_PORT);
-    addr.sin_addr.s_addr = inet_addr(destination_ip);
+    memset(&addr1, 0, sizeof(addr1));
+    addr1.sin_family = AF_INET;
+    addr1.sin_port = htons(VITA49_2_UDP_PORT);
+    addr1.sin_addr.s_addr = inet_addr(DEFAULT_DESTINATION);
+
+    memset(&addr2, 0, sizeof(addr2));
+    addr2.sin_family = AF_INET;
+    addr2.sin_port = htons(VITA49_2_UDP_PORT);
+    addr2.sin_addr.s_addr = inet_addr(DEFAULT_DESTINATION_2);
 
     // Create a Control Packet to Request IQ Data
     struct vita49_2_control_packet request_iq_packet = {0};
@@ -191,9 +204,14 @@ int main()
         }
 
         printf("Sending VITA 49.2 Control Packet to %s:%d\n", destination_ip, VITA49_2_UDP_PORT);
-        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr, sizeof(addr)) < 0) 
+        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr1, sizeof(addr1)) < 0) 
         {
-            perror("sendto");
+            fprintf(stderr, "Failed to send to %s\n", DEFAULT_DESTINATION);
+        }
+        
+        if (sendto(fd, packet, packet_size*4, 0, (struct sockaddr *)&addr2, sizeof(addr2)) < 0) 
+        {
+            fprintf(stderr, "Failed to send to %s\n", DEFAULT_DESTINATION_2);
         }
 
         printf("\n");
