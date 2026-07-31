@@ -8,7 +8,7 @@
 
 #include "iio-config.h"
 #include "iio-private.h"
-#include "vita49_packet.h"
+#include "vita49_2_packet_types.h"
 
 #include <iio/iio.h>
 #include <iio/iio-backend.h>
@@ -31,7 +31,8 @@
 #include <unistd.h>
 #endif
 
-#define VITA49_TIMEOUT_MS 5000
+#define VITA49_2_TIMEOUT_MS 5000
+#define DEFAULT_PORT "4991"
 
 struct iio_context_pdata {
 	int fd;
@@ -41,7 +42,7 @@ struct iio_context_pdata {
 
 
 static struct iio_context *
-vrt_create_context(const struct iio_context_params *params, const char *hostname)
+vita49_2_create_context(const struct iio_context_params *params, const char *hostname)
 {
 	struct addrinfo hints, *res;
 	struct iio_context_pdata *pdata;
@@ -51,49 +52,65 @@ vrt_create_context(const struct iio_context_params *params, const char *hostname
 	uint32_t buf[1024];
 	struct timeval tv;
 
-	fprintf(stderr, "vrt_create_context: hostname=%s\n", hostname);
+	fprintf(stderr, "vita49_2_create_context: hostname=%s\n", hostname);
 
+	// Allocating memory for a struct containing our socket information
 	pdata = zalloc(sizeof(*pdata));
 	if (!pdata)
 		return iio_ptr(-ENOMEM);
 
 	tmp_host = iio_strdup(hostname);
-	if (!tmp_host) {
+	if (!tmp_host) 
+	{
 		free(pdata);
 		return iio_ptr(-ENOMEM);
 	}
 
 	host = tmp_host;
+
+	// Finding the port from the provided hostname
 	port_str = strchr(host, ':');
-	if (port_str) {
+	if (port_str) 
+	{
+		// Placing a null terminator to split the hostname into 2 strings (host and port)
 		*port_str = '\0';
 		port_str++;
-	} else {
-		port_str = "1234"; /* Default VRT port */
+	} 
+	// Default if no port could be found or was provided
+	else 
+	{
+		port_str = DEFAULT_PORT;
 	}
 
-	fprintf(stderr, "vrt_create_context: host=%s port=%s\n", host, port_str);
+	fprintf(stderr, "vita49_2_create_context: host=%s port=%s\n", host, port_str);
 
+	// Creating the UDP socket for either IPv4 or IPv6
 	memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_UNSPEC;
 	hints.ai_socktype = SOCK_DGRAM;
 
+	// Translate the hostname into a list of possible addresses
 	ret = getaddrinfo(host, port_str, &hints, &res);
 	free(tmp_host);
-	if (ret != 0) {
-		fprintf(stderr, "vrt_create_context: getaddrinfo failed: %s\n", gai_strerror(ret));
+
+	if (ret != 0) 
+	{
+		fprintf(stderr, "vita49_2_create_context: getaddrinfo failed: %s\n", gai_strerror(ret));
 		free(pdata);
 		return iio_ptr(-EINVAL);
 	}
 
+	// Creating the socket, not yet bound though
 	fd = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-	if (fd < 0) {
-		fprintf(stderr, "vrt_create_context: socket failed: %s\n", strerror(errno));
+	if (fd < 0) 
+	{
+		fprintf(stderr, "vita49_2_create_context: socket failed: %s\n", strerror(errno));
 		freeaddrinfo(res);
 		free(pdata);
 		return iio_ptr(-errno);
 	}
 
+	// Storing the socket info in our private data struct
 	pdata->fd = fd;
 	memcpy(&pdata->addr, res->ai_addr, res->ai_addrlen);
 	pdata->addrlen = res->ai_addrlen;
@@ -108,6 +125,8 @@ vrt_create_context(const struct iio_context_params *params, const char *hostname
 	local_addr.sin_family = AF_INET;
 	local_addr.sin_port = htons(atoi(port_str));
 	local_addr.sin_addr.s_addr = INADDR_ANY;
+
+	// Binding the socket to the port from the hostname argument, but on all interfaces
 	bind(fd, (struct sockaddr *)&local_addr, sizeof(local_addr));
 
 	/* Set timeout for discovery */
@@ -115,15 +134,17 @@ vrt_create_context(const struct iio_context_params *params, const char *hostname
 	tv.tv_usec = 0;
 	setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
 
-	ctx = iio_context_create_from_backend(params, &iio_vrt_backend,
-					      "VITA 49.2 VRT Backend", 0, 1, "");
-	if (!ctx) {
-		fprintf(stderr, "vrt_create_context: iio_context_create_from_backend failed\n");
-#ifdef _WIN32
-		closesocket(fd);
-#else
-		close(fd);
-#endif
+	ctx = iio_context_create_from_backend(params, &iio_vita49_2_backend, "VITA 49.2 Backend", 0, 1, "");
+	if (!ctx) 
+	{
+		fprintf(stderr, "vita_49_2_create_context: iio_context_create_from_backend failed\n");
+		
+		#ifdef _WIN32
+				closesocket(fd);
+		#else
+				close(fd);
+		#endif
+		
 		free(pdata);
 		return NULL;
 	}
@@ -131,31 +152,35 @@ vrt_create_context(const struct iio_context_params *params, const char *hostname
 	iio_context_set_pdata(ctx, pdata);
 
 	/* Discovery loop */
-	fprintf(stderr, "vrt_create_context: starting discovery loop\n");
+	fprintf(stderr, "vita49_2_create_context: starting discovery loop\n");
 	struct timeval start_time, current_time;
 	gettimeofday(&start_time, NULL);
 
-	while (1) {
+	while (1) 
+	{
 		ssize_t received = recv(fd, buf, sizeof(buf), 0);
-		if (received < 0) {
-			if (errno == EAGAIN || errno == EWOULDBLOCK) {
-				fprintf(stderr, "vrt_create_context: discovery timeout\n");
+		if (received < 0) 
+		{
+			if (errno == EAGAIN || errno == EWOULDBLOCK) 
+			{
+				fprintf(stderr, "vita49_2_create_context: discovery timeout\n");
 				break;
 			}
-			fprintf(stderr, "vrt_create_context: recv failed: %s\n", strerror(errno));
+			fprintf(stderr, "vita49_2_create_context: recv failed: %s\n", strerror(errno));
 			break;
 		}
 
-		struct vrt_packet pkt;
-		if (vrt_parse_packet(buf, received / 4, &pkt) < 0) {
-			fprintf(stderr, "vrt_create_context: Failed to parse VRT packet\n");
+		struct vita49_2_context_packet pkt;
+		if (vita49_2_parse_context_packet(buf, received / 4, &pkt) < 0) 
+		{
+			fprintf(stderr, "vita49_2_create_context: Failed to parse VITA 49.2 packet\n");
 			continue;
 		}
 
-		fprintf(stderr, "vrt_create_context: received packet type %u\n", pkt.header.packet_type);
+		fprintf(stderr, "vita49_2_create_context: received packet type %u\n", pkt.prologue.header.packet_type);
 
-		if (pkt.header.packet_type == VRT_PKT_TYPE_IF_CONTEXT && pkt.has_stream_id) {
-			uint32_t sid = pkt.stream_id;
+		if (pkt.prologue.header.packet_type == VITA49_2_PKT_TYPE_IF_CONTEXT && pkt.prologue.has_stream_id) {
+			uint32_t sid = pkt.prologue.stream_id;
 			char sid_str[32];
 			snprintf(sid_str, sizeof(sid_str), "vrt_device_%08x", sid);
 			
@@ -187,7 +212,7 @@ vrt_create_context(const struct iio_context_params *params, const char *hostname
 	return ctx;
 }
 
-static void vrt_shutdown(struct iio_context *ctx)
+static void vita49_2_shutdown(struct iio_context *ctx)
 {
 	struct iio_context_pdata *pdata = iio_context_get_pdata(ctx);
 
@@ -200,7 +225,7 @@ static void vrt_shutdown(struct iio_context *ctx)
 	}
 }
 
-static int vrt_get_version(const struct iio_context *ctx, unsigned int *major,
+static int vita49_2_get_version(const struct iio_context *ctx, unsigned int *major,
 			   unsigned int *minor, char git_tag[8])
 {
 	*major = 0;
@@ -209,17 +234,20 @@ static int vrt_get_version(const struct iio_context *ctx, unsigned int *major,
 	return 0;
 }
 
-static const struct iio_backend_ops vrt_ops = {
-	.create = vrt_create_context,
-	.shutdown = vrt_shutdown,
-	.get_version = vrt_get_version,
+static const struct iio_backend_ops vita49_2_ops = {
+	.create = vita49_2_create_context,
+	.shutdown = vita49_2_shutdown,
+	.get_version = vita49_2_get_version,
 	/* TODO: Implement other ops */
 };
 
-const struct iio_backend iio_vrt_backend = {
+const struct iio_backend iio_vita49_2_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "vrt",
 	.uri_prefix = "vrt:",
-	.ops = &vrt_ops,
-	.default_timeout_ms = VITA49_TIMEOUT_MS,
+	.ops = &vita49_2_ops,
+	.default_timeout_ms = VITA49_2_TIMEOUT_MS,
 };
+
+
+

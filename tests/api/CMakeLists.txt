@@ -16,15 +16,11 @@ set(API_TEST_TARGETS
     test_lowlevel
 )
 
-if(WITH_VITA49_BACKEND)
-    list(APPEND API_TEST_TARGETS test_vita49)
-endif()
-
 # Create a helper library for common test utilities
 add_library(test_common STATIC test_framework.h)
 set_target_properties(test_common PROPERTIES LINKER_LANGUAGE C)
 target_include_directories(test_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_common PUBLIC iio)
+target_link_libraries(test_common PUBLIC iio iio-compat)
 
 # Build each API test
 foreach(test ${API_TEST_TARGETS})
@@ -49,25 +45,21 @@ foreach(test ${API_TEST_TARGETS})
     endif()
 endforeach()
 
-if(WITH_VITA49_BACKEND)
-	add_executable(test_vrt_iiod test_vrt_iiod.c ../../iiod/vrt_command.c ../../vita49_packet.c)
-	target_link_libraries(test_vrt_iiod PRIVATE test_common iio)
-	target_include_directories(test_vrt_iiod PRIVATE
+if(WITH_VITA49_2_BACKEND)
+    add_executable(test_vita49_2_packets vita49_2/static/test_vita49_2_packets.c)
+    target_link_libraries(test_vita49_2_packets PRIVATE test_common iio vita49_2)
+    target_include_directories(test_vita49_2_packets PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}
         ${CMAKE_CURRENT_SOURCE_DIR}/../
         ${CMAKE_SOURCE_DIR}/include
         ${CMAKE_BINARY_DIR}
-        ${CMAKE_CURRENT_SOURCE_DIR}/../../
     )
-    add_test(NAME api_vrt_iiod COMMAND test_vrt_iiod)
-
-	add_executable(vrt_simulator vrt_simulator.c)
-	set_target_properties(vrt_simulator PROPERTIES
-		RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-		C_STANDARD 99
-		C_STANDARD_REQUIRED ON
-		C_EXTENSIONS OFF
-	)
+    set_target_properties(test_vita49_2_packets PROPERTIES
+        C_STANDARD 99
+        C_STANDARD_REQUIRED ON
+        C_EXTENSIONS OFF
+    )
+    add_test(NAME test_vita49_2_packets COMMAND test_vita49_2_packets)
 endif()
 
 # Master test runner

@@ -53,3 +53,24 @@ A Curses based application which implements real time monitoring of IIO non-buff
   * Language : C++
 
 Demonstrates the usage of the C++ API.
+
+## vita49_2 (directory)
+  
+  * #### command_sequence
+    * Language : C
+    * Requirements : vita49_2 -> Run CMake with -DWITH_VITA49_2_BACKEND, libiio
+
+    This example VITA 49.2 program demonstrates how command sequences can be issued via Control Extension Packets.
+
+  * #### simulator
+    * Language : C
+    * Requirements : vita49_2 -> Run CMake with -DWITH_VITA49_2_BACKEND, libiio
+
+    This example VITA 49.2 program demonstrates how Control Packets can be generated to modify CIF0 fields.
+
+  * #### sine_wave
+    * Language : C
+    * Requirements : vita49_2 -> Run CMake with -DWITH_VITA49_2_BACKEND, libiio, math
+
+    This example VITA 49.2 program demonstrates how Control Packets can be used to request I/Q data. It sets up
+    a Pluto to transmit a sine wave in loopback mode, and issues V49.2 Control Packets on an interval to retrieve that data.

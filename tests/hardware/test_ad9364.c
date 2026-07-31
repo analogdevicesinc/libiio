@@ -49,10 +49,10 @@ int main() {
 
   int err;
 
-  const char *uri = getenv("URI_AD9361");
-  if (uri == NULL)
-    exit(0); // Can't find anything don't run tests
-  ctx = iio_create_context(NULL, uri);
+  // const char *uri = getenv("URI_AD9361");
+  // if (uri == NULL)
+  //   exit(0); // Can't find anything don't run tests
+  ctx = iio_create_context(NULL, "ip:192.168.2.1");
 
   phy = iio_context_find_device(ctx, "ad9361-phy");
   assertm(phy, "Unable to find AD9361-phy device");

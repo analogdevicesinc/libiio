@@ -1,0 +1,2309 @@
+/* SPDX-License-Identifier: LGPL-2.1-or-later */
+/*
+ * libiio - Library for interfacing industrial I/O (IIO) devices
+ *
+ * Copyright (C) 2026 Analog Devices, Inc.
+ * Author: Praveen Perera <praveen.perera@analog.com>
+ * 
+ * Contributors:
+ * 		- Travis Collins <travis.collins@analog.com>
+*/
+
+// Runs on the System-on-Module (SoM) and handles processing incoming VITA 49.2 packets,
+// executing any necessary commands, querying data, generating VITA 49.2 packets, and sending those packets.
+
+#include "vita49_2_client.h"
+#include "vita49_2_iiod_helpers.h"
+#include <vita49_2/vita49_2_packet_types.h>
+#include <vita49_2/vita49_2_packet_elements.h>
+#include <iio/iio.h>
+
+#include <inttypes.h>
+#include <stdbool.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <errno.h>
+#include <poll.h>
+#include <time.h>
+#include <math.h>
+#include <sys/timerfd.h>
+#include <float.h>
+#include <dirent.h>
+#include <linux/limits.h>
+#include <dlfcn.h>
+
+#define VITA_PORT 4991 // By convention, VITA 49.2 uses 4991 for the UDP port
+
+// ====================================================================================================================================
+// Streaming related parameters for the RX and TX I/Q buffers
+
+// A VITA 49.2 packet has a max size of 65535 words. It's more efficient to try and pack as many samples as possible into a packet.
+// However UDP has a max packet size of 65535 bytes (not words!), so we actually have to divide by 4.
+#define NUM_RX_SAMPLES 65440/4 
+#define NUM_RX_BLOCKS 32
+
+#define NUM_TX_SAMPLES 128
+
+#define NUM_CHANNELS 2 		// One for the I-component and one for the Q-component
+#define BYTES_PER_SAMPLE 4 	// I and Q-components are both 16-bit signed integers
+// ====================================================================================================================================
+
+#define STREAM_ID_TABLE_SIZE 50 // How big our array of Stream IDs structs should be. Expand this number in the future if we have a lot of concurrent or new VITA 49.2 connections/packet streams.
+
+#define CONTEXT_PACKET_INTERVAL_S 2 // How many seconds to wait before sending the next Context Packet (ignoring Context Packets that are triggered by metadata changes)
+
+#define PLUGINS_DIRECTORY "./"				// Directory containing device plugins
+#define VALIDATE_SYMBOL "validate_control_packet" 		// Name of the function in the device plugin for validating the commands
+#define EXECUTE_SYMBOL "execute_control_packet"			// Name of the function in the device plugin for executing the commands
+#define CONTEXT_SYMBOL "acquire_context_data"			// Name of the function in the device plugin for acquiring Context Packet data
+#define IDENTIFY_SYMBOL "identify"						// Name of the function in the device plugin that determines whether there's a device that this plugin is associated with
+#define RX_DEVICE_NAME_SYMBOL "get_rx_device_name"		// Name of the function in the device plugin that provides the RX device name
+#define TX_DEVICE_NAME_SYMBOL "get_tx_device_name"		// Name of the function in the device plugin that provides the TX device name
+
+#define TCP_DESTINATION "192.168.2.11" // Using this for sending packets to DIFI in GNU Radio
+
+// ==============================================================
+// INTERNAL FUNCTION DECLARATIONS ONLY, NOT OUTWARDLY EXPOSED
+// ==============================================================
+
+/**
+ * @brief Linear search of an array of vita49_2_stream_entry structs to see if the insertion_item already exists.
+ * If not, the element is copied onto the next available element in the array and the index is returned.
+ * 
+ * @param array_start Pointer to the start of the array
+ * @param array_size Size of the array
+ * @param insertion_item Pointer to a struct containing the parameter values of the associated struct that we want to insert into the array.
+ * @return ssize_t If the insertion_item already exists in the array, the index to that element is returned. Otherwise a negative error code is returned.
+ */
+ssize_t _insert_stream_id(struct vita49_2_stream_entry* const array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item);
+
+/**
+ * @brief Accepts a parsed Control Packet and executes the commands listed in it.
+ * 
+ * @param ctx 
+ * @param pkt 
+ * @param ackX_packet Can be NULL (optional). Pass an AckX Packet to populate its error fields if necessary. 
+ * @param device_plugin Pointer to the head node of the linked list of available plugins.
+ * @return int Returns a negative error code on failure, otherwise 0 on success.
+ */
+int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, const struct vita49_2_device_plugin* const device_plugin);
+
+/**
+ * @brief Accepts a parsed Control Extension Packet and executes the commands in it.
+ * 
+ * @param ctx 
+ * @param pkt 
+ * @param device_plugin Pointer to the head node of the linked list of available plugins. 
+ * @return int Returns a negative error code on failure, otherwise 0 on success.
+ */
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_device_plugin* device_plugin);
+
+/**
+ * @brief Finds the "_available" attribute associated with a modifiable IIO attribute and reads the data from it.
+ * 
+ * @param ctx 
+ * @param cif_type 
+ * @param cif_bit 
+ * @param available_range 
+ * @param buffer_size 
+ * @return enum vita49_2_warnings_error_codes 
+ */
+enum vita49_2_warnings_error_codes _find_available_attribute(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, char* available_range, size_t buffer_size);
+
+/**
+ * @brief Validates the commands in a Control Packet by verifying that provided new value for an attribute is within the acceptable range.
+ * 
+ * @param ctx
+ * @param control_packet 
+ * @param ackX_packet 
+ * @param device_plugin 
+ * @return int Returns an error code on failure, otherwise 0 on success.
+ */
+int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet, const struct vita49_2_device_plugin* const device_plugin);
+
+/**
+ * @brief More precise way of comparing doubles. Takes into account scaling.
+ * 
+ * Returns true if the 2 doubles are equal.
+ * 
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+static inline bool _double_compare(double a, double b)
+{
+	return fabs(a - b) <= DBL_EPSILON * fmax(fabs(a), fabs(b));
+}
+
+/**
+ * @brief More precise way of comparing floats. Takes into account scaling.
+ * 
+ * Returns true if the 2 floats are equal.
+ * 
+ * @param a 
+ * @param b 
+ * @return true 
+ * @return false 
+ */
+static inline bool _float_compare(float a, float b)
+{
+	return fabs(a - b) <= FLT_EPSILON * fmax(fabs(a), fabs(b));
+}
+
+// ==============================================================
+// GLOBAL VARIABLES
+// ==============================================================
+
+// Linked list containing CIF mapping structs which describe how a field in one of the CIFs 
+// translates to a specific attribute on this device. This variable will be our head node.
+static struct vita49_2_cif_mapping *vita49_2_cif_mappings_list = NULL;
+
+// ==============================================================
+// ENTRY POINT
+// ==============================================================
+
+int start_vita49_2_daemon(struct iio_context *ctx, struct thread_pool *pool)
+{
+	int ret;
+
+	// This struct will contain all of the arguments that we want to pass to the main VITA 49.2 thread
+	struct vita49_2_pdata *thread_arguments;
+	thread_arguments = calloc(1, sizeof(*thread_arguments));
+
+	if (!thread_arguments)
+		return -ENOMEM;
+
+	thread_arguments->ctx = ctx;
+	thread_arguments->pool = thread_pool_new();
+	if (!thread_arguments->pool)
+	{
+		ret = -errno;
+		free(thread_arguments);
+		return ret;
+	}
+
+	if ((ret = thread_pool_add_thread(pool, vita49_2_main, thread_arguments, "vita49_2_main_thd")) == 0)
+		return 0;
+	
+	// Free data on failure only
+	free(thread_arguments);
+	return ret;
+}
+
+static void vita49_2_main(struct thread_pool *pool, void *args)
+{
+	struct vita49_2_pdata *arguments = args;
+	char iio_error_buffer[256];
+	printf("\n");
+
+	const char* rx_device_name;
+	const char* tx_device_name;
+
+	// ==============================================================
+	// SHARED LIBRARIES/PLUGINS
+	// ==============================================================
+	
+	struct vita49_2_device_plugin device_plugin = {0};
+
+	DIR *libraries_directory;
+	libraries_directory = opendir(PLUGINS_DIRECTORY);
+	
+	if (libraries_directory == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to open directory for command sequence plugins (%s). (%d) %s Any future commands invoking these libraries will fail!\n", PLUGINS_DIRECTORY, errno, strerror(errno));
+		goto socket_creation;
+	}
+	
+	struct dirent *library;
+	size_t filename_length;
+	while ((library = readdir(libraries_directory)) != NULL)
+	{
+		// Skipping parent/current directory
+		if (strcmp(library->d_name, ".") == 0 || strcmp(library->d_name, "..") == 0)
+			continue;
+
+		// Skipping entries not ending in ".so"
+		filename_length = strlen(library->d_name);
+		if (filename_length < 4 || strcmp(library->d_name + filename_length - 3, ".so") != 0)
+			continue;
+
+		char library_path[PATH_MAX];
+		snprintf(library_path, sizeof(library_path), "%s%s", PLUGINS_DIRECTORY, library->d_name);
+
+		// Loading the library
+		printf("Loading library at %s\n", library_path);
+		void *library_handle = dlopen(library_path, RTLD_NOW | RTLD_LOCAL);
+
+		if (library_handle == NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load library. %s\n", dlerror());
+			continue;
+		}
+
+		dlerror();
+
+		// Not all plugins that are stored on the SoM are guaranteed to correspond to a device that exists in the SoM.
+		// For that, we must first identify if the plugin is associated with a device, and if no we'll skip it.
+		bool (*identify_fn)(const struct iio_context const *ctx);
+		identify_fn = dlsym(library_handle, IDENTIFY_SYMBOL);
+		char* error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", IDENTIFY_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		// Now to check if this plugin is associated with a device locally
+		if (!identify_fn(arguments->ctx))
+			continue;
+
+		dlerror();
+
+		// Symbol for validating commands
+		int (*validate_fn)(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet);
+		validate_fn = dlsym(library_handle, VALIDATE_SYMBOL);
+		error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", VALIDATE_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+
+		// Symbol for executing commands
+		int (*execute_fn)(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackX_packet* const ackX_packet);
+		execute_fn = dlsym(library_handle, EXECUTE_SYMBOL);
+		error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", EXECUTE_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+
+		// Symbol for acquiring Context Packet data
+		int (*context_fn)(const struct iio_context* const ctx, struct vita49_2_cif0_fields* const cif0, struct vita49_2_cif1_fields* const cif1, 
+                struct vita49_2_cif2_fields* const cif2, struct vita49_2_cif3_fields* const cif3, struct vita49_2_cif7_fields* const cif7,
+				const struct vita49_2_control_packet* const associated_control_packet);
+		context_fn = dlsym(library_handle, CONTEXT_SYMBOL);
+		error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", CONTEXT_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+
+		// Acquiring RX device name
+		const char* (*rx_device_name_fn)();
+		rx_device_name_fn = dlsym(library_handle, RX_DEVICE_NAME_SYMBOL);
+		error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", RX_DEVICE_NAME_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+		rx_device_name = rx_device_name_fn();
+		
+		// Acquiring TX device name
+		const char* (*tx_device_name_fn)();
+		tx_device_name_fn = dlsym(library_handle, TX_DEVICE_NAME_SYMBOL);
+		error = dlerror();
+		if (error != NULL)
+		{
+			fprintf(stderr, "vita49_2_client: Failed to load '%s' symbol from %s. %s\n", TX_DEVICE_NAME_SYMBOL, library_path, error);
+			dlclose(library_handle);
+			continue;
+		}
+
+		dlerror();
+		tx_device_name = tx_device_name_fn();
+
+		device_plugin.validate = validate_fn;
+		device_plugin.execute = execute_fn;
+		device_plugin.context = context_fn;
+	}
+
+	closedir(libraries_directory);
+
+	if (device_plugin.validate == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to discover a compatible plugin for this device. Shutting down VITA 49.2 backend.\n\n");
+		return;
+	}
+
+	// ==============================================================
+	// SOCKET CREATION
+	// ==============================================================
+	socket_creation:
+	{}
+
+	// UDP Socket
+
+	int udp_socket_fd;
+	struct sockaddr_in local_address;
+
+	// Socket creation
+	udp_socket_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (udp_socket_fd < 0) 
+	{
+		fprintf(stderr, "vita49_2_client: socket creation failed\n");
+		return;
+	}
+
+	// Address info
+	memset(&local_address, 0, sizeof(local_address));
+	local_address.sin_family = AF_INET;
+	local_address.sin_addr.s_addr = htonl(INADDR_ANY);
+	local_address.sin_port = htons(VITA_PORT);
+
+	// Binding socket
+	if (bind(udp_socket_fd, (struct sockaddr *)&local_address, sizeof(local_address)) < 0) 
+	{
+		fprintf(stderr, "vita49_2_client: UDP socket bind failed\n");
+		close(udp_socket_fd);
+		return;
+	}
+
+	fprintf(stderr, "vita49_2_client: VITA 49.2 Packet Listener started.\n");
+
+
+	// TCP Socket
+
+	int tcp_socket_fd;
+	tcp_socket_fd = socket(AF_INET, SOCK_STREAM, 0);
+
+	// If socket creation fails, we'll accept that since the UDP socket succeeded
+    if (tcp_socket_fd < 0) 
+	{
+        printf("vita49_2_client: TCP socket creation failed.\n");
+    }
+	else
+	{
+		struct sockaddr_in server_addr;
+		server_addr.sin_family = AF_INET;
+		server_addr.sin_port = htons(VITA_PORT);
+		server_addr.sin_addr.s_addr = inet_addr(TCP_DESTINATION);
+
+		// Connect. Again if this fails we'll let it pass since UDP succeeded.
+		if (connect(tcp_socket_fd, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) 
+		{
+			printf("vita49_2_client: TCP socket connection to %s failed. (%d) %s\n", TCP_DESTINATION, errno, strerror(errno));
+		}
+	}
+
+	// ==================================================================================
+	// CREATING BUFFER + STREAM FOR I/Q DATA (High level iio_stream API from Libiio v1.x)
+	// ==================================================================================
+
+	// See https://events.gnuradio.org/event/18/contributions/242/attachments/101/207/grcon2022.pdf
+	// for more information, specifically Slide 10.
+
+	// To retrieve I/Q data from the device via libiio, we need to create a buffer as well as a streaming object
+	// to leverage DMA to continuously provide us with new data.
+
+	// My logic below is based on Travis' example code (test_ad9364.c) as I saw it captured pretty much
+	// exactly what I wanted to achieve, however I'm attempting to make this code generic to support
+	// different RF transceivers rather than just hte AD9364 or anything in just that family.
+
+	// I need some booleans to keep track of whether initialization of the buffer+stream for RX and TX were successful
+	// which will let me know if I can handle I/Q RX or TX requests from VITA
+	bool rx_ready = false, tx_ready = false;
+	struct iio_channel *channel, *i_channel;
+
+	// ==============================================================
+	// CONFIGURING RX DEVICE
+	// ==============================================================
+
+	// First we need handles to the devices
+	struct iio_device *rx_device = iio_context_find_device(arguments->ctx, rx_device_name);
+
+	if (rx_device == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Could not find RX device. Device will be unable to retrieve I/Q data.\n");
+
+		// Skip the rest of the setup for RX and proceed with TX
+		goto tx_configuration;
+	}
+
+	
+	// Now to enable the channels. We only care about I/Q data, so we don't need to capture data from all of the channels on a device.
+	// To accomplish that, I'll use a channel mask.
+	struct iio_channels_mask *rx_channel_mask = iio_create_channels_mask(iio_device_get_channels_count(rx_device));
+	
+	if (rx_channel_mask == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to create RX channel mask.");
+		rx_device = NULL;
+	
+		goto tx_configuration;
+	}
+
+	// Adding I (voltage0) and Q (voltage1) to the mask
+	i_channel = iio_device_find_channel(rx_device, "voltage0", false);
+	if (i_channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for RX device.\n");
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+
+		goto tx_configuration;
+	}
+
+	iio_channel_enable(i_channel, rx_channel_mask);
+
+	channel = iio_device_find_channel(rx_device, "voltage1", false);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+
+		goto tx_configuration;
+	}
+
+	iio_channel_enable(channel, rx_channel_mask);
+
+	// Creating a buffer
+	struct iio_buffer *rx_buffer = iio_device_create_buffer(rx_device, 0, rx_channel_mask);
+	if (iio_err(rx_buffer) != 0)
+	{
+		iio_strerror(iio_err(rx_buffer), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create RX buffer. %s\n", iio_error_buffer);
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+		
+		goto tx_configuration;
+	}
+
+	// Creating a stream
+	struct iio_stream *rx_stream = iio_buffer_create_stream(rx_buffer, NUM_RX_BLOCKS, NUM_RX_SAMPLES);
+	if (iio_err(rx_stream) != 0)
+	{
+		iio_strerror(iio_err(rx_stream), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create RX stream. %s\n", iio_error_buffer);
+		rx_device = NULL;
+		rx_channel_mask = NULL;
+		iio_buffer_destroy(rx_buffer);
+
+		goto tx_configuration;
+	}
+	// Since RX setup was successful, we can enable the flag
+	rx_ready = true;
+	const struct iio_block *rx_block; // Will be used when we want to grab data from the RX stream
+
+	// ==============================================================
+	// CONFIGURING TX DEVICE
+	// ==============================================================
+	tx_configuration: ;
+
+	// Handle to the TX device
+	struct iio_device *tx_device;
+	tx_device = iio_context_find_device(arguments->ctx, tx_device_name);
+	if (tx_device == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Could not find TX device. Device will be unable to handle requests to transmit data.\n");
+
+		// Skip the rest of the setup for TX
+		goto context_packet_timerfd_configuration;
+	}
+
+	// Channel Mask
+	struct iio_channels_mask *tx_channel_mask = iio_create_channels_mask(iio_device_get_channels_count(tx_device));
+	
+	if (tx_channel_mask == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to create TX channel mask.");
+		tx_device = NULL;
+	
+		goto context_packet_timerfd_configuration;
+	}
+
+	// Adding I (voltage0) and Q (voltage1) to the mask
+	channel = iio_device_find_channel(tx_device, "voltage0", true);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find I-channel (voltage0) for TX device.\n");
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+
+		goto context_packet_timerfd_configuration;
+	}
+
+	iio_channel_enable(channel, tx_channel_mask);
+
+	channel = iio_device_find_channel(tx_device, "voltage1", true);
+	if (channel == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Unable to find Q-channel (voltage1) for RX device.\n");
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+
+		goto context_packet_timerfd_configuration;
+	}
+
+	iio_channel_enable(channel, tx_channel_mask);
+
+	// Creating a buffer
+	struct iio_buffer *tx_buffer = iio_device_create_buffer(tx_device, 0, tx_channel_mask);
+	if (iio_err(tx_buffer) != 0)
+	{
+		iio_strerror(iio_err(tx_buffer), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create TX buffer. %s\n", iio_error_buffer);
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+		
+		goto context_packet_timerfd_configuration;
+	}
+
+	// Up until this point the TX config has been pretty identical to the RX config.
+	// The stream component is where we'll diverge. TX doesn't need a stream because the device
+	// doesn't need to constantly transmit data. The most likely usecase that we'd target is the host
+	// sends us several Signal Data Packets and we combine all of that data into a single block and transmit that.
+
+	// In the future we might want to consider a stream if ADI decides to support functionality
+	// where a host can constantly sent Signal Data Packets with I/Q data to transmit.
+
+	// Creating a block
+	struct iio_block *tx_block = iio_buffer_create_block(tx_buffer, NUM_TX_SAMPLES * BYTES_PER_SAMPLE * NUM_CHANNELS);
+	if (iio_err(tx_block) != 0)
+	{
+		iio_strerror(iio_err(tx_block), iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+		fprintf(stderr, "vita49_2_client: Unable to create TX block. %s\n", iio_error_buffer);
+		tx_device = NULL;
+		tx_channel_mask = NULL;
+		iio_buffer_destroy(tx_buffer);
+	}
+	else
+		tx_ready = true;
+
+
+	// ==============================================================
+	// CONTEXT PACKET INTERVAL TIMER
+	// ==============================================================
+
+	context_packet_timerfd_configuration: ;
+
+	// VITA 49.2 recommends sending Context Packets on a regular interval as well as when certain
+	// metadata changes (like temperature).
+
+	// To handle generation and sending of the Context Packets on an interval, we can use a timerfd
+	// that triggers an event in the call to poll().
+
+	int context_timer_fd = timerfd_create(CLOCK_MONOTONIC, TFD_NONBLOCK);
+	if (context_timer_fd < 0)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to create timerfd for Context Packet intervals.\n");
+		return;
+	}
+
+	struct itimerspec timer_specs;
+	
+	// Fire for the first time in 5 seconds
+	timer_specs.it_value.tv_nsec = 0;
+	timer_specs.it_value.tv_sec = 2;
+
+	// Fire the timer on an interval defined by CONTEXT_PACKET_INTERVALS_S after the first time it fires
+	timer_specs.it_interval.tv_nsec = 0;
+	timer_specs.it_interval.tv_sec = CONTEXT_PACKET_INTERVAL_S;
+
+	if (timerfd_settime(context_timer_fd, 0, &timer_specs, NULL) < 0)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to initialize timerfd for Context Packet intervals.\n");
+		return;
+	}
+
+	uint64_t num_timer_expirations;
+
+	// ==============================================================
+	// EVENTS
+	// ==============================================================
+
+	// We'll wake up the thread whenever a packet is received, STOP event is issued to the thread,
+	// or the Context Packet interval timer fires.
+	// To accomplish that, we can use poll().
+
+	struct pollfd wake_up_events[3];
+
+	// Thread pool wrapper issuing a STOP
+	wake_up_events[0].fd = thread_pool_get_poll_fd(pool);
+	wake_up_events[0].events = POLLIN;
+	wake_up_events[0].revents = 0;
+
+	// The UDP socket
+	wake_up_events[1].fd = udp_socket_fd;
+	wake_up_events[1].events = POLLIN;
+	wake_up_events[1].revents = 0;
+
+	// Context Packet timerfd
+	wake_up_events[2].fd = context_timer_fd;
+	wake_up_events[2].events = POLLIN;
+	wake_up_events[2].revents = 0;
+
+
+	// ==============================================================
+	// TIME DATA PACKET SETUP
+	// ==============================================================
+
+	// Setting up the majority of a time data packet now to streamline future processing
+	struct vita49_2_data_packet time_data_packet = {0};
+
+	time_data_packet.prologue.header.indicators = (1 << 1); // Indicate that we're NOT generating a VITA 49.0 packet. See Table 5.1.1.1-1 for more info on indicator bits.
+	time_data_packet.prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	time_data_packet.prologue.header.ts_fractional_format = VITA49_2_TSF_REAL_TIME; // We have no way of getting picosecond time precision in Linux
+	time_data_packet.prologue.header.has_class_id = 1;
+	time_data_packet.prologue.header.packet_type = VITA49_2_PKT_TYPE_IF_DATA_WITH_SID;
+
+	time_data_packet.prologue.class_id.oui = OUI;
+	time_data_packet.prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_TIME_DATA;
+	time_data_packet.prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+
+	time_data_packet.prologue.has_stream_id = 1;
+	time_data_packet.prologue.has_class_id = 1;
+	time_data_packet.prologue.has_timestamp_int = 1;
+	time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	// Here are the remaining fields that have to be set whenever one of these messages have to be generated and sent:
+	// Data Packet:
+		// Prologue:
+			// Header:
+				// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
+				// packet_count *
+			// stream_id *
+			// timestamp_int *
+			// TODO: timestamp_frac, Linux doesn't provide a way to get picosecond accuracy natively
+		// Payload:
+			// payload *
+			// payload_num_words *
+
+		// TODO: Trailer support
+
+	ssize_t time_data_packet_size = 0;
+
+	// ==============================================================
+	// ACKV PACKET SETUP
+	// ==============================================================
+
+	struct vita49_2_ackV_packet ackV_packet = {0};
+
+	ackV_packet.command_prologue.common_prologue.header.indicators = (1 << 2);		// Indicate that this specific Command Packet is an Acknowledge type
+	ackV_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	ackV_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+	ackV_packet.command_prologue.common_prologue.header.has_class_id = 1;
+	ackV_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+
+	ackV_packet.command_prologue.common_prologue.class_id.oui = OUI;
+	ackV_packet.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+	ackV_packet.command_prologue.common_prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+	
+	ackV_packet.command_prologue.common_prologue.has_stream_id = 1;
+	ackV_packet.command_prologue.common_prologue.has_class_id = 1;
+	ackV_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+	// time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	ackV_packet.command_prologue.ack_cam = calloc(1, sizeof(*ackV_packet.command_prologue.ack_cam));
+	if (ackV_packet.command_prologue.ack_cam == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to allocate memory for AckV CAM field.\n");
+		return;
+	}
+
+	ackV_packet.command_prologue.ack_cam->ackV_request = 1;
+
+	// Remaining Fields that need to be set:
+	// AckV Packet:
+		// Command Prologue:
+			// Common Prologue
+				// Header:
+					// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
+					// packet_count *
+				// stream_id *
+				// timestamp_int *
+				// TODO: timestamp_frac, Linux doesn't provide a way to get picosecond accuracy natively
+			// CAM
+				// Warnings Present *
+				// Control Fields *
+			// Message ID *
+			// Controllee ID/UUID *
+			// Controller ID/UUID *
+		// CIF0 Warnings *
+		// CIF1 Warnings (if applicable) *
+		// CIF2 Warnings (if applicable) *
+		// CIF3 Warnings (if applicable) *
+		// CIF7 Warnings (if applicable) *
+		// Warnings Payload *
+		// Warnings Payload Size *
+
+	ssize_t ackV_packet_size = 0;
+
+	// ========================================================================================================
+	// ACKX PACKET SETUP
+	// ========================================================================================================
+
+	struct vita49_2_ackX_packet ackX_packet = {0};
+
+	ackX_packet.command_prologue.common_prologue.header.indicators = (1 << 2);		// Indicate that this specific Command Packet is an Acknowledge type
+	ackX_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	ackX_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+	ackX_packet.command_prologue.common_prologue.header.has_class_id = 1;
+	ackX_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+
+	ackX_packet.command_prologue.common_prologue.class_id.oui = OUI;
+	ackX_packet.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+	ackX_packet.command_prologue.common_prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+	
+	ackX_packet.command_prologue.common_prologue.has_stream_id = 1;
+	ackX_packet.command_prologue.common_prologue.has_class_id = 1;
+	ackX_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+	// time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	ackX_packet.command_prologue.ack_cam = calloc(1, sizeof(*ackX_packet.command_prologue.ack_cam));
+	if (ackV_packet.command_prologue.ack_cam == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to allocate memory for AckV CAM field.\n");
+		return;
+	}
+
+	ackX_packet.command_prologue.ack_cam->ackX_request = 1;
+
+	// Remaining Fields that need to be set:
+	// AckV Packet:
+		// Command Prologue:
+			// Common Prologue
+				// Header:
+					// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
+					// packet_count *
+				// stream_id *
+				// timestamp_int *
+				// TODO: timestamp_frac, Linux doesn't provide a way to get picosecond accuracy natively
+			// CAM
+				// Warnings Present *
+				// Errors Present *
+				// Control Fields *
+			// Message ID *
+			// Controllee ID/UUID *
+			// Controller ID/UUID *
+		// CIF0 Warnings *
+		// CIF1 Warnings (if applicable) *
+		// CIF2 Warnings (if applicable) *
+		// CIF3 Warnings (if applicable) *
+		// CIF7 Warnings (if applicable) *
+		// Warnings Payload *
+		// Warnings Payload Size *
+		// Errors Payload *
+		// Errors Payload Size *
+
+	ssize_t ackX_packet_size = 0;
+
+	// ==============================================================
+	// ACKS PACKET SETUP
+	// ==============================================================
+
+	struct vita49_2_ackS_packet ackS_packet = {0};
+
+	ackS_packet.command_prologue.common_prologue.header.indicators = (1 << 2);		// Indicate that this specific Command Packet is an Acknowledge type
+	ackS_packet.command_prologue.common_prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	ackS_packet.command_prologue.common_prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+	ackS_packet.command_prologue.common_prologue.header.has_class_id = 1;
+	ackS_packet.command_prologue.common_prologue.header.packet_type = VITA49_2_PKT_TYPE_COMMAND;
+
+	ackS_packet.command_prologue.common_prologue.class_id.oui = OUI;
+	ackS_packet.command_prologue.common_prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_ACKS;
+	ackS_packet.command_prologue.common_prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+	
+	ackS_packet.command_prologue.common_prologue.has_stream_id = 1;
+	ackS_packet.command_prologue.common_prologue.has_class_id = 1;
+	ackS_packet.command_prologue.common_prologue.has_timestamp_int = 1;
+	// time_data_packet.prologue.has_timestamp_frac = 1; // No way of getting picosecond time precision in Linux
+
+	ackS_packet.command_prologue.ack_cam = calloc(1, sizeof(*ackS_packet.command_prologue.ack_cam));
+	if (ackS_packet.command_prologue.ack_cam == NULL)
+	{
+		fprintf(stderr, "vita49_2_client: Failed to allocate memory for AckV CAM field.\n");
+		return;
+	}
+
+	ackS_packet.command_prologue.ack_cam->ackS_request = 1;
+	ackS_packet.command_prologue.ack_cam->action_scheduled = 1; // ADI doesn't currently support scheduling Commands, so this will be asserted to indicate that the Query was executed
+
+	// Remaining Fields that need to be set:
+	// AckV Packet:
+		// Command Prologue:
+			// Common Prologue
+				// Header:
+					// packet_size_words (this gets handled automatically when the vita49_2_serialize_<packet_name>() function gets called) *
+					// packet_count *
+				// stream_id *
+				// timestamp_int *
+				// TODO: timestamp_frac, Linux doesn't provide a way to get picosecond accuracy natively
+			// Message ID *
+			// Controllee ID/UUID *
+			// Controller ID/UUID *
+		// CIF0 *
+		// CIF1 (if applicable) *
+		// CIF2 (if applicable) *
+		// CIF3 (if applicable) *
+		// CIF7 (if applicable) *
+		// CIF Payload
+
+	ssize_t ackS_packet_size = 0;
+
+	// ==============================================================
+	// CONTEXT PACKET SETUP
+	// ==============================================================
+
+	struct vita49_2_context_packet context_packet = {0}, previous_context_packet = {0};
+	
+	context_packet.prologue.header.indicators = ((1 << 1) || (1 << 0));		// Indicating that this is not a V49.0 Packet. Also see Rule 7.1.1-4 in the VITA 49.2 2017 document. Setting bit 24 to 1 indicates Context Data is reflecting general timing of events.
+	context_packet.prologue.header.ts_integer_format = VITA49_2_TSI_UTC;
+	context_packet.prologue.header.ts_fractional_format = VITA49_2_TSF_NONE;
+	context_packet.prologue.header.has_class_id = 1;
+	context_packet.prologue.header.packet_type = VITA49_2_PKT_TYPE_IF_CONTEXT;
+
+	context_packet.prologue.class_id.oui = OUI;
+	context_packet.prologue.class_id.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTEXT;
+	context_packet.prologue.class_id.information_class_code = VITA49_2_INFO_CLASS_MODULE_TIME_DATA;
+	
+	context_packet.prologue.has_stream_id = 1;
+	context_packet.prologue.has_class_id = 1;
+	context_packet.prologue.has_timestamp_int = 1;
+
+	// Remaining fields that need to be set:
+	// Context Packet:
+		// Prologue
+			// Header
+				// Packet Size (gets set automatically when the vita49_2_generate<packet_name>() function is called)
+				// Packet Count *
+			// Stream ID *
+			// Timestamp Int *
+		// CIF0 Fields *
+		// CIF1 Fields (if applicable) *
+		// CIF2 Fields (if applicable) *
+		// CIF3 Fields (if applicable) *
+		// CIF7 Fields (if applicable) *
+
+	ssize_t context_packet_size;
+
+	// ==============================================================
+	// RECEIVE LOOP
+	// ==============================================================
+
+	int ret_value;
+
+	union vita49_2_header received_header;
+	uint32_t word;
+
+	uint32_t receive_buffer[2048];
+	uint8_t send_buffer[65500];
+	ssize_t received;
+
+	// For extracting the sender information
+	struct sockaddr_in sender_address;
+	socklen_t address_length = sizeof(sender_address);
+	char sender_ip[INET_ADDRSTRLEN];
+	uint16_t sender_port;
+
+	// For sending a packet with the modified port (set to 4991)
+	struct sockaddr_in destination_address;
+
+	// For keeping track of the Stream IDs created by the device
+	struct vita49_2_stream_entry device_stream_id_table[STREAM_ID_TABLE_SIZE] = {0};
+	struct vita49_2_stream_entry stream_entry = {0};
+	ssize_t last_insertion_index = -1;
+
+	// Dumb way of keeping track of what Stream ID we're currently on based on the packet type.
+	uint32_t next_time_data_stream_id = VITA49_2_PKT_TIME_DATA_DEVICE_START;
+	uint32_t next_context_stream_id = 0;
+	uint32_t next_ackx_ackv_stream_id = 0;
+	uint32_t next_acks_stream_id = 0;
+
+	while (udp_socket_fd >= 0) 
+	{
+		// ==============================================================
+		// WAITING FOR EVENT TO WAKE UP THREAD
+		// ==============================================================
+
+		// Copied the poll code below from the poll_nointr() in iiod.c to ensure
+		// that the VITA 49.2 backend isn't permanently interrupted by a signal.
+			
+			// The reason I want to "ignore" signals is because iiod.c already registers a signal
+			// handler for specific signals, and that handler issues thread_pool_stop().
+
+			// If I instead didn't use the poll-logic below, it could get interrupted by any signal
+			// rather than just the ones other developers have decided to accept in iiod.c
+
+		do {
+			ret_value = poll(wake_up_events, sizeof(wake_up_events)/sizeof(wake_up_events[0]), -1);
+		} while (ret_value == -1 && errno == EINTR);
+		
+		// Decode what event woke up the thread.
+		// STOP takes priority.
+		if (wake_up_events[0].revents & POLLIN)
+			break;
+
+		// ==============================================================
+		// HANDLING RECEIVED DATA
+		// ==============================================================
+
+		// Data is available on the socket.
+		else if (wake_up_events[1].revents & POLLIN)
+		{
+			received = recvfrom(udp_socket_fd, receive_buffer, sizeof(receive_buffer), 0, (struct sockaddr*)&sender_address, &address_length);
+			destination_address = sender_address;
+			destination_address.sin_port = htons(VITA_PORT);
+
+			// inet_pton(AF_INET, "192.168.2.10", &destination_address.sin_addr);
+
+			// Assume that a 0-length datagram implies a shutdown was called on the socket
+			if (received <= 0)
+			{
+				fprintf(stderr, "vita49_2_client: Socket closed.\n");
+				break;
+			}
+
+			// At a minimum any VITA 49.2 Packet requires a header which is 4 32-bit words
+			if (received < 4)
+			{
+				fprintf(stderr, "vita49_2_client: Received an invalid packet (size less than 4 words).\n");
+				continue;
+			}
+
+			// Extracting the sender information (optional for debugging)
+			// inet_ntop(AF_INET, &(sender_address.sin_addr), sender_ip, INET_ADDRSTRLEN);
+			// sender_port = ntohs(sender_address.sin_port);
+
+			// Need to figure out what packet was received so that we can call the correct parser function.
+			// We can determine that by looking at the header.
+			received_header.word = ntohl(receive_buffer[0]);
+
+			switch (received_header.packet_type)
+			{
+				// Signal Data Packet with no Stream ID
+				case VITA49_2_PKT_TYPE_IF_DATA_NO_SID:
+					// TODO: ADI doesn't support this packet as of yet, though we retain the right to implement it in the future.
+					// Currently we require all Data Packets to have a Stream ID, though if that changes in the future we need to update this case-block.
+					break;
+
+				// Signal Data Packet with Stream ID
+				case VITA49_2_PKT_TYPE_IF_DATA_WITH_SID:
+				{
+					// Since the device is receiving this packet, that implies the host wants to the device to transmit this data.
+					
+					struct vita49_2_data_packet tx_data_packet;
+					if ((ret_value = vita49_2_parse_data_packet(receive_buffer, received, &tx_data_packet, true)) < 0)
+					{
+						fprintf(stderr, "vita49_2_client: Failed to parse Signal Data Packet with Stream ID. (%d) %s\n", ret_value, strerror(-ret_value));
+						break;
+					}
+
+					// Checking that this is a Signal Time Data Packet and not a Signal Spectrum Data Packet.
+					if (tx_data_packet.prologue.header.indicators & 1)
+					{
+						fprintf(stderr, "vita49_2_client: Received a Signal Spectrum Data Packet. Skipping processing.\n");
+						break;
+					}
+
+					// TODO: Logic to parse the data in this packet and have the device transmit it. Make sure to check if a trailer
+					// was included and what bits in the trailer were asserted. See Table 5.1.6-1 in the VITA 49.2 2017 document.
+
+					break;
+				}
+
+				// Extension Data Packet without Stream ID
+				case VITA49_2_PKT_TYPE_EXT_DATA_NO_SID:
+					// TODO: ADI doesn't support this packet as of yet, though we retain the right to implement it in the future.
+					fprintf(stderr, "vita49_2_client: Received Extension Data Packet without Stream ID. Skipping processing.\n");
+					break;
+
+				// Extension Data Packet with Stream ID
+				case VITA49_2_PKT_TYPE_EXT_DATA_WITH_SID:
+					// TODO: ADI doesn't support this packet as of yet, though we retain the right to implement it in the future.
+					fprintf(stderr, "vita49_2_client: Received Extension Data Packet with Stream ID. Skipping processing.\n");
+					break;
+
+				// Context Packet
+				case VITA49_2_PKT_TYPE_IF_CONTEXT:
+					// The device/client shouldn't be receiving Context Packets from host. It works the other way around,
+					// as in the device/client should be generating and sending Context Packets to the host.
+					fprintf(stderr, "vita49_2_client: Received a Context Packet. Skipping processing.\n");
+					break;
+
+				// Extension Context Packet
+				case VITA49_2_PKT_TYPE_EXT_CONTEXT:
+					// Same issue as with the regular Context Packet.
+					fprintf(stderr, "vita49_2_client: Received an Extension Context Packet. Skipping processing.\n");
+					break;
+
+				// Command Packet
+				case VITA49_2_PKT_TYPE_COMMAND:
+					
+					// There's multiple types of Command Packets:
+						// Control
+						// AckV
+						// AckX
+						// AckS
+
+					// If bit 24 is asserted (implies Cancellation Packet), then we need to skip processing as we currently don't support it (yet).
+					if (received_header.indicators & 1)
+					{
+						fprintf(stderr, "vita49_2_client: Cancellation Packets are unsupported at this time. Skipping processing.\n");
+						break;
+					}
+
+					// Indicator bit 26 can be used to determine if we have a Control Packet or an Acknowledge Packet.
+					if (received_header.indicators & (1 << 2))
+					{
+						// The device/client shouldn't be receiving Ack Packets from host. It works the other way around,
+						// as in the device/client should be generating and sending Ack Packets to the host.
+						fprintf(stderr, "vita49_2_client: Received an Acknowledge Packet. Skipping processing.\n");
+						break;
+					} 
+
+					// Otherwise we have a Control Packet. 
+					// ssize_t ackV_ret_value;
+					bool ackX_warning_init_error = false;		// Indicates if there was an issue while setting the warning fields in the AckX Packet
+
+					struct vita49_2_control_packet control_packet;
+					if ((ret_value = vita49_2_parse_control_packet(receive_buffer, received/4, &control_packet)) < 0)
+					{
+						fprintf(stderr, "vita49_2_client: Unable to parse Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+						break;
+					}
+
+					// ADI has a custom Control Packet Class specifically for requesting I/Q data refills.
+					// Instead of incorporating this logic into the _execute_commands() function and returning some specific value
+					// or passing IIO streaming/block arguments to that function, it's easier to do it here.
+					if ((uint16_t)(control_packet.command_prologue.common_prologue.class_id.packet_class_code) == VITA49_2_PKT_CLASS_REFILL_TIME_REQUEST)
+					{
+						// First we have to check if setup of the RX stream was successful.
+						if (!rx_ready)
+						{
+							fprintf(stderr, "vita49_2_client: Unable to respond to Time Data Refill Request because RX configuration failed during initialization.\n");
+							
+							// TODO: If the Control Packet requested Ack messages, we need to indicate this error to the host
+							continue;
+						}
+
+						unsigned long long count = 0;
+						struct timespec start, end;
+
+						// Used a while loop to continuously send Data Packets without having to send constant queries for more I/Q
+						// while (1)
+						// {
+
+							// Timestamp for a packet that has multiple samples should be when the first sample was recorded.
+							// I have no good way of determining latency of a call to libiio to grab data, so I'll record the timestamp
+							// before the data has been retrieved.
+							time_data_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
+
+							// Fetching a block from the stream
+							rx_block = iio_stream_get_next_block(rx_stream);
+							if ((ret_value = iio_err(rx_block)) < 0)
+							{
+								iio_strerror(ret_value, iio_error_buffer, sizeof(iio_error_buffer)/sizeof(iio_error_buffer[0]));
+								fprintf(stderr, "vita49_2_client: Encountered an error while trying to query I/Q data. (%d) %s\n", -ret_value, iio_error_buffer);
+
+								continue;
+							}
+
+							// Now we have to write the data in this block to the Signal Data Packet's payload buffer.
+							// Instead of copying memory (wasteful), I'll just map the packet's buffer pointer to the
+							// block that we're reading from.
+
+							// I don't need to check that this payload pushes over the 65535 word limit because I specified
+							// that NUM_RX_SAMPLES is below that while also giving some room for the other fields in the packet.
+							time_data_packet.payload = (union vita49_2_iq_item *)(iio_block_first(rx_block, i_channel));
+							ssize_t sample_size_bytes = iio_device_get_sample_size(rx_device, rx_channel_mask);
+
+							// Means there was an error with capturing the data if the sample size is less than 0 bytes or more than 4 bytes.
+							// It should either be 4 bytes (meaning the I and Q components are both 16 bits) or 2 bytes (meaning the I and Q components
+							// are both 8 bits)
+							if (sample_size_bytes != 2 && sample_size_bytes != 4)
+							{
+								fprintf(stderr, "vita49_2_client: I/Q sample size is invalid while retrieving I/Q data. Sample Size (bytes) = %zd\n", sample_size_bytes);
+								break;
+							}
+
+							ssize_t payload_size_words = (((uint32_t *)(iio_block_end(rx_block)) - (uint32_t *)(iio_block_first(rx_block, i_channel))) * sample_size_bytes)/4;
+
+							// If this failed as well, then we shouldn't send the packet at all
+							if (payload_size_words <= 0)
+							{
+								fprintf(stderr, "vita49_2_client: Error while reading I/Q data from the RX block. Number of words read is invalid (%zd)\n", payload_size_words);
+								break;
+							}
+
+							time_data_packet.payload_num_words = payload_size_words;
+
+							// Next we have to set the Stream ID. We can check if it exists in the existing Stream ID table
+							// and insert it if it doesn't.
+							stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+							stream_entry.host_port = sender_address.sin_port;
+							stream_entry.packet_class_code = VITA49_2_PKT_CLASS_TIME_DATA;
+							stream_entry.stream_id = next_time_data_stream_id;
+
+							// Error occurred
+							if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the Signal Time Data Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
+								break;
+							}
+
+							// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+							if (ret_value > last_insertion_index)
+							{
+								time_data_packet.prologue.stream_id = stream_entry.stream_id;
+								time_data_packet.prologue.header.packet_count = 0;
+							
+								device_stream_id_table[ret_value].packet_count = 0;
+
+								last_insertion_index++;
+								next_time_data_stream_id++;
+							}
+							// Otherwise that means the element already existed in the array.
+							else
+							{
+								time_data_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+								time_data_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+							}
+
+							// Now to write that data to a buffer and send it
+							time_data_packet_size = vita49_2_serialize_data_packet(&time_data_packet, &send_buffer, sizeof(send_buffer)/4);
+							if (time_data_packet_size <= 0)
+							{
+								fprintf(stderr, "vita49_2_client: Failed to serialize Signal Time Data Packet. (%d) %s\n", time_data_packet_size, (time_data_packet_size < 0) ? strerror(time_data_packet_size) : "");
+								continue;							
+							}
+
+							if (sendto(udp_socket_fd, send_buffer, time_data_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over UDP. (%d) %s\n", errno, strerror(errno));
+
+							if (tcp_socket_fd >= 0)
+							{
+								if (send(tcp_socket_fd, send_buffer, time_data_packet_size*4, 0) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send Signal Time Data Packet over TCP. (%d) %s\n", errno, strerror(errno));
+							}
+
+						// }
+						
+						break;
+					}
+
+					// If an AckV packet was requested, we need to validate the commands in the Control Packet and send
+					// back the AckV packet
+					if (control_packet.command_prologue.control_cam->request_ack_v)
+					{
+						if ((ret_value = _validate_commands(arguments->ctx, &control_packet, &ackV_packet.warnings, &device_plugin)) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Failed to generate AckV Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+							goto cleanup_ackv;
+						}
+
+						// In the CAM, there's a field call NACK (see Table 8.3.1-1 in the VITA 49.2 2017 docs).
+						// If asserted and there's no warnings, then we shouldn't send the AckV packet.
+						if (control_packet.command_prologue.control_cam->nack && ackV_packet.warnings.warnings_payload_num_words == 0)
+							goto cleanup_ackv; 
+						
+						// Populating the rest of the AckV Packet
+						ackV_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
+
+						stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+						stream_entry.host_port = sender_address.sin_port;
+						stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+						stream_entry.stream_id = next_ackx_ackv_stream_id;
+
+						// Error occurred
+						if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Error while trying to retrieve Stream ID for the AckV Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
+							goto cleanup_ackv;
+						}
+
+						// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+						if (ret_value > last_insertion_index)
+						{
+							ackV_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+							ackV_packet.command_prologue.common_prologue.header.packet_count = 0;
+						
+							device_stream_id_table[ret_value].packet_count = 0;
+
+							last_insertion_index++;
+							next_ackx_ackv_stream_id++;
+						}
+						// Otherwise that means the element already existed in the array.
+						else
+						{
+							ackV_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+							ackV_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+						}
+
+						ackV_packet.command_prologue.message_id = control_packet.command_prologue.message_id;
+
+						// Determining if we should assert the Warnings Present bit in the CAM
+						if (ackV_packet.warnings.warnings_payload_num_words > 0)
+							ackV_packet.command_prologue.ack_cam->warnings_present = 1;
+
+						// Copying the 11 bits from the Control Packet CAM as specified by Rule 8.4.1-2 in the VITA 49.2 2017 Documentation.
+						ackV_packet.command_prologue.ack_cam->reserved_21 = control_packet.command_prologue.control_cam->reserved_21;
+						ackV_packet.command_prologue.ack_cam->nack = control_packet.command_prologue.control_cam->nack;
+						ackV_packet.command_prologue.ack_cam->action_bits = control_packet.command_prologue.control_cam->action_bits;
+						ackV_packet.command_prologue.ack_cam->errors = control_packet.command_prologue.control_cam->errors;
+						ackV_packet.command_prologue.ack_cam->warnings = control_packet.command_prologue.control_cam->warnings;
+						ackV_packet.command_prologue.ack_cam->partial_execution = control_packet.command_prologue.control_cam->partial_execution;
+						ackV_packet.command_prologue.ack_cam->controller_id_format = control_packet.command_prologue.control_cam->controller_id_format;
+						ackV_packet.command_prologue.ack_cam->has_controller_id = control_packet.command_prologue.control_cam->has_controller_id;
+						ackV_packet.command_prologue.ack_cam->controllee_id_format = control_packet.command_prologue.control_cam->controllee_id_format;
+						ackV_packet.command_prologue.ack_cam->has_controllee_id = control_packet.command_prologue.control_cam->has_controllee_id;
+
+						// Copying the Controller and Controllee ID information from the Control Packet
+						memcpy(&ackV_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackV_packet.command_prologue.controller_id));
+						memcpy(&ackV_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackV_packet.command_prologue.controllee_id));
+
+						// Now to write that data to a buffer and send it
+						if ((ackV_packet_size = vita49_2_serialize_ackV_packet(&ackV_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							fprintf(stderr, "vita49_2_client: Failed to serialize AckV Packet. (%d) %s\n", ackV_packet_size, (ackV_packet_size < 0) ? strerror(-ackV_packet_size) : "");
+						else
+						{ 
+							if (sendto(udp_socket_fd, send_buffer, ackV_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over UDP. (%d) %s\n", errno, strerror(errno));
+						
+							if (tcp_socket_fd >= 0)
+								if (send(tcp_socket_fd, send_buffer, ackV_packet_size*4, 0) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send AckV Packet over TCP. (%d) %s\n", errno, strerror(errno));
+						}
+
+						cleanup_ackv:
+						free(ackV_packet.warnings.cif1_warnings);
+						free(ackV_packet.warnings.cif2_warnings);
+						free(ackV_packet.warnings.cif3_warnings);
+						free(ackV_packet.warnings.cif7_warnings);
+
+						ackV_packet.warnings.cif1_warnings = NULL;
+						ackV_packet.warnings.cif2_warnings = NULL;
+						ackV_packet.warnings.cif3_warnings = NULL;
+						ackV_packet.warnings.cif7_warnings = NULL;
+
+						free(ackV_packet.warnings.warnings_payload);
+						ackV_packet.warnings.warnings_payload = NULL;
+						ackV_packet.warnings.warnings_payload_num_words = 0;
+
+						memset(&ackV_packet.warnings.cif0_warnings, 0, sizeof(ackV_packet.warnings.cif0_warnings));
+					}
+
+					// If AckX was requested, I need to do some initial setup to see what fields might generate warnings.
+					if (control_packet.command_prologue.control_cam->request_ack_x && control_packet.command_prologue.control_cam->action_bits == VITA49_2_CTRL_EXECUTE)
+					{
+						if ((ret_value = _validate_commands(arguments->ctx, &control_packet, &ackX_packet.warnings, &device_plugin)) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Failed to acquire Warnings for AckX Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+							ackX_warning_init_error = true;
+						}
+					}
+
+					// TODO: Add logic that looks at the timestamp and schedules execution of the controls in the future.
+					// An idea might be to spawn a detached pthread that checks a timer_fd and executes the controls once the timer
+					// has been met. Additional complexity has to be considered if we support cancellation packets which should kill that pthread.
+
+					// Now to execute the commands in the packet. Currently ADI only supports Execute Mode and No-Action Mode for Control Packets,
+					// however we retain the right to implement Dry Run Mode in the future.
+					switch (control_packet.command_prologue.control_cam->action_bits)
+					{
+						case VITA49_2_CTRL_EXECUTE:
+
+							// AckX Packet Requested
+							if (control_packet.command_prologue.control_cam->request_ack_x && !ackX_warning_init_error)
+							{
+								if ((ret_value = _execute_commands(arguments->ctx, &control_packet, &ackX_packet, &device_plugin)) < 0)
+								{
+									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));	
+									goto cleanup_ackX;
+								}
+
+								// In the CAM, there's a field call NACK (see Table 8.3.1-1 in the VITA 49.2 2017 docs).
+								// If asserted and there's no warnings nor any errors, then we shouldn't send the AckX packet.
+								if (control_packet.command_prologue.control_cam->nack && ackX_packet.warnings.warnings_payload_num_words == 0 && ackX_packet.errors.errors_payload_num_words == 0)
+									goto cleanup_ackX; 
+
+								if (ackX_packet.errors.errors_payload_num_words > 0)
+									ackX_packet.command_prologue.ack_cam->errors_present = 1;
+
+								// Setting the "warnings_present" field isn't as easy as errors since warnings were removed if an error was generated for the corresponding CIF field in _execute_commands().
+								// Warnings were "removed" by setting the corresponding struct in the payload to 0, however the payload size wasn't touched (to avoid issues with copying that payload buffer).
+								// Hence we must iterate over that payload manually and scan for non-zero elements.
+								uint32_t warning_word;
+								ackX_packet.command_prologue.ack_cam->warnings_present = 0;
+								for (uint8_t current_warning = 0; current_warning < ackX_packet.warnings.warnings_payload_num_words; current_warning++)
+								{
+									memcpy(&warning_word, &ackX_packet.warnings.warnings_payload[current_warning], sizeof(warning_word));
+									if (warning_word != 0)
+									{
+										ackX_packet.command_prologue.ack_cam->warnings_present = 1;
+										break;
+									}
+								}
+
+								// Writing the remaining information before sending the packet
+								ackX_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
+
+								stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+								stream_entry.host_port = sender_address.sin_port;
+								stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKV_ACKX;
+								stream_entry.stream_id = next_ackx_ackv_stream_id;
+
+								// Error occurred
+								if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+								{
+									fprintf(stderr, "vita49_2_client: Error while trying to retrieve Stream ID for the AckX Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
+									goto cleanup_ackX;
+								}
+
+								// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+								if (ret_value > last_insertion_index)
+								{
+									ackX_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+									ackX_packet.command_prologue.common_prologue.header.packet_count = 0;
+								
+									device_stream_id_table[ret_value].packet_count = 0;
+
+									last_insertion_index++;
+									next_acks_stream_id++;
+								}
+								// Otherwise that means the element already existed in the array.
+								else
+								{
+									ackX_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+									ackX_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+								}
+
+								// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
+								ackX_packet.command_prologue.ack_cam->reserved_21 = control_packet.command_prologue.control_cam->reserved_21;
+								ackX_packet.command_prologue.ack_cam->nack = control_packet.command_prologue.control_cam->nack;
+								ackX_packet.command_prologue.ack_cam->action_bits = control_packet.command_prologue.control_cam->action_bits;
+								ackX_packet.command_prologue.ack_cam->errors = control_packet.command_prologue.control_cam->errors;
+								ackX_packet.command_prologue.ack_cam->warnings = control_packet.command_prologue.control_cam->warnings;
+								ackX_packet.command_prologue.ack_cam->partial_execution = control_packet.command_prologue.control_cam->partial_execution;
+								ackX_packet.command_prologue.ack_cam->controller_id_format = control_packet.command_prologue.control_cam->controller_id_format;
+								ackX_packet.command_prologue.ack_cam->has_controller_id = control_packet.command_prologue.control_cam->has_controller_id;
+								ackX_packet.command_prologue.ack_cam->controllee_id_format = control_packet.command_prologue.control_cam->controllee_id_format;
+								ackX_packet.command_prologue.ack_cam->has_controllee_id = control_packet.command_prologue.control_cam->has_controllee_id;
+								
+								// Copying the Controller and Controllee ID information from the Control Packet
+								memcpy(&ackX_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackX_packet.command_prologue.controller_id));
+								memcpy(&ackX_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackX_packet.command_prologue.controllee_id));
+
+								// Now to write that data to a buffer and send it
+								if ((ackX_packet_size = vita49_2_serialize_ackX_packet(&ackX_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to serialize AckX Packet. (%d) %s\n", ackX_packet_size, (ackX_packet_size < 0) ? strerror(-ackX_packet_size) : "");
+								else
+								{
+									if (sendto(udp_socket_fd, send_buffer, ackX_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+										fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over UDP. (%d) %s\n", errno, strerror(errno));
+								
+									if (tcp_socket_fd >= 0)
+										if (send(tcp_socket_fd, send_buffer, ackX_packet_size*4, 0) <= 0)
+											fprintf(stderr, "vita49_2_client: Failed to send AckX Packet over TCP. (%d) %s\n", errno, strerror(errno));	
+								}
+							}
+							// No AckX Packet requested
+							else
+							{
+								if ((ret_value = _execute_commands(arguments->ctx, &control_packet, NULL, &device_plugin)) < 0)
+									fprintf(stderr, "vita49_2_client: Error while executing commands in Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+							}
+
+							break;
+
+						case VITA49_2_CTRL_RESERVED:
+						case VITA49_2_CTRL_NO_ACT:
+							break;
+
+						case VITA49_2_CTRL_DRY_RUN:
+							fprintf(stderr, "vita49_2_client: Received Control Packet with 'Dry Run' mode enabled.\n");
+							break;
+
+						default:
+							fprintf(stderr, "vita49_2_client: Received Control Packet with invalid Action Mode: %d\n", control_packet.command_prologue.control_cam->action_bits);
+							break;
+					}
+					
+					cleanup_ackX:
+					free(ackX_packet.warnings.cif1_warnings);
+					free(ackX_packet.warnings.cif2_warnings);
+					free(ackX_packet.warnings.cif3_warnings);
+					free(ackX_packet.warnings.cif7_warnings);
+
+					free(ackX_packet.errors.cif1_errors);
+					free(ackX_packet.errors.cif2_errors);
+					free(ackX_packet.errors.cif3_errors);
+					free(ackX_packet.errors.cif7_errors);
+
+					ackX_packet.warnings.cif1_warnings = NULL;
+					ackX_packet.warnings.cif2_warnings = NULL;
+					ackX_packet.warnings.cif3_warnings = NULL;
+					ackX_packet.warnings.cif7_warnings = NULL;
+
+					ackX_packet.errors.cif1_errors = NULL;
+					ackX_packet.errors.cif2_errors = NULL;
+					ackX_packet.errors.cif3_errors = NULL;
+					ackX_packet.errors.cif7_errors = NULL;
+
+					free(ackX_packet.warnings.warnings_payload);
+					ackX_packet.warnings.warnings_payload = NULL;
+					ackX_packet.warnings.warnings_payload_num_words = 0;
+					
+					free(ackX_packet.errors.errors_payload);
+					ackX_packet.errors.errors_payload = NULL;
+					ackX_packet.errors.errors_payload_num_words = 0;
+
+					memset(&ackX_packet.warnings.cif0_warnings, 0, sizeof(ackX_packet.warnings.cif0_warnings));
+
+
+					// Checking if AckS was requested
+					if (control_packet.command_prologue.control_cam->request_ack_s)
+					{
+						// Acquiring the attribute data to populate the Context Packet
+						if ((ret_value = device_plugin.context(arguments->ctx, &ackS_packet.cif0, ackS_packet.cif1, ackS_packet.cif2, ackS_packet.cif3, ackS_packet.cif7, &control_packet)) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Error while acquiring data for AckS Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+							goto cleanup_ackS;
+						}
+
+						// Writing the remaining information before sending the packet
+						ackS_packet.command_prologue.common_prologue.timestamp_int = (uint32_t)(time(NULL));
+
+						stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+						stream_entry.host_port = sender_address.sin_port;
+						stream_entry.packet_class_code = VITA49_2_PKT_CLASS_ACKS;
+						stream_entry.stream_id = next_acks_stream_id;
+
+						// Error occurred
+						if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+						{
+							fprintf(stderr, "vita49_2_client: Encountered an error while trying to retrieve Stream ID for the AckS Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
+							goto cleanup_ackS;
+						}
+
+						// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+						if (ret_value > last_insertion_index)
+						{
+							ackS_packet.command_prologue.common_prologue.stream_id = stream_entry.stream_id;
+							ackS_packet.command_prologue.common_prologue.header.packet_count = 0;
+						
+							device_stream_id_table[ret_value].packet_count = 0;
+
+							last_insertion_index++;
+							next_acks_stream_id++;
+						}
+						// Otherwise that means the element already existed in the array.
+						else
+						{
+							ackS_packet.command_prologue.common_prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+							ackS_packet.command_prologue.common_prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+						}
+
+						// Copying the 11 bits from the Control Packet CAM. To avoid any complications with byte ordering I'll manually do the copies:
+						ackS_packet.command_prologue.ack_cam->reserved_21 = control_packet.command_prologue.control_cam->reserved_21;
+						ackS_packet.command_prologue.ack_cam->nack = control_packet.command_prologue.control_cam->nack;
+						ackS_packet.command_prologue.ack_cam->action_bits = control_packet.command_prologue.control_cam->action_bits;
+						ackS_packet.command_prologue.ack_cam->errors = control_packet.command_prologue.control_cam->errors;
+						ackS_packet.command_prologue.ack_cam->warnings = control_packet.command_prologue.control_cam->warnings;
+						ackS_packet.command_prologue.ack_cam->partial_execution = control_packet.command_prologue.control_cam->partial_execution;
+						ackS_packet.command_prologue.ack_cam->controller_id_format = control_packet.command_prologue.control_cam->controller_id_format;
+						ackS_packet.command_prologue.ack_cam->has_controller_id = control_packet.command_prologue.control_cam->has_controller_id;
+						ackS_packet.command_prologue.ack_cam->controllee_id_format = control_packet.command_prologue.control_cam->controllee_id_format;
+						ackS_packet.command_prologue.ack_cam->has_controllee_id = control_packet.command_prologue.control_cam->has_controllee_id;
+
+						// Copying the Controller and Controllee ID information from the Control Packet
+						memcpy(&ackS_packet.command_prologue.controller_id, &control_packet.command_prologue.controller_id, sizeof(ackS_packet.command_prologue.controller_id));
+						memcpy(&ackS_packet.command_prologue.controllee_id, &control_packet.command_prologue.controllee_id, sizeof(ackS_packet.command_prologue.controllee_id));
+					
+						// Now to write that data to a buffer and send it
+						if ((ackS_packet_size = vita49_2_serialize_ackS_packet(&ackS_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+							fprintf(stderr, "vita49_2_client: Failed to serialize AckS Packet. (%d) %s\n", ackS_packet_size, (ackS_packet_size < 0) ? strerror(-ackS_packet_size) : "");
+						else 
+						{
+							if (sendto(udp_socket_fd, send_buffer, ackS_packet_size*4, 0, (struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+								fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over UDP. (%d) %s\n", errno, strerror(errno));
+							
+							if (tcp_socket_fd >= 0)
+								if (send(tcp_socket_fd, send_buffer, context_packet_size*4, 0) <= 0)
+									fprintf(stderr, "vita49_2_client: Failed to send AckS Packet over TCP. (%d) %s\n", errno, strerror(errno));
+						}
+						cleanup_ackS:
+						free(ackS_packet.cif1);
+						free(ackS_packet.cif2);
+						free(ackS_packet.cif3);
+						free(ackS_packet.cif7);
+						
+						ackS_packet.cif1 = NULL;
+						ackS_packet.cif2 = NULL;
+						ackS_packet.cif3 = NULL;
+						ackS_packet.cif7 = NULL;
+
+						memset(&ackS_packet.cif0, 0, sizeof(ackS_packet.cif0));
+					}
+
+					break;
+
+				// Extension Command Packet
+				case VITA49_2_PKT_TYPE_EXT_COMMAND:
+
+					// TODO: Add support for Command Extension Packets for the Acknowledge subtype (if necessary, it may be unneeded)
+
+					// First we have to determine what kind of Command Extension Packet we're dealing with (Control Extension, Acknowledge Extension, etc.).
+					// If the 3rd indicator bit is asserted, that means this is an Acknowledge Packet. -> See Table 5.1.1.1-1 in the VITA 49.2 2017 docs.
+					if (received_header.indicators & (1 << 2))
+					{
+						fprintf(stderr, "vita49_2_client: Received a Acknowledge Extension Packet which is unsupported.\n");
+						break;
+					}
+
+					struct vita49_2_control_extension_packet control_ext_packet;
+					if ((ret_value = vita49_2_parse_control_extension_packet(receive_buffer, received/4, &control_ext_packet)) < 0)
+					{
+						fprintf(stderr, "vita49_2_client: Unable to parse Control Extension Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+						continue;
+					}
+
+					// TODO: Handle AckV Request by creating a Command Extension Packet for AckV
+					// TODO: Handle AckX Request by creating a Command Extension Packet for AckX
+					// TODO: Handle AckS Request by creating a Command Extension Packet for AckS
+
+					switch (control_ext_packet.command_prologue.control_cam->action_bits)
+					{
+						case VITA49_2_CTRL_EXECUTE:
+							if ((ret_value = _execute_command_extensions(arguments->ctx, &control_ext_packet, &device_plugin)) < 0)
+							{
+								fprintf(stderr, "vita49_2_client: Error while executing commands in Control Extension Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+								continue;
+							}
+
+							break;
+
+						case VITA49_2_CTRL_RESERVED:
+						case VITA49_2_CTRL_NO_ACT:
+							break;
+
+						case VITA49_2_CTRL_DRY_RUN:
+							fprintf(stderr, "vita49_2_client: Received Control Extension Packet with 'Dry Run' mode enabled.\n");
+							break;
+
+						default:
+							fprintf(stderr, "vita49_2_client: Received Control Extension Packet with invalid Action Mode: %d\n", control_ext_packet.command_prologue.control_cam->action_bits);
+							break;
+					}
+
+					break;
+
+				// Unknown packet
+				default:
+					fprintf(stderr, "vita49_2_client: Found a packet of unknown type: '%d'.\n", received_header.packet_type);
+					break;
+			}		
+		}
+
+		// We're ready to send another Context Packet
+		else
+		{
+			if (read(context_timer_fd, &num_timer_expirations, sizeof(num_timer_expirations)) != sizeof(num_timer_expirations))
+			{
+				fprintf(stderr, "vita49_2_client: Error while reading timerfd value. (%d) %s\n", errno, strerror(errno));
+				continue;
+			}
+
+			// First let's check that the sender address has been populated with information. This happens after we've received at least VITA 49.2
+			// packet from a host. Otherwise if we haven't received any packets, then we don't know who to send this Context Packet to.
+			if (destination_address.sin_addr.s_addr == 0)
+			{
+				fprintf(stderr, "vita49_2_client: Cannot send Context Packet because host address hasn't been resolved.\n");
+				continue;
+			}
+
+			// Acquiring the attribute data to populate the Context Packet
+			if ((ret_value = device_plugin.context(arguments->ctx, &context_packet.cif0, context_packet.cif1, context_packet.cif2, context_packet.cif3, context_packet.cif7, NULL)) < 0)
+			{
+				fprintf(stderr, "vita49_2_client: Error while acquiring data for Context Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+				goto cleanup_context;
+			}
+
+			// Writing the remaining information before sending the packet
+			context_packet.prologue.timestamp_int = (uint32_t)(time(NULL));
+
+			stream_entry.host_ip_addr = sender_address.sin_addr.s_addr;
+			stream_entry.host_port = sender_address.sin_port;
+			stream_entry.packet_class_code = VITA49_2_PKT_CLASS_GENERIC_CONTEXT;
+			stream_entry.stream_id = next_context_stream_id;
+
+			ssize_t ret_value;
+
+			// Error occurred
+			if ((ret_value = _insert_stream_id(device_stream_id_table, sizeof(device_stream_id_table)/sizeof(device_stream_id_table[0]), &stream_entry)) < 0)
+			{
+				fprintf(stderr, "vita49_2_client: Error while trying to retrieve Stream ID for the Context Packet that was to be sent. (%d) %s\n", ret_value, strerror(-ret_value));
+				goto cleanup_context;
+			}
+
+			// If the return value is greater than the last_insertion_index, that means a new element was inserted.
+			if (ret_value > last_insertion_index)
+			{
+				context_packet.prologue.stream_id = stream_entry.stream_id;
+				context_packet.prologue.header.packet_count = 0;
+			
+				device_stream_id_table[ret_value].packet_count = 0;
+
+				last_insertion_index++;
+				next_context_stream_id++;
+			}
+			// Otherwise that means the element already existed in the array.
+			else
+			{
+				context_packet.prologue.stream_id = device_stream_id_table[ret_value].stream_id;
+				context_packet.prologue.header.packet_count = ++device_stream_id_table[ret_value].packet_count;
+			}
+
+			// Checking if this Context Packet has changed. There's a CIF0 field called "Context Field Change Indicator" which when asserted
+			// indicates that the attribute data in this packet has changed since the previous Context Packet.
+
+			// Pointers to make addressing easier (less typing)
+			struct vita49_2_cif0_fields *current_cif0_ptr = &context_packet.cif0;
+			struct vita49_2_cif0_fields *previous_cif0_ptr = &previous_context_packet.cif0;
+			union vita49_2_cif0_word *current_cif0_word_ptr = &context_packet.cif0.word;
+
+			current_cif0_word_ptr->context_field_change = 0;
+			previous_cif0_ptr->word.context_field_change = 0;
+
+			// First let's check if the previous packet was ever initialized to anything besides 0. If it was only initialized to 0,
+			// then this represents the first time a Context Packet is being sent, thus "Context Field Change Indicator" should be asserted.
+			if (previous_context_packet.prologue.header.packet_type != 0)
+			{
+				// Now to do an attribute-by-attribute comparison of the present CIF0 fields. I can't just use memcmp
+				// because structs have padding bytes which can differ between 2 structs with the same attribute values.
+				
+				// Checking for a difference in what fields are present/enabled
+				if (context_packet.cif0.word.word != previous_context_packet.cif0.word.word)
+					current_cif0_word_ptr->context_field_change = 1;
+
+				// If the same fields are present, we have to compare each field individually to check for differing values
+				else
+				{
+					if (current_cif0_ptr->reference_point_id != previous_cif0_ptr->reference_point_id)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_double_compare(current_cif0_ptr->bandwidth, previous_cif0_ptr->bandwidth))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_double_compare(current_cif0_ptr->if_reference_frequency, previous_cif0_ptr->if_reference_frequency))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_double_compare(current_cif0_ptr->rf_reference_frequency, previous_cif0_ptr->rf_reference_frequency))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_double_compare(current_cif0_ptr->rf_reference_frequency_offset, previous_cif0_ptr->rf_reference_frequency_offset))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_double_compare(current_cif0_ptr->if_band_offset, previous_cif0_ptr->if_band_offset))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_float_compare(current_cif0_ptr->reference_level, previous_cif0_ptr->reference_level))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_float_compare(current_cif0_ptr->gains.gain_stage_1, previous_cif0_ptr->gains.gain_stage_1) || !_float_compare(current_cif0_ptr->gains.gain_stage_2, previous_cif0_ptr->gains.gain_stage_2))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_ptr->over_range_count != previous_cif0_ptr->over_range_count)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_double_compare(current_cif0_ptr->sample_rate, previous_cif0_ptr->sample_rate))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_ptr->timestamp_adjustment != previous_cif0_ptr->timestamp_adjustment)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_ptr->timestamp_calibration_time_int != previous_cif0_ptr->timestamp_calibration_time_int)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					else if (!_float_compare(current_cif0_ptr->temperature, previous_cif0_ptr->if_band_offset))
+						current_cif0_word_ptr->context_field_change = 1;
+
+					// Skipping the device identifier struct (that shouldn't change between Context Packets)
+
+					else if (current_cif0_ptr->state_and_event_indicators != previous_cif0_ptr->state_and_event_indicators)
+						current_cif0_word_ptr->context_field_change = 1;
+
+					// Only checking the Data Packet Payload Format struct if it's enabled
+					else if (current_cif0_word_ptr->has_data_packet_payload_format)
+					{
+						if (current_cif0_ptr->data_packet_payload_format.lower_word != previous_cif0_ptr->data_packet_payload_format.lower_word)
+							current_cif0_word_ptr->context_field_change = 1;
+						else
+						{
+							if (current_cif0_ptr->data_packet_payload_format.upper_word != previous_cif0_ptr->data_packet_payload_format.upper_word)
+								current_cif0_word_ptr->context_field_change = 1;
+						}
+					}
+
+					// TODO: Currently the vita49_2_formatted_gps_ins, vita49_2_gps_ascii, vita49_2_ecef_relative_ephemeris, and vita49_2_context_association_lists
+					// structs haven't been fully defined, so I'm unable to implement the comparison logic for that.
+					// Once they've been defined, that logic needs to be added here.
+					else if (current_cif0_word_ptr->has_formatted_gps)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_formatted_ins)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_ecef_ephemeris)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_relative_ephemeris)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_ptr->ephemeris_ref_id != previous_cif0_ptr->ephemeris_ref_id)
+							current_cif0_word_ptr->context_field_change = 1;
+
+					else if (current_cif0_word_ptr->has_gps_ascii)
+					{
+						// TODO: See the above TODO
+					}
+
+					else if (current_cif0_word_ptr->has_context_association_lists)
+					{
+						// TODO: See the above TODO
+					}
+				}
+
+				// I haven't fully defined the CIF1/2/3/7 structs yet, so the logic for that needs to be implemented
+
+				// TODO: Logic for checking CIF1 fields
+				
+				// TODO: Logic for checking CIF2 fields
+				
+				// TODO: Logic for checking CIF3 fields
+				
+				// TODO: Logic for checking CIF7 fields
+
+			}
+
+			if ((context_packet_size = vita49_2_serialize_context_packet(&context_packet, &send_buffer, sizeof(send_buffer)/4)) <= 0)
+			{
+				fprintf(stderr, "vita49_2_client: Failed to serialize Context Packet. (%d) %s\n", context_packet_size, (context_packet_size < 0) ? strerror(-context_packet_size) : "");
+				goto cleanup_context;
+			}
+
+			if (sendto(udp_socket_fd, send_buffer, context_packet_size*4, 0, (const struct sockaddr*)&destination_address, sizeof(destination_address)) <= 0)
+				fprintf(stderr, "vita49_2_client: Failed to send Context Packet over UDP. (%d) %s\n", errno, strerror(errno));
+			else
+				previous_context_packet = context_packet;
+
+			if (tcp_socket_fd >= 0)
+				if (send(tcp_socket_fd, send_buffer, context_packet_size*4, 0) <= 0)
+					fprintf(stderr, "vita49_2_client: Failed to send Context Packet over TCP. (%d) %s\n", errno, strerror(errno));
+
+			cleanup_context:
+			free(context_packet.cif1);
+			free(context_packet.cif2);
+			free(context_packet.cif3);
+			free(context_packet.cif7);
+
+			context_packet.cif1 = NULL;
+			context_packet.cif2 = NULL;
+			context_packet.cif3 = NULL;
+			context_packet.cif7 = NULL;
+
+			memset(&context_packet.cif0, 0, sizeof(context_packet.cif0));
+		}
+	}
+
+	return;
+}
+
+int vita49_2_command_init(struct iio_context *ctx)
+{
+	if (!ctx)
+		return -1;
+	
+	fprintf(stderr, "vita49_2_command_init: Initialized VITA 49.2 translation layer.\n");
+	return 0;
+}
+
+void vita49_2_command_cleanup(void)
+{
+	struct vita49_2_cif_mapping *m = vita49_2_cif_mappings_list;
+	struct vita49_2_cif_mapping *next;
+	
+	// Freeing the linked list memory
+	while (m) 
+	{
+		next = m->next;
+		free(m);
+		m = next;
+	}
+	vita49_2_cif_mappings_list = NULL;
+
+	fprintf(stderr, "vita49_2_process: Cleaned up VITA 49.2 translation layer.\n");
+}
+
+ssize_t _insert_stream_id(struct vita49_2_stream_entry* const array_start, size_t array_size, const struct vita49_2_stream_entry* const insertion_item)
+{
+	if (array_start == NULL || array_size == 0 || insertion_item == NULL)
+		return -EINVAL;
+	
+	ssize_t i;
+	for (i = 0; i < array_size; i++)
+	{
+		// If host_ip_addr is uninitialized, that means this element and downstream elements haven't been populated,
+		// so we can terminate the search.
+			// NOTE: Can be unsafe if the array wasn't initialized to 0 before creation. Thankfully I've already done that.
+
+		if (array_start[i].host_ip_addr == 0)
+			break;
+
+		// Can't do a simple memcmp between the 2 structs because of the risk of padding bytes, hence why I'm
+		// doing direct attribute comparisons
+		if (array_start[i].host_ip_addr 		== insertion_item->host_ip_addr && 
+			array_start[i].host_port 			== insertion_item->host_port && 
+			array_start[i].packet_class_code 	== insertion_item->packet_class_code)
+			return i;
+	}
+
+	// If we get here, that means the element isn't in the array.
+	// We need to check if we have the capacity to add it by checking if the iterator got to the last index.
+	if (i == array_size)
+		return -ENOMEM;
+
+	// Space is available
+	array_start[i] = *insertion_item;
+	return i;
+}
+
+int _execute_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const pkt, struct vita49_2_ackX_packet* const ackX_packet, const struct vita49_2_device_plugin* const device_plugin)
+{
+	// Don't need to check the AckX Packet pointer since it's optional
+	if (ctx == NULL || pkt == NULL || device_plugin == NULL)
+		return -EINVAL;
+
+	if (pkt->command_prologue.control_cam == NULL)
+		return -EINVAL;
+
+	// Check the Action Mode bits in the Packet to see if the Controls should be executed
+	if (pkt->command_prologue.control_cam->action_bits != VITA49_2_CTRL_EXECUTE)
+		return -EINVAL;
+
+	int ret_value;
+
+	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
+	// in this packet should be executed.
+
+	// We're assuming the Control Packet has already been parsed and that the cif0 (and cif1-7) struct has already
+	// been populated with the parsed data.
+
+	// If a plugin for this device has been loaded, then we can pass the Control Packet and AckX Packet to it to handle execution
+	if ((ret_value = device_plugin->execute(ctx, pkt, ackX_packet)) < 0)
+		fprintf(stderr, "vita49_2_client: Failed to execute Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+
+	return 0;
+}
+
+int _execute_command_extensions(struct iio_context *ctx, const struct vita49_2_control_extension_packet* const pkt, struct vita49_2_device_plugin* device_plugin)
+{
+	// Don't need to check the AckX Packet pointer since it's optional
+	if (!ctx || !pkt)
+		return -EINVAL;
+
+	if (pkt->command_prologue.control_cam == NULL)
+		return -EINVAL;
+
+	// Check the Action Mode bits in the Packet to see if the Controls should be executed
+	if (pkt->command_prologue.control_cam->action_bits != VITA49_2_CTRL_EXECUTE)
+		return -EINVAL;
+
+	struct iio_device *dev;
+	struct iio_channel *chn;
+	const struct iio_attr *attr;
+	struct vita49_2_cif_mapping *m;
+	int ret_value = 0;
+
+	// TODO: Need logic that looks at the Controller ID/UUID in the Control Packet and determines if the commands
+	// in this packet should be executed.
+
+	struct vita49_2_control_extension_word_node* control_extension_node;
+
+	// There's 2 payload formats/structures that ADI uses for the Control Extension Packets: Implicit and Explicit
+	// See the definition of the vita49_2_control_extension_description struct in vita49_2_packet_elements.h for more information
+	
+	// Implicit Structure
+	if (pkt->command_prologue.common_prologue.class_id.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_IMPLICIT)
+	{
+		// Iterate through the mappings list to find the associated attribute for this command. We're choosing to nest the loops this way (even though it's not the most efficient)
+		// because there might be 2 related attributes that are for TX and RX that correspond to the same CIF bit that should be updated simultaneously. If our outer loop iterated
+		// over the commands in the Control Extension Packet, we would miss that second attribute unless we had duplicate commands.
+		for (m = vita49_2_cif_mappings_list; m != NULL; m = m->next)
+		{
+			// Iterate through all of the commands
+			for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
+			{
+				// Check if mapping is part of the extended controls group
+				if (m->cif_type != CIF_EXT)
+					continue;
+
+				// Check if mapping has the same CIF bit
+				if (m->cif_bit != control_extension_node->control_extension.implicit.mapping)
+					continue;
+
+				// We have a match
+				break;
+			}
+
+			if (control_extension_node == NULL)
+				continue;
+
+
+			// Need to find the device
+			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+			{
+				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Implicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
+				continue;
+			}
+
+			// Extracting the new attribute value and issuing the new value
+			switch (control_extension_node->control_extension.implicit.data_type)
+			{
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+				{
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.ll);
+					ret_value = iio_attr_write_longlong(attr, control_extension_node->data.ll);
+					if (ret_value < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %lld to %s. (%d) %s\n", control_extension_node->data.ll, m->attr_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+				{
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.f);
+					ret_value = iio_attr_write_double(attr, (double)(control_extension_node->data.f));
+					if (ret_value < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s. (%d) %s\n", control_extension_node->data.f, m->attr_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+				{
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.d);
+					ret_value = iio_attr_write_double(attr, control_extension_node->data.d);
+					if (ret_value < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s. (%d) %s\n", control_extension_node->data.d, m->attr_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+				{
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", control_extension_node->data.b);
+					ret_value = iio_attr_write_bool(attr, control_extension_node->data.b);
+					if (ret_value < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %d to %s. (%d) %s\n", control_extension_node->data.b, m->attr_name, ret_value, strerror(-ret_value));
+					
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+				{
+
+					// This will require some extra work. We need to find the "_available" fd associated with this attribute and get a list of the possible values.
+					char available_range[256];
+
+					if ((ret_value = _find_available_attribute(ctx, CIF_EXT, m->cif_bit, available_range, sizeof(available_range))) < 0)
+					{	
+						fprintf(stderr, "vita49_2_process: Unable to find an '%s_available' attribute. Skipping execution of Control Extension. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
+						continue;
+					}
+
+					// Typically the contents of the "<attr>_available" attribute is a range of values formatted like this:
+						// "[min step max]"
+					// The alternative is a set of discrete values in which case the format usually involves more than 3 values
+					// in the brackets:
+						// "500 600 700 750 900"
+
+					// Since we're treating the list of available options as an array and using the control_extension_node->control_extension.option field as an index,
+					// we're unable to suppor the first option.
+
+					// Means we're dealing with the first case
+					if (available_range[0] == '[')
+					{
+						fprintf(stderr, "vita49_2_process: The '%s_available' attribute provides a start-step-stop format rather than a list of distinct values.\n", m->attr_name);
+						continue;
+					}
+					
+					int num_options = control_extension_node->control_extension.implicit.option;
+
+					// VLA
+					char *values[num_options];
+					for (int i = 0; i < num_options; i++) 
+						values[i] = NULL;
+
+					int count = 0;
+
+					char *tmp = strdup(available_range);
+					if (tmp == NULL) 
+					{
+						fprintf(stderr, "vita49_2_process: Failed to duplicate string while executing an attribute update for %s\n", m->attr_name);
+						continue;
+					}
+
+					char *saveptr = NULL;
+					char *tok = strtok_r(tmp, " \t\r\n", &saveptr);
+					while (tok && count < num_options && count < num_options) 
+					{
+						values[count] = strdup(tok);  // store each token
+						if (!values[count]) 
+						{
+							break;
+						}
+						count++;
+						tok = strtok_r(NULL, " \t\r\n", &saveptr);
+					}
+
+					free(tmp);
+
+					if (values[num_options-1] == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Unable to extract option %d from '%s_available' while executing Control Extension\n", control_extension_node->control_extension.implicit.option, m->attr_name);
+						continue;
+					}
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %s\n", m->device_name, m->attr_name, m->is_output ? "out" : "in", values[num_options-1]);
+					if ((ret_value = iio_attr_write_string(attr, values[num_options-1])) < 0)
+					{
+						fprintf(stderr, "vita49_2_process: Failed to write %s to %s. (%d) %s\n", values[num_options-1], m->attr_name, ret_value, strerror(-ret_value));
+					}	
+					break;
+				}
+			}
+		}
+	}
+	// Explicit Structure
+	else if (pkt->command_prologue.common_prologue.class_id.packet_class_code == VITA49_2_PKT_CLASS_CTRL_EXT_EXPLICIT)
+	{
+		// Iterate through all of the commands
+		for (control_extension_node = pkt->payload; control_extension_node != NULL; control_extension_node = control_extension_node->next)
+		{
+			// Need to find the device
+			if ((ret_value = vita49_2_find_iio_attribute(ctx, m->device_name, m->channel_name, m->attr_name, m->is_output, &attr)) < 0)
+			{
+				fprintf(stderr, "vita49_2_client: Failed to retrieve handle to IIO attribute ('%s') while executing Control Extension Packet with Explicit Structure. (%d) %s\n", m->attr_name, ret_value, strerror(-ret_value));
+				continue;
+			}
+
+			// Extracting the new attribute value and issuing the new value
+			switch (control_extension_node->control_extension.explicit.data_type)
+			{
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_LL:
+				{
+					long long value;
+					memcpy(&value, &control_extension_node->data, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %lld\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					if ((ret_value = iio_attr_write_longlong(attr, value)) < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %lld to %s. (%d) %s\n", value, control_extension_node->attribute_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_F:
+				{
+					float value;
+					memcpy(&value, &control_extension_node->data.f, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5f\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					if ((ret_value = iio_attr_write_double(attr, (double)(value))) < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %.5f to %s. (%d) %s\n", value, control_extension_node->attribute_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_D:
+				{
+					double value;
+					memcpy(&value, &control_extension_node->data, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %.5lf\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					if ((ret_value = iio_attr_write_double(attr, value)) < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %.5lf to %s. (%d) %s\n", value, control_extension_node->attribute_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_B:
+				{
+					bool value;
+					memcpy(&value, &control_extension_node->data.b, sizeof(value));
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %d\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", value);
+					if ((ret_value = iio_attr_write_bool(attr, value)) < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %d to %s. (%d) %s\n", value, control_extension_node->attribute_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+				case VITA49_2_CONTROL_EXTENSION_DATA_TYPE_S:
+				{
+					if (control_extension_node->string_data == NULL)
+					{
+						fprintf(stderr, "vita49_2_process: Could not execute attribute update for '%s' because of invalid data pointer.\n", control_extension_node->attribute_name);
+						break;
+					}
+
+					printf("vita49_2_process: Executing attribute update: %s %s (%s) -> %s\n", control_extension_node->device_name, control_extension_node->attribute_name, control_extension_node->control_extension.explicit.is_output ? "out" : "in", control_extension_node->string_data);
+					if ((ret_value = iio_attr_write_bool(attr, control_extension_node->string_data)) < 0)
+						fprintf(stderr, "vita49_2_process: Failed to write %s to %s. (%d) %s\n", control_extension_node->string_data, control_extension_node->attribute_name, ret_value, strerror(-ret_value));
+
+					break;
+				}
+			}
+		}
+	}
+	else
+	{
+		fprintf(stderr, "vita49_2_process: Unrecognized packet class code while executing Control Extension Packet: %d\n", pkt->command_prologue.common_prologue.class_id.packet_class_code);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+enum vita49_2_warnings_error_codes _find_available_attribute(struct iio_context *ctx, uint8_t cif_type, uint8_t cif_bit, char* available_range, size_t buffer_size)
+{
+	// We need to iterate through the CIF mappings linked list until we find a hardware attribute
+	// associated with this CIF bit
+	struct vita49_2_cif_mapping * cif_mappings;
+
+	for (cif_mappings = vita49_2_cif_mappings_list; cif_mappings != NULL; cif_mappings = cif_mappings->next) 
+	{
+		// Checking that the current mapping and the attribute we're looking for belong to the same
+		// CIF group (0/1/2/3/7)
+		if (cif_mappings->cif_type != cif_type)
+			continue;
+
+		// Checking that the specific CIF bit we're targeting exists in this mapping
+		if (cif_mappings->cif_bit != cif_bit)
+			continue;
+
+		// Since neither of the 2 conditions above were true, we have a match!
+		goto match;
+	}
+
+	// If the loop exited naturally after going through all of the mappings without hitting the goto statement,
+	// then there was no viable mapping
+	return -ENOFIELD;
+
+	match: ;
+	// Find device and channel
+	struct iio_device *device;
+	struct iio_channel *channel;
+	struct iio_attr *attribute;
+
+	device = iio_context_find_device(ctx, cif_mappings->device_name);
+	if (!device) 
+	{
+		fprintf(stderr, "vita49_2_process: Device %s not found for mapping.\n", cif_mappings->device_name);
+		return -ENOFIELD;
+	}
+
+	int ret_value;
+
+	// Appending "_available" to access the fd containing the valid range of values for this attribute
+	char available_options_fd_name[74];
+	snprintf(available_options_fd_name, sizeof(available_options_fd_name), "%s_available", cif_mappings->attr_name);
+
+	// Attribute we're modifying is associated with a specific channel so we must find that channel first.
+	if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_CHANNEL)
+	{
+		channel = iio_device_find_channel(device, cif_mappings->channel_name, cif_mappings->is_output);
+		if (!channel)
+		{
+			fprintf(stderr, "vita49_2_process: Channel %s (%s) not found.\n", available_options_fd_name, cif_mappings->is_output ? "out" : "in");
+			return -ENOFIELD;
+		}
+
+		// Now to find the channel attribute
+		attribute = iio_channel_find_attr(channel, available_options_fd_name);
+		if (attribute == NULL)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find channel attribute: %s\n", available_options_fd_name);
+			return -ENOFIELD;
+		}
+
+		if (ret_value = iio_attr_read_raw(attribute, available_range, buffer_size) < 0)
+		{
+			fprintf(stderr, "vita49_2_process: Reading from channel attribute '%s' failed.\n", available_options_fd_name);
+		}
+	} 
+	// Attribute we're modifying is associated with the device as a whole
+	else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEVICE) 
+	{
+		attribute = iio_device_find_attr(device, available_options_fd_name);
+		if (attribute == NULL)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find device attribute: %s\n", available_options_fd_name);
+			return -ENOFIELD;
+		}
+
+		if (ret_value = iio_attr_read_raw(attribute, available_range, buffer_size) < 0)
+		{
+			fprintf(stderr, "vita49_2_process: Reading from device attribute '%s' failed.\n", available_options_fd_name);
+		}
+	} 
+	// Attribute we're modifying is a debug attribute (advanced configuration)
+	else if (cif_mappings->attr_type == VITA49_2_ATTR_TYPE_DEBUG) 
+	{
+		attribute = iio_device_find_debug_attr(device, available_options_fd_name);
+		if (attribute == NULL)
+		{
+			fprintf(stderr, "vita49_2_process: Could not find debug attribute: %s\n", available_options_fd_name);
+			return -ENOFIELD;
+		}
+
+		if (ret_value = iio_attr_read_raw(attribute, available_range, buffer_size) < 0)
+		{
+			fprintf(stderr, "vita49_2_process: Reading from debug attribute '%s' failed.\n", available_options_fd_name);
+		}
+	}
+	// Otherwise the attribute doesn't have a proper mapping
+	else
+	{
+		return -ENOFIELD;
+	}
+
+	if (ret_value == -ENOSYS || ret_value == -ENOENT)	
+		return -ENOFIELD;
+	else
+		return ret_value;
+}
+
+int _validate_commands(struct iio_context *ctx, const struct vita49_2_control_packet* const control_packet, struct vita49_2_ackV_packet* const ackV_packet, const struct vita49_2_device_plugin* const device_plugin)
+{	
+	if (ctx == NULL || control_packet == NULL || ackV_packet == NULL || device_plugin == NULL)
+		return -EINVAL;
+
+	int ret_value;
+
+	if ((ret_value = device_plugin->validate(ctx, control_packet, ackV_packet)) < 0)
+		fprintf(stderr, "vita49_2_client: Failed to validate Control Packet. (%d) %s\n", ret_value, strerror(-ret_value));
+
+	return ret_value;
+}

@@ -576,12 +576,38 @@ if(WITH_NETWORK_BACKEND)
 		set(HAVE_DNS_SD OFF)
 	endif()
 	
-	iio_option(WITH_VITA49_BACKEND "Enable the VITA 49.2 backend" ON "POSIX")
-	if(WITH_VITA49_BACKEND)
+	iio_option(WITH_VITA49_2_BACKEND "Enable the VITA 49.2 backend" ON "POSIX")
+	if(WITH_VITA49_2_BACKEND)
+		if (NOT BUILD_SHARED_LIBS)
+			set_target_properties(iio PROPERTIES POSITION_INDEPENDENT_CODE ON)
+		endif()
+
 		if (WIN32)
 			target_link_libraries(iio PRIVATE wsock32 iphlpapi ws2_32)
 		endif()
-		target_sources(iio PRIVATE vita49.c vita49_packet.c)
+
+		add_subdirectory(vita49_2)
+		add_library(vita49_2_iiod STATIC iiod/vita49_2/vita49_2_iiod_helpers.c)
+		set_target_properties(vita49_2_iiod PROPERTIES
+			C_STANDARD 99
+			C_STANDARD_REQUIRED ON
+			C_EXTENSIONS OFF
+			POSITION_INDEPENDENT_CODE ON
+		)
+		target_include_directories(vita49_2_iiod PUBLIC
+			${CMAKE_SOURCE_DIR}/include
+			${CMAKE_SOURCE_DIR}/vita49_2
+			${CMAKE_SOURCE_DIR}/iiod
+			${CMAKE_SOURCE_DIR}/iiod/vita49_2
+			${CMAKE_BINARY_DIR}
+		)
+		target_link_libraries(vita49_2_iiod PRIVATE iio vita49_2 m)
+		add_subdirectory(iiod/vita49_2/plugins)
+		target_sources(iio PRIVATE iiod/vita49_2/vita49_2_host.c vita49_2/vita49_2_packet_elements.c vita49_2/vita49_2_packet_types.c)
+		target_include_directories(iio PRIVATE 
+        ${CMAKE_CURRENT_SOURCE_DIR}/vita49_2
+        ${CMAKE_SOURCE_DIR}/vita49_2
+    	)
 	endif()
 	
 	iio_option(WITH_XML_BACKEND "Enable the XML backend" ON "POSIX")
