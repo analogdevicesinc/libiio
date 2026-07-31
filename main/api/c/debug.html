@@ -105,6 +105,7 @@
 <li><a class="reference internal" href="#_CPPv427iio_channel_get_data_formatPK11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_get_data_format()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv419iio_channel_convertPK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv427iio_channel_convert_inversePK11iio_channelPvPKv"><code class="docutils literal notranslate"><span class="pre">iio_channel_convert_inverse()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv426iio_channel_refresh_formatP11iio_channel"><code class="docutils literal notranslate"><span class="pre">iio_channel_refresh_format()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv432iio_device_get_event_attrs_countPK10iio_device"><code class="docutils literal notranslate"><span class="pre">iio_device_get_event_attrs_count()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv425iio_device_get_event_attrPK10iio_devicej"><code class="docutils literal notranslate"><span class="pre">iio_device_get_event_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv426iio_device_find_event_attrPK10iio_devicePKc"><code class="docutils literal notranslate"><span class="pre">iio_device_find_event_attr()</span></code></a></li>
@@ -356,6 +357,38 @@ Content on this topic
 <li><p><strong>dst</strong> – A pointer to the destination buffer where the converted sample should be written </p></li>
 <li><p><strong>src</strong> – A pointer to the source buffer containing the sample </p></li>
 </ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv426iio_channel_refresh_formatP11iio_channel">
+<span id="_CPPv326iio_channel_refresh_formatP11iio_channel"></span><span id="_CPPv226iio_channel_refresh_formatP11iio_channel"></span><span id="iio_channel_refresh_format__iio_channelP"></span><span class="target" id="group__Debug_1ga917b5ebe611e3ccf17f8c06cc7002a42"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_channel_refresh_format</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="channel.html#_CPPv411iio_channel" title="iio_channel"><span class="n"><span class="pre">iio_channel</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">chn</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv426iio_channel_refresh_formatP11iio_channel" title="Link to this definition"></a><br /></dt>
+<dd><p>Refresh the data format of a scan element channel from hardware. </p>
+<p>
+This function re-reads the scan element type attribute from the kernel and updates the cached data format. Use this when the hardware format may have changed (e.g., after changing oversampling or resolution).</p>
+<p>The channel must be a scan element. For non-scan-element channels, this returns -EINVAL.</p>
+<p><strong>IMPORTANT:</strong> Call this function BEFORE opening a new buffer stream after changing any attribute that affects channel format.</p>
+<p>Example usage: <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//</span> <span class="n">Change</span> <span class="n">hardware</span> <span class="n">configuration</span>
+<span class="n">iio_channel_attr_write</span><span class="p">(</span><span class="n">chn</span><span class="p">,</span> <span class="s2">&quot;oversampling_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;8&quot;</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Refresh</span> <span class="n">the</span> <span class="nb">format</span> <span class="p">(</span><span class="n">updates</span> <span class="n">both</span> <span class="n">client</span> <span class="ow">and</span> <span class="n">server</span><span class="p">)</span>
+<span class="n">iio_channel_refresh_format</span><span class="p">(</span><span class="n">chn</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">Now</span> <span class="n">safe</span> <span class="n">to</span> <span class="nb">open</span> <span class="n">buffer</span> <span class="k">with</span> <span class="n">updated</span> <span class="nb">format</span>
+<span class="n">buf_stream</span> <span class="o">=</span> <span class="n">iio_buffer_open</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span> <span class="n">mask</span><span class="p">);</span>
+</pre></div>
+</div>
+</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>chn</strong> – A pointer to an <a class="reference internal" href="channel.html#structiio__channel"><span class="std std-ref">iio_channel</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative errno code is returned</p>
 </dd>
 </dl>
 </dd></dl>

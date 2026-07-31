@@ -111,6 +111,7 @@
 <li><a class="reference internal" href="#iio.Channel.name"><code class="docutils literal notranslate"><span class="pre">Channel.name</span></code></a></li>
 <li><a class="reference internal" href="#iio.Channel.output"><code class="docutils literal notranslate"><span class="pre">Channel.output</span></code></a></li>
 <li><a class="reference internal" href="#iio.Channel.read"><code class="docutils literal notranslate"><span class="pre">Channel.read()</span></code></a></li>
+<li><a class="reference internal" href="#iio.Channel.refresh_format"><code class="docutils literal notranslate"><span class="pre">Channel.refresh_format()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Channel.scan_element"><code class="docutils literal notranslate"><span class="pre">Channel.scan_element</span></code></a></li>
 <li><a class="reference internal" href="#iio.Channel.type"><code class="docutils literal notranslate"><span class="pre">Channel.type</span></code></a></li>
 <li><a class="reference internal" href="#iio.Channel.write"><code class="docutils literal notranslate"><span class="pre">Channel.write()</span></code></a></li>
@@ -355,6 +356,15 @@ native format to their host format</p></li>
 <dt>returns: type=bytearray</dt><dd><p>An array containing the samples for this channel</p>
 </dd>
 </dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Channel.refresh_format">
+<span class="sig-name descname"><span class="pre">refresh_format</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#iio.Channel.refresh_format" title="Link to this definition"></a></dt>
+<dd><p>Refresh the channel’s data format from the hardware.</p>
+<p>Call this after changing any attribute that affects channel format
+(e.g., oversampling_ratio) and before opening a buffer.</p>
+<p>raises: OSError if the format could not be refreshed</p>
 </dd></dl>
 
 <dl class="py property">

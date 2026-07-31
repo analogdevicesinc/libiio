@@ -211,6 +211,7 @@
 <li><a class="reference internal" href="#function-iio.Channel.is_enabled"><code class="docutils literal notranslate"><span class="pre">is_enabled()</span></code></a></li>
 <li><a class="reference internal" href="#function-iio.Channel.read"><code class="docutils literal notranslate"><span class="pre">read()</span></code></a></li>
 <li><a class="reference internal" href="#function-iio.Channel.write"><code class="docutils literal notranslate"><span class="pre">write()</span></code></a></li>
+<li><a class="reference internal" href="#function-iio.Channel.refresh_format"><code class="docutils literal notranslate"><span class="pre">refresh_format()</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Channel.dev"><code class="docutils literal notranslate"><span class="pre">dev</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Channel.name"><code class="docutils literal notranslate"><span class="pre">name</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Channel.id"><code class="docutils literal notranslate"><span class="pre">id</span></code></a></li>
@@ -959,6 +960,17 @@ Content on this topic
 </dd>
 <dt class="field-odd">Return<span class="colon">:</span></dt>
 <dd class="field-odd"><p>The number of bytes written.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cs function">
+<dt class="sig sig-object cs" id="function-iio.Channel.refresh_format">
+<span class="target" id="classiio_1_1Channel_1ab0ef2f2bad9119731f7f3aec78eaafdd"></span><span class="pre">void</span> <span class="sig-name descname"><span class="pre">refresh_format</span></span> <span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#function-iio.Channel.refresh_format" title="Link to this definition"></a></dt>
+<dd><p>Refresh the channel’s data format from the hardware. Call this after changing any attribute that affects channel format (e.g., oversampling_ratio) and before opening a buffer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Throws IioLib.IIOException<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The format could not be refreshed.</p>
 </dd>
 </dl>
 </dd></dl>
