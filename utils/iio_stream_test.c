@@ -74,7 +74,8 @@ static const struct option options[] = {
 
 static const char *options_descriptions[] = {
 	"[-i <ip>] [-m <mode>] [-s <samples>] [-o <file>] [-r <rate>] [-l] [-n <blocks>] [-q]",
-	"IP address of the remote board (required).",
+	"IP address/hostname of the remote board, or a full IIO URI "
+	"(e.g. 'local:', 'usb:1.5.5') to use a different backend (required).",
 	"Test mode: rx128, rx256, rxtx128 (default: rx128).",
 	"Number of samples to capture (default: 8M).",
 	"Output file for captured data (default: capture_<mode>.bin).",
@@ -770,8 +771,8 @@ int main(int argc, char **argv)
 	free(opts);
 
 	if (!ip_addr) {
-		fprintf(stderr, "Error: IP address is required\n");
-		fprintf(stderr, "Usage: %s -i <ip_address> [-m <mode>] [-s <samples>] "
+		fprintf(stderr, "Error: IP address or URI is required\n");
+		fprintf(stderr, "Usage: %s -i <ip_address|uri> [-m <mode>] [-s <samples>] "
 		        "[-o <output_file>] [-r <sample_rate>] [-n <pipeline_depth>] [-q]\n", MY_NAME);
 		return EXIT_FAILURE;
 	}
@@ -824,8 +825,14 @@ int main(int argc, char **argv)
 		}
 	}
 
-	/* Create network context */
-	snprintf(uri, sizeof(uri), "ip:%s", ip_addr);
+	/* Create context. If ip_addr already looks like a full URI (contains a
+	 * ':', e.g. "local:", "ip:1.2.3.4", "usb:1.5.5"), use it verbatim so
+	 * non-network backends can be selected; otherwise treat it as a bare
+	 * IP/hostname and build an "ip:" URI as before. */
+	if (strchr(ip_addr, ':'))
+		snprintf(uri, sizeof(uri), "%s", ip_addr);
+	else
+		snprintf(uri, sizeof(uri), "ip:%s", ip_addr);
 	printf("Connecting to %s...\n", uri);
 
 	ctx = iio_create_context(&params, uri);
