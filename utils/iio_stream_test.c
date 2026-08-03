@@ -43,12 +43,21 @@
 #define BUFFER_SIZE_128 128  /* 128 complex samples */
 #define BUFFER_SIZE_256 256  /* 256 complex samples */
 #define BYTES_PER_COMPLEX_SAMPLE 4  /* I and Q are int16_t each */
+#define DEFAULT_PIPELINE_DEPTH 4  /* Number of in-flight blocks in the RX stream */
+#define MAX_LATENCY_SAMPLES (16 * 1024 * 1024)  /* Safety cap, ~128 MiB of uint64_t */
 
 /* Test modes */
 enum test_mode {
 	MODE_RX_128,
 	MODE_RX_256,
 	MODE_RXTX_128,
+};
+
+/* Per-block RX latency statistics, computed from a bounded sample buffer */
+struct block_latency_stats {
+	uint64_t *samples_us;   /* Array of per-block latency deltas, in microseconds */
+	uint64_t count;         /* Number of latency samples actually recorded */
+	uint64_t capacity;      /* Allocated capacity of samples_us */
 };
 
 static const struct option options[] = {
@@ -58,17 +67,21 @@ static const struct option options[] = {
 	{ "output", required_argument, 0, 'o' },
 	{ "rate", required_argument, 0, 'r' },
 	{ "loopback", no_argument, 0, 'l' },
+	{ "num-blocks", required_argument, 0, 'n' },
+	{ "quiet", no_argument, 0, 'q' },
 	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
-	"[-i <ip>] [-m <mode>] [-s <samples>] [-o <file>] [-r <rate>] [-l]",
+	"[-i <ip>] [-m <mode>] [-s <samples>] [-o <file>] [-r <rate>] [-l] [-n <blocks>] [-q]",
 	"IP address of the remote board (required).",
 	"Test mode: rx128, rx256, rxtx128 (default: rx128).",
 	"Number of samples to capture (default: 8M).",
 	"Output file for captured data (default: capture_<mode>.bin).",
 	"Sample rate in Hz (default: 8000000).",
 	"Enable digital loopback mode (default: disabled).",
+	"RX stream pipeline depth / number of in-flight blocks, RX modes only (default: 4).",
+	"Suppress progress output (recommended for timing-sensitive runs, e.g. under 'time').",
 };
 
 /* Global state */
@@ -212,15 +225,67 @@ static int configure_sample_rate(uint64_t sample_rate)
 	return 0;
 }
 
+/* Comparator for qsort() over an array of uint64_t microsecond latencies */
+static int compare_u64(const void *a, const void *b)
+{
+	uint64_t va = *(const uint64_t *)a;
+	uint64_t vb = *(const uint64_t *)b;
+
+	if (va < vb)
+		return -1;
+	if (va > vb)
+		return 1;
+	return 0;
+}
+
+/* Compute and print min/max/mean/percentile latency stats from a bounded sample set.
+ * Sorts the array in place; only ever called once, after capture has completed. */
+static void print_latency_stats(struct block_latency_stats *stats)
+{
+	uint64_t i, sum = 0;
+	uint64_t p50_idx, p95_idx, p99_idx;
+
+	if (stats->count == 0) {
+		printf("Block latency: no samples recorded\n");
+		return;
+	}
+
+	qsort(stats->samples_us, stats->count, sizeof(*stats->samples_us), compare_u64);
+
+	for (i = 0; i < stats->count; i++)
+		sum += stats->samples_us[i];
+
+	/* Nearest-rank percentile method, clamped to the last valid index */
+	p50_idx = (stats->count * 50) / 100;
+	p95_idx = (stats->count * 95) / 100;
+	p99_idx = (stats->count * 99) / 100;
+	if (p50_idx >= stats->count)
+		p50_idx = stats->count - 1;
+	if (p95_idx >= stats->count)
+		p95_idx = stats->count - 1;
+	if (p99_idx >= stats->count)
+		p99_idx = stats->count - 1;
+
+	printf("Block latency (get-next-block wait time, %" PRIu64 " samples):\n", stats->count);
+	printf("  Min:  %" PRIu64 " us\n", stats->samples_us[0]);
+	printf("  Max:  %" PRIu64 " us\n", stats->samples_us[stats->count - 1]);
+	printf("  Mean: %.2f us\n", (double)sum / (double)stats->count);
+	printf("  p50:  %" PRIu64 " us\n", stats->samples_us[p50_idx]);
+	printf("  p95:  %" PRIu64 " us\n", stats->samples_us[p95_idx]);
+	printf("  p99:  %" PRIu64 " us\n", stats->samples_us[p99_idx]);
+}
+
 /* RX-only capture using stream API */
 static int capture_rx_only(size_t block_size, uint64_t total_samples,
-                           FILE *out_file, uint64_t sample_rate, bool loopback_enabled)
+                           FILE *out_file, uint64_t sample_rate, bool loopback_enabled,
+                           size_t pipeline_depth, bool quiet)
 {
 	struct iio_stream *rx_stream = NULL;
 	struct iio_buffer *rxbuf = NULL;
 	struct iio_channels_mask *rxmask = NULL;
 	struct iio_channel *rx0_i, *rx0_q;
 	const struct iio_block *rx_block = NULL;
+	struct block_latency_stats lat_stats = {0};
 	uint64_t samples_captured = 0;
 	uint64_t blocks_processed = 0;
 	uint64_t start_time_us, end_time_us;
@@ -266,8 +331,21 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 		goto cleanup;
 	}
 
+	/* Allocate per-block latency sample buffer, sized to the expected block count */
+	lat_stats.capacity = (total_samples + block_size - 1) / block_size;
+	if (lat_stats.capacity > MAX_LATENCY_SAMPLES)
+		lat_stats.capacity = MAX_LATENCY_SAMPLES;
+
+	lat_stats.samples_us = malloc(lat_stats.capacity * sizeof(*lat_stats.samples_us));
+	if (!lat_stats.samples_us) {
+		fprintf(stderr, "Error: Failed to allocate latency sample buffer (%" PRIu64 " entries)\n",
+		        lat_stats.capacity);
+		ret = -ENOMEM;
+		goto cleanup;
+	}
+
 	/* Create RX stream */
-	rx_stream = iio_buffer_create_stream(rxbuf, 4, block_size, rxmask);
+	rx_stream = iio_buffer_create_stream(rxbuf, pipeline_depth, block_size, rxmask);
 	ret = iio_err(rx_stream);
 	if (ret) {
 		fprintf(stderr, "Error: Failed to create RX stream: %d\n", ret);
@@ -283,14 +361,21 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 
 	/* Capture loop */
 	while (app_running && samples_captured < total_samples) {
+		uint64_t block_wait_start_us, block_wait_end_us;
+
 		/* Get next RX block */
+		block_wait_start_us = get_time_us();
 		rx_block = iio_stream_get_next_block(rx_stream);
+		block_wait_end_us = get_time_us();
 		ret = iio_err(rx_block);
 		if (ret) {
 			if (app_running)
 				fprintf(stderr, "Error: Failed to get next RX block: %d\n", ret);
 			break;
 		}
+
+		if (lat_stats.count < lat_stats.capacity)
+			lat_stats.samples_us[lat_stats.count++] = block_wait_end_us - block_wait_start_us;
 
 		const void *start = iio_block_start(rx_block);
 		const void *end = iio_block_end(rx_block);
@@ -317,7 +402,7 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 		blocks_processed++;
 
 		/* Progress indicator */
-		if (blocks_processed % 100 == 0) {
+		if (!quiet && blocks_processed % 100 == 0) {
 			double progress = (double)samples_captured / total_samples * 100.0;
 			printf("\rProgress: %.1f%% (%" PRIu64 " / %" PRIu64 " samples, %"
 			       PRIu64 " blocks)",
@@ -327,7 +412,8 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 	}
 
 	end_time_us = get_time_us();
-	printf("\n");
+	if (!quiet)
+		printf("\n");
 
 	/* Print statistics */
 	printf("\n--- Capture Statistics ---\n");
@@ -335,6 +421,7 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 	printf("Blocks processed: %" PRIu64 "\n", blocks_processed);
 	printf("Block size: %zu complex samples\n", block_size);
 	printf("Sample size: %zd bytes\n", sample_size);
+	printf("Pipeline depth: %zu blocks\n", pipeline_depth);
 
 	if (end_time_us > start_time_us) {
 		uint64_t duration_us = end_time_us - start_time_us;
@@ -349,18 +436,22 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 		printf("Rate error: %.2f%%\n", rate_error);
 	}
 
+	print_latency_stats(&lat_stats);
+
 cleanup:
-	if (rx_stream)
+	if (rx_stream && !iio_err(rx_stream))
 		iio_stream_destroy(rx_stream);
 	if (rxmask)
 		iio_channels_mask_destroy(rxmask);
+	free(lat_stats.samples_us);
 
 	return ret;
 }
 
 /* Simultaneous RX/TX capture using block API */
 static int capture_rxtx_simultaneous(size_t block_size, uint64_t total_samples,
-                                     FILE *rx_file, FILE *tx_file, uint64_t sample_rate)
+                                     FILE *rx_file, FILE *tx_file, uint64_t sample_rate,
+                                     bool quiet)
 {
 	struct iio_buffer_stream *rx_buf_stream = NULL;
 	struct iio_buffer_stream *tx_buf_stream = NULL;
@@ -538,7 +629,7 @@ static int capture_rxtx_simultaneous(size_t block_size, uint64_t total_samples,
 		}
 
 		/* Progress indicator */
-		if (blocks_processed % 100 == 0) {
+		if (!quiet && blocks_processed % 100 == 0) {
 			double progress = (double)samples_captured / total_samples * 100.0;
 			printf("\rProgress: %.1f%% (%" PRIu64 " / %" PRIu64 " samples, %"
 			       PRIu64 " blocks)",
@@ -548,7 +639,8 @@ static int capture_rxtx_simultaneous(size_t block_size, uint64_t total_samples,
 	}
 
 	end_time_us = get_time_us();
-	printf("\n");
+	if (!quiet)
+		printf("\n");
 
 	/* Print statistics */
 	printf("\n--- Capture Statistics ---\n");
@@ -571,13 +663,13 @@ static int capture_rxtx_simultaneous(size_t block_size, uint64_t total_samples,
 	}
 
 cleanup:
-	if (rx_block)
+	if (rx_block && !iio_err(rx_block))
 		iio_block_destroy(rx_block);
-	if (tx_block)
+	if (tx_block && !iio_err(tx_block))
 		iio_block_destroy(tx_block);
-	if (rx_buf_stream)
+	if (rx_buf_stream && !iio_err(rx_buf_stream))
 		iio_buffer_close(rx_buf_stream);
-	if (tx_buf_stream)
+	if (tx_buf_stream && !iio_err(tx_buf_stream))
 		iio_buffer_close(tx_buf_stream);
 	if (rxmask)
 		iio_channels_mask_destroy(rxmask);
@@ -598,11 +690,13 @@ int main(int argc, char **argv)
 	uint64_t total_samples = DEFAULT_DURATION_SAMPLES;
 	uint64_t sample_rate = DEFAULT_SAMPLE_RATE_HZ;
 	bool enable_loopback = false;
+	bool quiet = false;
 	struct iio_context_params params = {0};
 	struct option *opts;
 	FILE *out_file = NULL;
 	FILE *tx_ref_file = NULL;
 	size_t block_size;
+	size_t pipeline_depth = DEFAULT_PIPELINE_DEPTH;
 	int c, ret = EXIT_FAILURE;
 
 	/* Parse arguments */
@@ -612,7 +706,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	while ((c = getopt_long(argc, argv, "i:m:s:o:r:l" COMMON_OPTIONS, opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "i:m:s:o:r:ln:q" COMMON_OPTIONS, opts, NULL)) != -1) {
 		switch (c) {
 		case 'i':
 			ip_addr = optarg;
@@ -653,6 +747,12 @@ int main(int argc, char **argv)
 		case 'l':
 			enable_loopback = true;
 			break;
+		case 'n':
+			pipeline_depth = sanitize_clamp("pipeline depth", optarg, 1, 4096);
+			break;
+		case 'q':
+			quiet = true;
+			break;
 		case 'h':
 			usage(MY_NAME, options, options_descriptions);
 			free(opts);
@@ -672,7 +772,7 @@ int main(int argc, char **argv)
 	if (!ip_addr) {
 		fprintf(stderr, "Error: IP address is required\n");
 		fprintf(stderr, "Usage: %s -i <ip_address> [-m <mode>] [-s <samples>] "
-		        "[-o <output_file>] [-r <sample_rate>]\n", MY_NAME);
+		        "[-o <output_file>] [-r <sample_rate>] [-n <pipeline_depth>] [-q]\n", MY_NAME);
 		return EXIT_FAILURE;
 	}
 
@@ -768,15 +868,22 @@ int main(int argc, char **argv)
 	       sample_rate, (double)sample_rate / 1000000.0);
 	printf("  Total samples: %" PRIu64 " (%.3f seconds)\n",
 	       total_samples, (double)total_samples / sample_rate);
+	if (mode == MODE_RXTX_128) {
+		if (pipeline_depth != DEFAULT_PIPELINE_DEPTH)
+			printf("  Note: -n/--num-blocks has no effect in rxtx128 mode "
+			       "(single RX/TX block, no pipelining).\n");
+	} else {
+		printf("  RX pipeline depth: %zu blocks\n", pipeline_depth);
+	}
 	printf("========================================\n");
 
 	/* Run capture */
 	if (mode == MODE_RXTX_128) {
 		ret = capture_rxtx_simultaneous(block_size, total_samples,
-		                                out_file, tx_ref_file, sample_rate);
+		                                out_file, tx_ref_file, sample_rate, quiet);
 	} else {
 		ret = capture_rx_only(block_size, total_samples, out_file,
-		                      sample_rate, enable_loopback);
+		                      sample_rate, enable_loopback, pipeline_depth, quiet);
 	}
 
 	if (ret < 0) {
