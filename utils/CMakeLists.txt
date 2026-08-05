@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.13)
 
-set(IIO_UTILS_TARGETS iio_genxml iio_info iio_attr iio_rwdev iio_reg iio_event iio_ping iio_stream_test)
+set(IIO_UTILS_TARGETS iio_genxml iio_info iio_attr iio_rwdev iio_reg iio_event iio_ping iio_stream_test iio_stream_test_v2)
 if (PTHREAD_LIBRARIES OR ANDROID)
     list(APPEND IIO_UTILS_TARGETS iio_stresstest)
 endif ()
