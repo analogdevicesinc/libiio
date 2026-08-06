@@ -63,6 +63,7 @@ struct block_latency_stats {
 static const struct option options[] = {
 	{ "ip", required_argument, 0, 'i' },
 	{ "mode", required_argument, 0, 'm' },
+	{ "block-size", required_argument, 0, 'b' },
 	{ "samples", required_argument, 0, 's' },
 	{ "output", required_argument, 0, 'o' },
 	{ "rate", required_argument, 0, 'r' },
@@ -73,10 +74,12 @@ static const struct option options[] = {
 };
 
 static const char *options_descriptions[] = {
-	"[-i <ip>] [-m <mode>] [-s <samples>] [-o <file>] [-r <rate>] [-l] [-n <blocks>] [-q]",
+	"[-i <ip>] [-m <mode>] [-b <block_size>] [-s <samples>] [-o <file>] [-r <rate>] [-l] [-n <blocks>] [-q]",
 	"IP address/hostname of the remote board, or a full IIO URI "
 	"(e.g. 'local:', 'usb:1.5.5') to use a different backend (required).",
-	"Test mode: rx128, rx256, rxtx128 (default: rx128).",
+	"Test mode: rx128, rx256, rxtx128 (default: rx128). Ignored if -b is given.",
+	"RX block size in complex samples, RX modes only. Overrides -m's preset size "
+	"(e.g. -b 4096 for a 4096-sample block).",
 	"Number of samples to capture (default: 8M).",
 	"Output file for captured data (default: capture_<mode>.bin).",
 	"Sample rate in Hz (default: 8000000).",
@@ -697,6 +700,7 @@ int main(int argc, char **argv)
 	FILE *out_file = NULL;
 	FILE *tx_ref_file = NULL;
 	size_t block_size;
+	size_t custom_block_size = 0;
 	size_t pipeline_depth = DEFAULT_PIPELINE_DEPTH;
 	int c, ret = EXIT_FAILURE;
 
@@ -707,7 +711,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	while ((c = getopt_long(argc, argv, "i:m:s:o:r:ln:q" COMMON_OPTIONS, opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "i:m:b:s:o:r:ln:q" COMMON_OPTIONS, opts, NULL)) != -1) {
 		switch (c) {
 		case 'i':
 			ip_addr = optarg;
@@ -725,6 +729,9 @@ int main(int argc, char **argv)
 				free(opts);
 				return EXIT_FAILURE;
 			}
+			break;
+		case 'b':
+			custom_block_size = sanitize_clamp("block size", optarg, 1, 1048576);
 			break;
 		case 's':
 			total_samples = strtoull(optarg, NULL, 10);
@@ -794,6 +801,14 @@ int main(int argc, char **argv)
 	default:
 		fprintf(stderr, "Unknown mode\n");
 		return EXIT_FAILURE;
+	}
+
+	if (custom_block_size) {
+		if (mode == MODE_RXTX_128) {
+			fprintf(stderr, "Error: -b/--block-size is not supported in rxtx128 mode\n");
+			return EXIT_FAILURE;
+		}
+		block_size = custom_block_size;
 	}
 
 	if (!output_file) {
@@ -867,8 +882,9 @@ int main(int argc, char **argv)
 	/* Print test configuration */
 	printf("\n========================================\n");
 	printf("Test Configuration:\n");
-	printf("  Mode: %s\n", mode == MODE_RX_128 ? "RX 128" :
-	                        mode == MODE_RX_256 ? "RX 256" : "RX/TX 128");
+	printf("  Mode: %s%s\n", mode == MODE_RX_128 ? "RX 128" :
+	                          mode == MODE_RX_256 ? "RX 256" : "RX/TX 128",
+	                          custom_block_size ? " (custom block size)" : "");
 	printf("  Block size: %zu complex samples (%zu bytes)\n",
 	       block_size, block_size * BYTES_PER_COMPLEX_SAMPLE);
 	printf("  Sample rate: %" PRIu64 " Hz (%.1f Msps)\n",
