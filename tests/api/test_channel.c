@@ -190,6 +190,11 @@ TEST_FUNCTION(channel_mask_operations)
 {
 	setup_test_channel();
 
+	if (!test_ctx) {
+		DEBUG_PRINT("  SKIP: No test context available\n");
+		return;
+	}
+
 	/* Find a channel that is a scan element in order to test enabling/disabling */
 	struct iio_channel *iio_chn = NULL;
 	unsigned int nb_devices = iio_context_get_devices_count(test_ctx);
