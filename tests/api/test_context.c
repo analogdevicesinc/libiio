@@ -73,9 +73,8 @@ TEST_FUNCTION(context_creation_with_params)
 	};
 
 	struct iio_context *ctx = create_test_context("TESTS_API_URI", "local:", &params);
-	if (iio_err(ctx)) {
-		DEBUG_PRINT("  INFO: Context creation with params failed with error %d\n",
-				iio_err(ctx));
+	if (!ctx) {
+		DEBUG_PRINT("  SKIP: No context for params test\n");
 		return;
 	}
 

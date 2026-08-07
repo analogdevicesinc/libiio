@@ -35,7 +35,7 @@ TEST_FUNCTION(channels_mask_operations)
 TEST_FUNCTION(sample_size_calculation)
 {
 	struct iio_context *ctx = create_test_context("TESTS_API_URI", "local:", NULL);
-	if (iio_err(ctx) && !ctx) {
+	if (!ctx) {
 		DEBUG_PRINT("  SKIP: No context for sample size test\n");
 		TEST_ASSERT(true, "Sample size test skipped");
 		return;
