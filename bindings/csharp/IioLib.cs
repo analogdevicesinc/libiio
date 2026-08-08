@@ -52,6 +52,13 @@ namespace iio
 
     public class IIOException : Exception
     {
+        /// <summary>Default value of <see cref="ErrorCode"/> when no error code is associated with the exception.</summary>
+        public const int NoErrorCode = 0;
+
+        /// <summary>The underlying negative errno-style error code associated with this exception,
+        /// or <see cref="NoErrorCode"/> if none is available.</summary>
+        public int ErrorCode { get; private set; }
+
         public IIOException(string fmt) : base(fmt)
         {
         }
@@ -59,11 +66,13 @@ namespace iio
         public IIOException(string fmt, IIOPtr ptr)
             : base(string.Format("{0}: {1}", fmt, ptr.str()))
         {
+            ErrorCode = ptr.computeError();
         }
 
         public IIOException(string fmt, int err)
 	    : base(string.Format("{0}: {1}", fmt, IioLib.strerror(err)))
         {
+            ErrorCode = err;
         }
     }
 
