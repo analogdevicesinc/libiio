@@ -109,6 +109,9 @@ stages:
         ubuntu_24_04:
           image: 'tfcollins/libiio_ubuntu_24_04-ci:latest'
           artifactName: 'Linux-Ubuntu-24.04'
+        ubuntu_26_04:
+          image: 'tfcollins/libiio_ubuntu_26_04-ci:latest'
+          artifactName: 'Linux-Ubuntu-26.04'
         fedora28:
           image: 'tfcollins/libiio_fedora_28-ci:latest'
           artifactName: 'Linux-Fedora-28'
