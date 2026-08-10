@@ -1054,7 +1054,7 @@ int main(int argc, char **argv)
 			enable_loopback = true;
 			break;
 		case 'n':
-			pipeline_depth = sanitize_clamp("ring depth", optarg, 1, 4096);
+			pipeline_depth = sanitize_clamp("ring depth", optarg, 1, UINT32_MAX);
 			break;
 		case 'q':
 			quiet = true;
