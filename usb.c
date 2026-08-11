@@ -530,6 +530,9 @@ static int usb_refresh_format(const struct iio_channel *chn)
 	char format_str[256];
 	ssize_t ret;
 
+	if (!iiod_client_uses_binary_interface(pdata->io_ctx.iiod_client))
+		return -ENOTSUP;
+
 	ret = iiod_client_refresh_format(pdata->io_ctx.iiod_client, dev, chn,
 	                                   format_str, sizeof(format_str));
 	if (ret < 0)
