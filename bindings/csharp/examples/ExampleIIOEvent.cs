@@ -81,7 +81,6 @@ namespace IIOCSharp
                             return;
                         }
                     }
-                    event_stream.Dispose();
                 }
             }
         }
