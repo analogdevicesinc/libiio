@@ -47,6 +47,7 @@ if(CONFIG_LIBIIO)
     WITH_EXTERNAL_BACKEND=1
     # Only define the minimal macros actually needed for compilation
     WITH_IIOD_USB_DMABUF=0
+    WITH_IIOD_V0_COMPAT=0
     WITH_LOCAL_BACKEND=0
     WITH_NETWORK_BACKEND=0
     WITH_SERIAL_BACKEND=0

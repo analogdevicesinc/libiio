@@ -328,7 +328,8 @@ static void handle_refresh_format(struct parser_pdata *pdata, const struct iiod_
 	if (ret < 0)
 		goto out_send_error;
 
-	invalidate_sample_size_cache(dev);
+	if (WITH_IIOD_V0_COMPAT)
+		invalidate_sample_size_cache(dev);
 
 	const struct iio_data_format *fmt = iio_channel_get_data_format(chn);
 	char endian = fmt->is_be ? 'b' : 'l';
