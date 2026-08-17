@@ -11,12 +11,28 @@ on:
       - '20*'
     tags:
       - 'v*'
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - '.gitignore'
+      - 'LICENSE*'
+      - 'COPYING*'
+      - 'CODE_OF_CONDUCT*'
+      - 'CONTRIBUTING*'
   pull_request:
     branches:
       - main
       - next_stable
       - dev
       - '20*'
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - '.gitignore'
+      - 'LICENSE*'
+      - 'COPYING*'
+      - 'CODE_OF_CONDUCT*'
+      - 'CONTRIBUTING*'
 
 permissions:
   contents: write
