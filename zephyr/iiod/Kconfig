@@ -80,3 +80,26 @@ config LIBIIO_IIOD_UART_TX_BUF_SIZE
 	  before it can be transmitted by the UART device.
 
 endif # LIBIIO_IIOD_UART
+
+menuconfig LIBIIO_IIOD_USB
+	bool "USB iiod server"
+	depends on USB_DEVICE_STACK_NEXT
+	depends on DT_HAS_ADI_IIO_USB_ENABLED
+	help
+	  Enable the iiod server over a USB interface.
+
+if LIBIIO_IIOD_USB
+
+config LIBIIO_IIOD_USB_THREAD_PRIORITY
+	int "Thread priority"
+	default 10
+	help
+	  Priority of the thread running the iiod server.
+
+config LIBIIO_IIOD_USB_THREAD_STACK_SIZE
+	int "Thread stack size"
+	default 4096
+	help
+	  Stack size of the thread running the iiod server.
+
+endif # LIBIIO_IIOD_USB
