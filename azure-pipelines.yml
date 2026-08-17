@@ -1,5 +1,5 @@
 # If you make changes to builds or artifacts, please check and update the following files if needed:
-# README.md, CI/azure/prepare_assets.sh, artifact_manifest.txt.cmakein, CI/publish_deps.ps1
+# README.md, CI/scripts/prepare_assets.sh, artifact_manifest.txt.cmakein, CI/publish_deps.ps1
 
 variables:
   isMain: $[eq(variables['Build.SourceBranch'], 'refs/heads/main')]
@@ -95,10 +95,10 @@ stages:
         sourceFolder: '$(Agent.BuildDirectory)/s/build/'
         contents: '$(Agent.BuildDirectory)/s/build/?(*.deb|*.gz|*.rpm)'
         targetFolder: '$(Build.ArtifactStagingDirectory)'
-    - script: ./CI/azure/check_kernel.sh
+    - script: ./CI/scripts/check_kernel.sh
       displayName: 'Kernel check'
       condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
-    - script: ./CI/azure/check_README_BUILD.sh
+    - script: ./CI/scripts/check_README_BUILD.sh
       displayName: 'README_BUILD check'
       condition: and(eq(variables['artifactName'], 'Linux-Ubuntu-22.04'), eq(variables['Build.Reason'], 'PullRequest'))
     - task: PublishPipelineArtifact@1
@@ -129,7 +129,7 @@ stages:
         script: |
           git submodule update --init
           $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
-          C:\msys64\usr\bin\bash.exe -c "./CI/azure/build_mingw.sh install_pacman_deps"
+          C:\msys64\usr\bin\bash.exe -c "./CI/scripts/build_mingw.sh install_pacman_deps"
     - task: PowerShell@2
       inputs:
         targetType: inline
@@ -137,7 +137,7 @@ stages:
           $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
           mkdir build-mingw
           cd build-mingw
-          C:\msys64\usr\bin\bash.exe -c "../CI/azure/build_mingw.sh build_libiio"
+          C:\msys64\usr\bin\bash.exe -c "../CI/scripts/build_mingw.sh build_libiio"
       displayName: 'Build'
     - task: CopyFiles@2
       displayName: 'Copy .exe files'
@@ -351,7 +351,7 @@ stages:
         cmake .. -DCMAKE_BUILD_TYPE=$(cmakeBuildType) -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DCPACK_SYSTEM_NAME=${ARTIFACTNAME}
         make
         make package
-        mv ../CI/azure/macos_tar_fixup.sh .
+        mv ../CI/scripts/macos_tar_fixup.sh .
         chmod +x macos_tar_fixup.sh
         ./macos_tar_fixup.sh
         cd ..
@@ -415,7 +415,7 @@ stages:
       displayName: 'Setup'
     - script: |
         set -e
-        sudo docker run --platform "linux/$(arch)" --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -e CMAKE_BUILD_TYPE=$(cmakeBuildType) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/azure/$(build_script) && ./CI/azure/$(build_script)"
+        sudo docker run --platform "linux/$(arch)" --rm -t --privileged -e ARTIFACTNAME=$(artifactName) -e CMAKE_BUILD_TYPE=$(cmakeBuildType) -v "$(Agent.BuildDirectory)/s":"/ci" -v "/usr/bin/qemu-$(arch)-static":"/usr/bin/qemu-$(arch)-static" "$(image)" /bin/bash -c "cd /ci/ && chmod +x ./CI/scripts/$(build_script) && ./CI/scripts/$(build_script)"
       displayName: 'Build'
     - task: CopyFiles@2
       inputs:
@@ -485,7 +485,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       inputs:
         path: '$(Agent.BuildDirectory)/s/build/artifacts'
-    - script: ./CI/azure/prepare_assets.sh check
+    - script: ./CI/scripts/prepare_assets.sh check
       displayName: 'Check files'
     - task: CopyFiles@2
       inputs:
@@ -507,7 +507,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       inputs:
         path: '$(Build.ArtifactStagingDirectory)'
-    - bash: ./CI/azure/prepare_assets.sh swdownloads
+    - bash: ./CI/scripts/prepare_assets.sh swdownloads
       displayName: "Prepare artifacts for SWDownloads"
     - task: DownloadSecureFile@1
       name: key
@@ -529,7 +529,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       inputs:
         path: '$(Build.ArtifactStagingDirectory)'
-    - bash: ./CI/azure/prepare_assets.sh release
+    - bash: ./CI/scripts/prepare_assets.sh release
       displayName: 'Prepare assets for release'
     - task: GithubRelease@0
       displayName: 'Attach artifacts to GitHub Release'
