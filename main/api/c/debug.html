@@ -370,7 +370,7 @@ This function re-reads the scan element type attribute from the kernel and updat
 <p>The channel must be a scan element. For non-scan-element channels, this returns -EINVAL.</p>
 <p><strong>IMPORTANT:</strong> Call this function BEFORE opening a new buffer stream after changing any attribute that affects channel format.</p>
 <p>Example usage: <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">//</span> <span class="n">Change</span> <span class="n">hardware</span> <span class="n">configuration</span>
-<span class="n">iio_channel_attr_write</span><span class="p">(</span><span class="n">chn</span><span class="p">,</span> <span class="s2">&quot;oversampling_ratio&quot;</span><span class="p">,</span> <span class="s2">&quot;8&quot;</span><span class="p">);</span>
+<span class="n">iio_channel_attr_write</span><span class="p">(</span><span class="n">chn</span><span class="p">,</span> <span class="s2">"oversampling_ratio"</span><span class="p">,</span> <span class="s2">"8"</span><span class="p">);</span>
 
 <span class="o">//</span> <span class="n">Refresh</span> <span class="n">the</span> <span class="nb">format</span> <span class="p">(</span><span class="n">updates</span> <span class="n">both</span> <span class="n">client</span> <span class="ow">and</span> <span class="n">server</span><span class="p">)</span>
 <span class="n">iio_channel_refresh_format</span><span class="p">(</span><span class="n">chn</span><span class="p">);</span>

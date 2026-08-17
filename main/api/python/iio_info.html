@@ -236,7 +236,7 @@ Content on this topic
 <div class="line">This tool is written using the libiio Python bindings. It works in the same way as the base iio_info works. You can find more information about it on this <a class="icon link reference external" href="https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_info" target="_blank">page</a>.</div>
 </div>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="ch">#!/usr/bin/env python</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 <span class="sd">Copyright (C) 2015 Analog Devices, Inc.</span>
 <span class="sd">Author: Paul Cercueil &lt;paul.cercueil@analog.com&gt;</span>
 
@@ -253,116 +253,116 @@ Content on this topic
 <span class="sd">You should have received a copy of the GNU General Public License</span>
 <span class="sd">along with this program; if not, write to the Free Software</span>
 <span class="sd">Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">"""</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">iio</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_create_context</span><span class="p">():</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;--uri&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"--uri"</span><span class="p">:</span>
         <span class="n">uri</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">argv</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">contexts</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">scan_contexts</span><span class="p">()</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">contexts</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Multiple contexts found. Please select one using --uri:&quot;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Multiple contexts found. Please select one using --uri:"</span><span class="p">)</span>
             <span class="k">for</span> <span class="n">uri</span><span class="p">,</span> <span class="n">description</span> <span class="ow">in</span> <span class="n">contexts</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">description</span><span class="p">))</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="p">(</span><span class="n">uri</span><span class="p">,</span> <span class="n">description</span><span class="p">))</span>
         <span class="n">sys</span><span class="o">.</span><span class="n">exit</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">iio</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="n">uri</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">Information</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Class for retrieving the requested information.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Class for retrieving the requested information."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">context</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Class constructor.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            context: type=iio.Context</span>
 <span class="sd">                Context used for retrieving the information.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">write_information</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write the information about the current context.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Write the information about the current context."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_context_info</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_context_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;IIO context created: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Backend version: </span><span class="si">%u</span><span class="s2">.</span><span class="si">%u</span><span class="s2"> (git tag: </span><span class="si">%s</span><span class="s2">&quot;</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Backend description string: &quot;</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"IIO context created: "</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Backend version: </span><span class="si">%u</span><span class="s2">.</span><span class="si">%u</span><span class="s2"> (git tag: </span><span class="si">%s</span><span class="s2">"</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">version</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"Backend description string: "</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">description</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;IIO context has </span><span class="si">%u</span><span class="s2"> attributes: &quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">attrs</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"IIO context has </span><span class="si">%u</span><span class="s2"> attributes: "</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">attrs</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">attr</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">attr</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">value</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="n">attr</span> <span class="o">+</span> <span class="s2">": "</span> <span class="o">+</span> <span class="n">value</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;IIO context has </span><span class="si">%u</span><span class="s2"> devices:&quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">devices</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"IIO context has </span><span class="si">%u</span><span class="s2"> devices:"</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">devices</span><span class="p">))</span>
 
         <span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">devices</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_device_info</span><span class="p">(</span><span class="n">dev</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_device_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dev</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t</span><span class="s2">"</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">id</span> <span class="o">+</span> <span class="s2">": "</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">dev</span> <span class="ow">is</span> <span class="n">iio</span><span class="o">.</span><span class="n">Trigger</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Found trigger! Rate: </span><span class="si">%u</span><span class="s2"> HZ&quot;</span> <span class="o">%</span> <span class="n">dev</span><span class="o">.</span><span class="n">frequency</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Found trigger! Rate: </span><span class="si">%u</span><span class="s2"> HZ"</span> <span class="o">%</span> <span class="n">dev</span><span class="o">.</span><span class="n">frequency</span><span class="p">)</span>
 
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="si">%u</span><span class="s2"> channels found: &quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t</span><span class="si">%u</span><span class="s2"> channels found: "</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">))</span>
         <span class="k">for</span> <span class="n">channel</span> <span class="ow">in</span> <span class="n">dev</span><span class="o">.</span><span class="n">channels</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_channel_info</span><span class="p">(</span><span class="n">channel</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="si">%u</span><span class="s2"> device-specific attributes found: &quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">attrs</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t</span><span class="si">%u</span><span class="s2"> device-specific attributes found: "</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">attrs</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">device_attr</span> <span class="ow">in</span> <span class="n">dev</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_device_attribute_info</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">device_attr</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">debug_attrs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t</span><span class="si">%u</span><span class="s2"> debug attributes found: &quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">debug_attrs</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t</span><span class="si">%u</span><span class="s2"> debug attributes found: "</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">debug_attrs</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">debug_attr</span> <span class="ow">in</span> <span class="n">dev</span><span class="o">.</span><span class="n">debug_attrs</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_device_debug_attribute_info</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">debug_attr</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_channel_info</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">channel</span><span class="p">):</span>
-        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)&quot;</span> <span class="o">%</span> <span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">channel</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span> <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">output</span> <span class="k">else</span> <span class="s2">&quot;input&quot;</span><span class="p">))</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t\t</span><span class="si">%s</span><span class="s2">: </span><span class="si">%s</span><span class="s2"> (</span><span class="si">%s</span><span class="s2">)"</span> <span class="o">%</span> <span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="n">channel</span><span class="o">.</span><span class="n">name</span> <span class="ow">or</span> <span class="s2">""</span><span class="p">,</span> <span class="s2">"output"</span> <span class="k">if</span> <span class="n">channel</span><span class="o">.</span><span class="n">output</span> <span class="k">else</span> <span class="s2">"input"</span><span class="p">))</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">attrs</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="si">%u</span><span class="s2"> channel-specific attributes found: &quot;</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">attrs</span><span class="p">))</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t\t</span><span class="si">%u</span><span class="s2"> channel-specific attributes found: "</span> <span class="o">%</span> <span class="nb">len</span><span class="p">(</span><span class="n">channel</span><span class="o">.</span><span class="n">attrs</span><span class="p">))</span>
             <span class="k">for</span> <span class="n">channel_attr</span> <span class="ow">in</span> <span class="n">channel</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_channel_attribute_info</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">channel_attr</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_channel_attribute_info</span><span class="p">(</span><span class="n">channel</span><span class="p">,</span> <span class="n">channel_attr</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t\t\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">channel_attr</span> <span class="o">+</span> <span class="s2">&quot;, value: &quot;</span> <span class="o">+</span> <span class="n">channel</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">channel_attr</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t\t\t</span><span class="s2">"</span> <span class="o">+</span> <span class="n">channel_attr</span> <span class="o">+</span> <span class="s2">", value: "</span> <span class="o">+</span> <span class="n">channel</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">channel_attr</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to read &quot;</span> <span class="o">+</span> <span class="n">channel_attr</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Unable to read "</span> <span class="o">+</span> <span class="n">channel_attr</span> <span class="o">+</span> <span class="s2">": "</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_device_attribute_info</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">device_attr</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">device_attr</span> <span class="o">+</span> <span class="s2">&quot;, value: &quot;</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">device_attr</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t\t</span><span class="s2">"</span> <span class="o">+</span> <span class="n">device_attr</span> <span class="o">+</span> <span class="s2">", value: "</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="n">device_attr</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to read &quot;</span> <span class="o">+</span> <span class="n">device_attr</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Unable to read "</span> <span class="o">+</span> <span class="n">device_attr</span> <span class="o">+</span> <span class="s2">": "</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_device_debug_attribute_info</span><span class="p">(</span><span class="n">dev</span><span class="p">,</span> <span class="n">debug_attr</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\t\t\t</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">debug_attr</span> <span class="o">+</span> <span class="s2">&quot;, value: &quot;</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">debug_attrs</span><span class="p">[</span><span class="n">debug_attr</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"</span><span class="se">\t\t\t</span><span class="s2">"</span> <span class="o">+</span> <span class="n">debug_attr</span> <span class="o">+</span> <span class="s2">", value: "</span> <span class="o">+</span> <span class="n">dev</span><span class="o">.</span><span class="n">debug_attrs</span><span class="p">[</span><span class="n">debug_attr</span><span class="p">]</span><span class="o">.</span><span class="n">value</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
-            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unable to read &quot;</span> <span class="o">+</span> <span class="n">debug_attr</span> <span class="o">+</span> <span class="s2">&quot;: &quot;</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">"Unable to read "</span> <span class="o">+</span> <span class="n">debug_attr</span> <span class="o">+</span> <span class="s2">": "</span> <span class="o">+</span> <span class="n">err</span><span class="o">.</span><span class="n">strerror</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Module&#39;s main method.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Module's main method."""</span>
     <span class="n">context</span> <span class="o">=</span> <span class="n">_create_context</span><span class="p">()</span>
     <span class="n">information</span> <span class="o">=</span> <span class="n">Information</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
     <span class="n">information</span><span class="o">.</span><span class="n">write_information</span><span class="p">()</span>
 
 
-<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">"__main__"</span><span class="p">:</span>
     <span class="n">main</span><span class="p">()</span>
 </pre></div>
 </div>

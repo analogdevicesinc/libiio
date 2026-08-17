@@ -467,7 +467,7 @@ systems as well as Windows and with a compatible license (LGPL) to validate then
 file.</p>
 <section id="document-type-definition">
 <h4>Document Type Definition<a class="headerlink" href="#document-type-definition" title="Link to this heading"></a></h4>
-<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;</span>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="w">    </span><span class="cp">&lt;?xml version="1.0" encoding="utf-8"?&gt;</span>
 <span class="w">    </span><span class="cp">&lt;!DOCTYPE context [</span>
 <span class="cp">        &lt;!ELEMENT context (device)*&gt;</span>
 <span class="w">        </span><span class="cp">&lt;!ELEMENT device (channel | attribute | debug-attribute)*&gt;</span>
@@ -621,7 +621,7 @@ samples:</p>
 <li><p>If you just want to dump the content of the internal buffer, you can just use the functions iio_buffer_start and iio_buffer_end to get the start and end addresses of the buffer, and then use the standard memcpy function to dump a part or the totality of the buffer.</p></li>
 <li><p>Use iio_buffer_first, iio_buffer_step and iio_buffer_end to iterate over the samples of one given channel contained inside the internal buffer:</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_buffer_first</span><span class="p">(</span><span class="n">buf</span><span class="p">,</span><span class="w"> </span><span class="n">channel</span><span class="p">);</span><span class="w"> </span><span class="n">ptr</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">iio_buffer_end</span><span class="p">(</span><span class="n">buf</span><span class="p">);</span><span class="w"> </span><span class="n">ptr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">iio_buffer_step</span><span class="p">(</span><span class="n">buf</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="cm">/* ptr points to one sample of the channel we&#39;re interested in */</span>
+<span class="w">    </span><span class="cm">/* ptr points to one sample of the channel we're interested in */</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -987,7 +987,7 @@ providing a couple of methods, that directly call their C counterpart:</p>
 <span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="n">IntPtr</span><span class="w"> </span><span class="n">dev</span><span class="p">;</span>
 <span class="w">        </span><span class="p">...</span>
 
-<span class="w">        </span><span class="na">[DllImport(&quot;libiio.dll&quot;, CallingConvention = CallingConvention.Cdecl)]</span>
+<span class="w">        </span><span class="na">[DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]</span>
 <span class="w">        </span><span class="k">private</span><span class="w"> </span><span class="k">static</span><span class="w"> </span><span class="k">extern</span><span class="w"> </span><span class="n">IntPtr</span><span class="w"> </span><span class="nf">iio_device_get_id</span><span class="p">(</span><span class="n">IntPtr</span><span class="w"> </span><span class="n">dev</span><span class="p">);</span>
 
 <span class="w">        </span><span class="k">public</span><span class="w"> </span><span class="kt">string</span><span class="w"> </span><span class="nf">id</span><span class="p">()</span>

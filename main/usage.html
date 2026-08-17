@@ -445,7 +445,7 @@ which will contain a valid sample if the buffer has been refilled,
 or correspond to an area where a sample should be stored if using an output device.</p>
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="kt">ssize_t</span><span class="w"> </span><span class="nf">sample_cb</span><span class="p">(</span><span class="k">const</span><span class="w"> </span><span class="k">struct</span><span class="w"> </span><span class="nc">iio_channel</span><span class="w"> </span><span class="o">*</span><span class="n">chn</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">src</span><span class="p">,</span><span class="w"> </span><span class="kt">size_t</span><span class="w"> </span><span class="n">bytes</span><span class="p">,</span><span class="w"> </span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">d</span><span class="p">)</span>
 <span class="p">{</span>
-<span class="w">    </span><span class="cm">/* Use &quot;src&quot; to read or write a sample for this channel */</span>
+<span class="w">    </span><span class="cm">/* Use "src" to read or write a sample for this channel */</span>
 <span class="p">}</span>
 
 <span class="kt">int</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="kt">void</span><span class="p">)</span>
@@ -467,7 +467,7 @@ As such, it is interesting if you want to process the data channel by channel.</
 <div class="highlight-c notranslate"><div class="highlight"><pre><span></span><span class="k">for</span><span class="w"> </span><span class="p">(</span><span class="kt">void</span><span class="w"> </span><span class="o">*</span><span class="n">ptr</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="n">iio_buffer_first</span><span class="p">(</span><span class="n">buffer</span><span class="p">,</span><span class="w"> </span><span class="n">channel</span><span class="p">);</span>
 <span class="w">           </span><span class="n">ptr</span><span class="w"> </span><span class="o">&lt;</span><span class="w"> </span><span class="n">iio_buffer_end</span><span class="p">(</span><span class="n">buffer</span><span class="p">);</span>
 <span class="w">           </span><span class="n">ptr</span><span class="w"> </span><span class="o">+=</span><span class="w"> </span><span class="n">iio_buffer_step</span><span class="p">(</span><span class="n">buffer</span><span class="p">))</span><span class="w"> </span><span class="p">{</span>
-<span class="w">    </span><span class="cm">/* Use &quot;ptr&quot; to read or write a sample for this channel */</span>
+<span class="w">    </span><span class="cm">/* Use "ptr" to read or write a sample for this channel */</span>
 <span class="p">}</span>
 </pre></div>
 </div>
