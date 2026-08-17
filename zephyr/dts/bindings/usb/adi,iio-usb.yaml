@@ -1,0 +1,43 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+include: base.yaml
+
+description: IIO USB device class
+
+compatible: "adi,iio-usb"
+
+on-bus: usb
+
+properties:
+  num-pipes:
+    type: int
+    default: 1
+    description: |
+      Number of USB bulk endpoint pairs (pipes). Pipe 0 is the IIOD
+      command channel. Each pipe requires one IN and one OUT bulk
+      endpoint.
+
+  rx-buf-size:
+    type: int
+    default: 512
+    description: |
+      Maximum buffer size in bytes for a single USB bulk receive
+      transfer. Must match the bulk endpoint max packet size or be
+      a multiple of it.
+
+  tx-buf-size:
+    type: int
+    default: 64
+    description: |
+      Size in bytes of each TX chunk when transmitting data over USB.
+      Smaller values reduce peak buffer pool usage at the cost of
+      more USB transactions.
+
+  rx-fifo-size:
+    type: int
+    default: 4096
+    description: |
+      Per-pipe RX ring buffer size in bytes. Must hold multiple
+      in-flight packets to avoid drops while the iiod interpreter
+      is busy. Should be a multiple of rx-buf-size.
