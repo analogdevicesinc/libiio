@@ -89,7 +89,7 @@ endif ()
 if (PTHREAD_LIBRARIES OR ANDROID)
     project(iio_adi_xflow_check C)
     add_executable(iio_adi_xflow_check iio_adi_xflow_check.c)
-    target_link_libraries(iio_adi_xflow_check iio iio_tests_helper
+    target_link_libraries(iio_adi_xflow_check iio iio_utils_helper
                           ${PTHREAD_LIBRARIES})
     set(IIO_EXAMPLES_TARGETS ${IIO_EXAMPLES_TARGETS} iio_adi_xflow_check)
 endif ()

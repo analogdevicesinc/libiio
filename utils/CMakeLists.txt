@@ -17,17 +17,17 @@ if (WIN32)
     configure_file(../properties.rc.cmakein ${LIBIIO_RC} @ONLY)
 endif ()
 
-add_library(iio_tests_helper STATIC iio_common.c gen_code.c)
-target_link_libraries(iio_tests_helper LINK_PRIVATE iio iio_common_config)
+add_library(iio_utils_helper OBJECT iio_common.c gen_code.c)
+target_link_libraries(iio_utils_helper LINK_PRIVATE iio iio_common_config)
 target_compile_definitions(iio_common_config INTERFACE _POSIX_C_SOURCE=200809L)
 if (MSVC)
-    target_sources(iio_tests_helper PRIVATE ../deps/wingetopt/src/getopt.c)
-    target_include_directories(iio_tests_helper PUBLIC ../deps/wingetopt/src)
-    target_compile_definitions(iio_tests_helper PRIVATE _CRT_SECURE_NO_WARNINGS)
-    target_link_options(iio_tests_helper PUBLIC /DEBUG)
+    target_sources(iio_utils_helper PRIVATE ../deps/wingetopt/src/getopt.c)
+    target_include_directories(iio_utils_helper PUBLIC ../deps/wingetopt/src)
+    target_compile_definitions(iio_utils_helper PRIVATE _CRT_SECURE_NO_WARNINGS)
+    target_link_options(iio_utils_helper PUBLIC /DEBUG)
 endif ()
 set_target_properties(
-    iio_tests_helper
+    iio_utils_helper
     PROPERTIES C_STANDARD 99
                C_STANDARD_REQUIRED ON
                C_EXTENSIONS OFF)
@@ -43,7 +43,7 @@ foreach (test ${IIO_UTILS_TARGETS})
     if (CMAKE_COMPILER_IS_GNUCC)
         target_compile_definitions(${test} PRIVATE IIO_CHECK_RET)
     endif ()
-    target_link_libraries(${test} LINK_PRIVATE iio iio_tests_helper)
+    target_link_libraries(${test} LINK_PRIVATE iio iio_utils_helper)
     if (MSVC)
         target_link_options(${test} PUBLIC /DEBUG)
     endif ()
