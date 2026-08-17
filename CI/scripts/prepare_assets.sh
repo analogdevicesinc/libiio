@@ -46,7 +46,7 @@ release_artifacts() {
 		rm ./"Windows-${i}"/iio.h
 		mv ./"Windows-${i}" Windows
         done
-	cp /home/vsts/work/1/s/CI/scripts/README.txt ./Windows
+	cp "${BUILD_SOURCESDIRECTORY}/CI/scripts/README.txt" ./Windows
 	cd Windows
 	zip -r Windows.zip ./*
 	cp ./Windows.zip ../

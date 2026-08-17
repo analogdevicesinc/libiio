@@ -131,6 +131,7 @@ jobs:
       - name: Check files
         run: ./CI/scripts/prepare_assets.sh check
         env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/build/artifacts
 
       - name: Upload manifest
@@ -160,6 +161,7 @@ jobs:
       - name: Prepare artifacts for SWDownloads
         run: ./CI/scripts/prepare_assets.sh swdownloads
         env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
 
       - name: Push artifacts to SW Downloads
@@ -192,6 +194,7 @@ jobs:
       - name: Prepare assets for release
         run: ./CI/scripts/prepare_assets.sh release
         env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
 
       - name: Create GitHub Release
