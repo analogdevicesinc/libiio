@@ -64,6 +64,14 @@ jobs:
         env:
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
 
+      - name: Create staging subdirectories
+        run: |
+          New-Item -ItemType Directory -Force -Path "staging/${{ inputs.build-type }}"
+          if ("${{ inputs.is-release }}" -ne "true") {
+            New-Item -ItemType Directory -Force -Path "staging/Debug"
+          }
+        shell: pwsh
+
       - name: Copy libraries
         run: |
           Copy-Item -Path "build-msvc/${{ inputs.build-type }}/*" -Destination "staging/${{ inputs.build-type }}/" -Recurse -Force
