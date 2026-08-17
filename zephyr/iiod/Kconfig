@@ -108,4 +108,60 @@ config LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE
 	help
 	  Stack size of threads running the iiod interpreter on data pipes.
 
+config LIBIIO_IIOD_USB_INIT
+	bool "Initialize the USB device stack"
+	default y
+	help
+	  Define and initialize a USB device with the IIO class as its only
+	  interface. Disable this in an application that provides its own USB
+	  device, such as a composite device with additional USB classes; the
+	  IIO class is registered with whichever device the application
+	  defines.
+
+if LIBIIO_IIOD_USB_INIT
+
+config LIBIIO_IIOD_USB_MANUFACTURER
+	string "USB device manufacturer string"
+	default "Analog Devices Inc"
+	help
+	  USB device manufacturer string.
+
+config LIBIIO_IIOD_USB_PRODUCT
+	string "USB device product string"
+	default "IIO USB Device"
+	help
+	  USB device product string.
+
+config LIBIIO_IIOD_USB_VID
+	hex "USB Vendor ID"
+	default 0x0456
+	help
+	  USB Vendor ID.
+
+config LIBIIO_IIOD_USB_PID
+	hex "USB Product ID"
+	default 0xB673
+	help
+	  USB Product ID.
+
+config LIBIIO_IIOD_USB_SELF_POWERED
+	bool "Self-powered attribute"
+	default y
+	help
+	  Set the Self-powered attribute in the USB configuration.
+
+config LIBIIO_IIOD_USB_REMOTE_WAKEUP
+	bool "Remote Wakeup attribute"
+	help
+	  Set the Remote Wakeup attribute in the USB configuration.
+
+config LIBIIO_IIOD_USB_MAX_POWER
+	int "bMaxPower value"
+	default 125
+	range 0 250
+	help
+	  bMaxPower value in the USB configuration in 2 mA units.
+
+endif # LIBIIO_IIOD_USB_INIT
+
 endif # LIBIIO_IIOD_USB
