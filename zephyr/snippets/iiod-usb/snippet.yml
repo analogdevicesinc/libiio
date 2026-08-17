@@ -5,3 +5,8 @@ name: iiod-usb
 append:
   EXTRA_CONF_FILE: iiod-usb.conf
   EXTRA_DTC_OVERLAY_FILE: iiod-usb.overlay
+boards:
+  /native_sim.*/:
+    append:
+      EXTRA_CONF_FILE: boards/native_sim.conf
+      EXTRA_DTC_OVERLAY_FILE: boards/native_sim.overlay

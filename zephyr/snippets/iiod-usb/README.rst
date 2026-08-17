@@ -44,3 +44,26 @@ resolve it.
 The USB device controller must provide at least two bulk endpoints per pipe,
 one IN and one OUT. The default of three pipes therefore requires six bulk
 endpoints; reduce ``num-pipes`` on controllers with fewer.
+
+Simulated USB on native_sim
+***************************
+
+:zephyr:board:`native_sim <native_sim>` declares ``zephyr_udc0`` as a
+placeholder with no controller driver, so it does not meet the requirement
+above. On that board the snippet replaces the placeholder with a virtual host
+and device controller pair and exports the device to the Linux kernel over
+USB/IP, which makes the transport usable without USB hardware.
+
+Attach the exported device before connecting to it:
+
+.. code-block:: console
+
+   west build -p -b native_sim samples/iiod/ -S iiod-usb
+   ./build/zephyr/zephyr.exe &
+
+   sudo modprobe vhci-hcd
+   sudo usbip attach -r 127.0.0.1 -b 1-1
+   iio_info -u usb:
+
+Binding the device to ``vhci-hcd`` requires root. Detach it with
+``sudo usbip detach -p 00`` when finished.
