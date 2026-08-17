@@ -22,8 +22,6 @@ jobs:
             artifact-name: Linux-Ubuntu-24.04
           - image: tfcollins/libiio_ubuntu_26_04-ci:latest
             artifact-name: Linux-Ubuntu-26.04
-          - image: tfcollins/libiio_fedora_28-ci:latest
-            artifact-name: Linux-Fedora-28
           - image: tfcollins/libiio_fedora_34-ci:latest
             artifact-name: Linux-Fedora-34
           - image: tfcollins/libiio_debian_bullseye-ci:latest
@@ -71,5 +69,36 @@ jobs:
           name: ${{ matrix.artifact-name }}
           path: |
             build/*.deb
+            build/*.rpm
+            build/*.tar.gz
+
+  # Fedora 28's glibc (2.27) is too old for the Node.js runtime that
+  # GitHub Actions requires inside containers. Run via docker instead.
+  fedora-28:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build
+        run: |
+          docker run --rm \
+            -e ARTIFACTNAME=Linux-Fedora-28 \
+            -e CMAKE_BUILD_TYPE=${{ inputs.build-type }} \
+            -v "${{ github.workspace }}":"/ci" \
+            tfcollins/libiio_fedora_28-ci:latest \
+            /bin/bash -c "cd /ci && mkdir build && cd build && \
+              cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DCPP_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=Linux-Fedora-28 && \
+              make VERBOSE=1 && \
+              cmake .. -DLICENSE_CHECK=ON && \
+              make package && \
+              make required2tar"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-Fedora-28
+          path: |
             build/*.rpm
             build/*.tar.gz
