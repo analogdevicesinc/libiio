@@ -12,6 +12,7 @@
 #include <zephyr/drivers/usb/udc.h>
 #include <zephyr/sys/ring_buffer.h>
 #include <string.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #define DT_DRV_COMPAT adi_iio_usb
@@ -125,6 +126,10 @@ struct iio_usb_data {
 	uint8_t *rx_fifo_data;
 	struct iio_usb_pipe pipes[IIO_USB_MAX_PIPES];
 	bool enabled;
+
+	/* Pipe thread infrastructure */
+	struct k_thread *pipe_threads;
+	k_thread_stack_t *pipe_stacks;
 
 	/* Shared IIO context and XML for the pipe interpreters */
 	struct iio_context *ctx;
@@ -399,6 +404,25 @@ static ssize_t iiod_usb_pipe_write(struct iiod_pdata *pdata, const void *buf, si
 }
 
 /*
+ * Thread entry for data pipe interpreters (pipes 1..N-1).
+ * Each runs its own iiod_interpreter using the pipe's endpoints.
+ */
+static void pipe_interpreter_thread(void *p1, void *p2, void *p3)
+{
+	struct iio_usb_pipe *pipe = (struct iio_usb_pipe *)p1;
+	struct iio_usb_data *data = (struct iio_usb_data *)p2;
+	int pipe_idx = (int)(intptr_t)p3;
+
+	LOG_INF("Pipe %d: interpreter thread started", pipe_idx);
+
+	iiod_interpreter(data->ctx, (struct iiod_pdata *)pipe, iiod_usb_pipe_read,
+			 iiod_usb_pipe_write, data->xml, data->xml_len);
+
+	LOG_INF("Pipe %d: interpreter thread exiting", pipe_idx);
+	pipe->open = false;
+}
+
+/*
  * Handle IIO vendor control requests for pipe management.
  * The host-side libiio sends these as VENDOR|RECIPIENT_INTERFACE requests:
  *   bRequest = command (OPEN/CLOSE/RESET)
@@ -441,6 +465,36 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 
 		/* Queue initial RX buffer for this pipe */
 		iio_usb_queue_rx_pipe(c_data, &data->pipes[pipe_id]);
+
+		/* Spawn interpreter thread for data pipes (not pipe 0) */
+		if (pipe_id > 0 && data->ctx != NULL && data->pipe_threads != NULL) {
+			struct iio_usb_pipe *pipe = &data->pipes[pipe_id];
+			int idx = pipe_id - 1;
+
+			/* Reset pipe state for clean start */
+			ring_buf_reset(&pipe->rx_ringbuf);
+			k_sem_reset(&pipe->rx_sem);
+			pipe->rx_err = 0;
+			pipe->tx_err = 0;
+			k_sem_reset(&pipe->tx_sem);
+
+			k_thread_create(&data->pipe_threads[idx],
+					data->pipe_stacks +
+						idx * CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE,
+					CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE,
+					pipe_interpreter_thread, pipe, data,
+					(void *)(intptr_t)pipe_id,
+					CONFIG_LIBIIO_IIOD_USB_THREAD_PRIORITY, 0, K_NO_WAIT);
+#ifdef CONFIG_THREAD_NAME
+			{
+				char name[CONFIG_THREAD_MAX_NAME_LEN];
+
+				snprintf(name, sizeof(name), "iiod_usb_pipe%u", pipe_id);
+				k_thread_name_set(&data->pipe_threads[idx], name);
+			}
+#endif
+			LOG_INF("Pipe %u: interpreter thread spawned", pipe_id);
+		}
 		break;
 
 	case IIO_USD_CMD_CLOSE_PIPE:
@@ -564,6 +618,12 @@ static void iiod_usb_thread_fn(struct iio_usb_data *data)
 
 		LOG_INF("IIOD interpreter exited, cleaning up...");
 
+		if (data->pipe_threads != NULL) {
+			for (int i = 0; i < data->num_pipes - 1; i++) {
+				k_thread_join(&data->pipe_threads[i], K_MSEC(1000));
+			}
+		}
+
 		free((void *)data->xml);
 		data->xml = NULL;
 		iio_context_destroy(data->ctx);
@@ -591,8 +651,8 @@ static void iiod_usb_thread_fn(struct iio_usb_data *data)
 
 /*
  * Per-instance device definition macro.
- * Instantiates descriptors, data structures, and the IIOD interpreter
- * thread for each DTS node with compatible "adi,iio-usb".
+ * Instantiates descriptors, data structures, pipe threads, and the
+ * IIOD interpreter thread for each DTS node with compatible "adi,iio-usb".
  */
 #define IIO_USB_DEVICE_DEFINE(inst)                                                                \
                                                                                                    \
@@ -641,6 +701,14 @@ static const struct usb_desc_header *iio_hs_desc_##inst[] = {                   
 static uint8_t iio_usb_rx_fifo_data_##inst                                                         \
 	[DT_INST_PROP(inst, num_pipes)][DT_INST_PROP(inst, rx_fifo_size)];                         \
                                                                                                    \
+COND_CODE_1(UTIL_BOOL(DT_INST_PROP(inst, num_pipes) - 1), (                                        \
+	static K_THREAD_STACK_ARRAY_DEFINE(iio_usb_pipe_stacks_##inst,                             \
+					   DT_INST_PROP(inst, num_pipes) - 1,                      \
+					   CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE);         \
+	static struct k_thread iio_usb_pipe_threads_##inst                                         \
+		[DT_INST_PROP(inst, num_pipes) - 1];                                               \
+), ())                                                                                             \
+                                                                                                   \
 static struct iio_usb_data iio_usb_data_##inst = {                                                 \
 	.desc = &iio_usb_desc_##inst,                                                              \
 	.fs_desc = iio_fs_desc_##inst,                                                             \
@@ -653,6 +721,13 @@ static struct iio_usb_data iio_usb_data_##inst = {                              
 	.rx_fifo_data = (uint8_t *)iio_usb_rx_fifo_data_##inst,                                    \
 	.c_data = NULL,                                                                            \
 	.enabled = false,                                                                          \
+	COND_CODE_1(UTIL_BOOL(DT_INST_PROP(inst, num_pipes) - 1), (                                \
+		.pipe_threads = iio_usb_pipe_threads_##inst,                                       \
+		.pipe_stacks = (k_thread_stack_t *)iio_usb_pipe_stacks_##inst,                     \
+	), (                                                                                       \
+		.pipe_threads = NULL,                                                              \
+		.pipe_stacks = NULL,                                                               \
+	))                                                                                         \
 };                                                                                                 \
                                                                                                    \
 USBD_DEFINE_CLASS(iio_usb_##inst, &iio_usb_api, &iio_usb_data_##inst, NULL);                       \
