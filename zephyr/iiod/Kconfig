@@ -102,4 +102,10 @@ config LIBIIO_IIOD_USB_THREAD_STACK_SIZE
 	help
 	  Stack size of the thread running the iiod server.
 
+config LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE
+	int "Pipe thread stack size"
+	default 4096
+	help
+	  Stack size of threads running the iiod interpreter on data pipes.
+
 endif # LIBIIO_IIOD_USB

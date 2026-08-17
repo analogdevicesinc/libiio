@@ -12,11 +12,12 @@ on-bus: usb
 properties:
   num-pipes:
     type: int
-    default: 1
+    default: 3
     description: |
       Number of USB bulk endpoint pairs (pipes). Pipe 0 is the IIOD
-      command channel. Each pipe requires one IN and one OUT bulk
-      endpoint.
+      command channel. Additional pipes are used for data streaming
+      (one per concurrent buffer/stream). Each pipe requires one IN
+      and one OUT bulk endpoint.
 
   rx-buf-size:
     type: int
