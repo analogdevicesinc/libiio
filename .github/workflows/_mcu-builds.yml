@@ -1,0 +1,31 @@
+name: MCU Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  mcu:
+    runs-on: ubuntu-latest
+    container:
+      image: tfcollins/libiio_ubuntu_22_04-ci:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install cross-compiler
+        run: |
+          set -e
+          sudo apt-get update
+          sudo apt-get install -y gcc-arm-none-eabi
+
+      - name: Build
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-cross-compile.cmake -DWITH_LIBTINYIIOD=ON
+          make
