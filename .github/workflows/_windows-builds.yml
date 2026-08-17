@@ -207,6 +207,7 @@ jobs:
       - name: Generate libiio-setup.exe
         run: .\CI\generate_exe.ps1
         env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
 
       - name: Upload installer artifact
