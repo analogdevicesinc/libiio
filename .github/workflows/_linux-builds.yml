@@ -20,6 +20,8 @@ jobs:
             artifact-name: Linux-Ubuntu-22.04
           - image: tfcollins/libiio_ubuntu_24_04-ci:latest
             artifact-name: Linux-Ubuntu-24.04
+          - image: tfcollins/libiio_ubuntu_26_04-ci:latest
+            artifact-name: Linux-Ubuntu-26.04
           - image: tfcollins/libiio_fedora_28-ci:latest
             artifact-name: Linux-Fedora-28
           - image: tfcollins/libiio_fedora_34-ci:latest
