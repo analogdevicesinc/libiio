@@ -4,3 +4,4 @@
 zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIOD_NETWORK network.c)
 zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIOD_UART uart.c)
 zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIOD_USB usb.c)
+zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIOD_USB_INIT usb_init.c)
