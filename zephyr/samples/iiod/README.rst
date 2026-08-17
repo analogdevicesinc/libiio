@@ -7,9 +7,9 @@ Overview
 ********
 
 A sample that enables the iiod server and exposes one or more IIO devices —
-including ADC channels and sensors — to a host PC over serial, USB CDC ACM, or
-network interfaces. Clients can interact with the devices using the libiio
-command-line utilities, `Scopy`_, or `pyadi-iio`_.
+including ADC channels and sensors — to a host PC over serial, USB CDC ACM,
+native USB, or network interfaces. Clients can interact with the devices using
+the libiio command-line utilities, `Scopy`_, or `pyadi-iio`_.
 
 The following hardware and emulated configurations are supported:
 
@@ -144,6 +144,37 @@ simultaneously, but the board requires USB support.
    :snippets: iiod-cdc-acm
    :goals: build flash
    :compact:
+
+USB
+===
+
+Use the `snippet-iiod-usb`_ to build the Zephyr application with the iiod server
+enabled on a native USB interface. The device exposes a vendor-specific
+interface that libiio reaches through the ``usb:`` URI, without the serial
+framing the CDC ACM transport carries. The board requires USB device support.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/iiod
+   :board: apard32690/max32690/m4
+   :snippets: iiod-usb
+   :goals: build flash
+   :compact:
+
+On :zephyr:board:`native_sim <native_sim>` the snippet substitutes a virtual USB
+controller and exports it over USB/IP, so the transport can be exercised without
+hardware. Attach the exported device to the host kernel before connecting to it:
+
+.. code-block:: console
+
+   west build -p -b native_sim samples/iiod/ -S iiod-usb
+   ./build/zephyr/zephyr.exe &
+
+   sudo modprobe vhci-hcd
+   sudo usbip attach -r 127.0.0.1 -b 1-1
+   iio_info -u usb:
+
+Either way, the libiio C library must be built with the USB backend enabled
+(``-DWITH_USB_BACKEND=ON``) for the ``usb:`` URI to be available.
 
 Network
 =======
