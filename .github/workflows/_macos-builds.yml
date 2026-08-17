@@ -20,6 +20,7 @@ jobs:
           - os: macos-latest
             artifact-name: macOS-latest-arm64
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
     env:
       ARTIFACTNAME: ${{ matrix.artifact-name }}
     steps:

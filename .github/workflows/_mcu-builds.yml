@@ -10,6 +10,7 @@ on:
 jobs:
   mcu:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     container:
       image: tfcollins/libiio_ubuntu_22_04-ci:latest
     steps:

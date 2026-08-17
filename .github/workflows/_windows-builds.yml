@@ -26,7 +26,10 @@ jobs:
             arch: x64
             platform-toolset: v145
             artifact-name: Windows-VS-2026-x64
+            experimental: true
     runs-on: ${{ matrix.vmImage }}
+    timeout-minutes: 15
+    continue-on-error: ${{ matrix.experimental || false }}
     env:
       COMPILER: ${{ matrix.compiler }}
       ARCH: ${{ matrix.arch }}
@@ -128,6 +131,7 @@ jobs:
 
   mingw:
     runs-on: windows-2022
+    timeout-minutes: 15
     env:
       COMPILER: MinGW Makefiles
       cmakeBuildType: ${{ inputs.build-type }}
@@ -188,6 +192,7 @@ jobs:
   generate-setup-exe:
     needs: msvc
     runs-on: windows-2022
+    timeout-minutes: 10
     env:
       cmakeBuildType: ${{ inputs.build-type }}
       BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging

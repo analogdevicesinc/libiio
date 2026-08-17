@@ -108,6 +108,7 @@ jobs:
     if: needs.config.outputs.is-main == 'true' || needs.config.outputs.is-release == 'true'
     needs: [config, linux, windows, macos, arm]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     container:
       image: tfcollins/libiio_ubuntu_20_04-ci:latest
     steps:
@@ -145,6 +146,7 @@ jobs:
     if: needs.config.outputs.is-main == 'true'
     needs: [config, check-artifacts]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
@@ -176,6 +178,7 @@ jobs:
     if: needs.config.outputs.is-release == 'true'
     needs: [config, check-artifacts]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
         with:
