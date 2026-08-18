@@ -51,15 +51,19 @@ jobs:
       build-type: ${{ steps.set.outputs.build-type }}
       is-main: ${{ steps.set.outputs.is-main }}
       is-release: ${{ steps.set.outputs.is-release }}
+      cloudsmith-version: ${{ steps.set.outputs.cloudsmith-version }}
     steps:
       - id: set
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "build-type=Release" >> "${GITHUB_OUTPUT}"
             echo "is-release=true" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
           else
             echo "build-type=RelWithDebInfo" >> "${GITHUB_OUTPUT}"
             echo "is-release=false" >> "${GITHUB_OUTPUT}"
+            branch="${GITHUB_REF#refs/heads/}"
+            echo "cloudsmith-version=${branch}-${GITHUB_SHA::7}" >> "${GITHUB_OUTPUT}"
           fi
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             echo "is-main=true" >> "${GITHUB_OUTPUT}"
@@ -141,13 +145,13 @@ jobs:
           path: build/artifact_manifest.txt
 
   #############################################
-  # Push to SW Downloads
+  # Push to Cloudsmith
   #############################################
-  push-swdownloads:
+  push-cloudsmith:
     if: needs.config.outputs.is-main == 'true'
     needs: [config, check-artifacts]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
         with:
@@ -158,20 +162,33 @@ jobs:
         with:
           path: ${{ github.workspace }}/artifacts
 
-      - name: Prepare artifacts for SWDownloads
+      - name: Prepare artifacts
         run: ./CI/scripts/prepare_assets.sh swdownloads
         env:
           BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
 
-      - name: Push artifacts to SW Downloads
+      - name: Checkout wiki-scripts
+        uses: actions/checkout@v4
+        with:
+          repository: analogdevicesinc/wiki-scripts
+          path: wiki-scripts
+          sparse-checkout: utils/cloudsmith_utils
+          fetch-depth: 1
+
+      - name: Install Cloudsmith CLI
+        run: pip install cloudsmith-cli
+
+      - name: Upload to Cloudsmith
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
         run: |
-          set -e
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i ~/.ssh/id_rsa -r ${{ github.workspace }}/artifacts/* ${{ secrets.SERVER_ADDRESS }}
-          rm -f ~/.ssh/id_rsa
+          python3 wiki-scripts/utils/cloudsmith_utils/upload_to_cloudsmith.py \
+            --repo external \
+            --version "libiio/${{ needs.config.outputs.cloudsmith-version }}/" \
+            --local_path "${{ github.workspace }}/artifacts" \
+            --no_rel_path \
+            --max_workers 5
 
   #############################################
   # Push to GitHub Release
