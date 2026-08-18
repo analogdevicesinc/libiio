@@ -288,9 +288,11 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 		if (!io) {
 			/* We received a response, but have no client waiting
-			 * for it, so drop it. */
+			 * for it, so drop it. A code <= 0 is a status code and
+			 * carries no payload, so there is nothing to discard. */
 			iio_mutex_unlock(priv->lock);
-			iiod_discard_data(priv, cmd.code);
+			if (cmd.code > 0)
+				iiod_discard_data(priv, cmd.code);
 			iio_mutex_lock(priv->lock);
 			continue;
 		}
