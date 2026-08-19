@@ -21,7 +21,6 @@ namespace IIOCSharp
     static class PlutoExample
     {
         const int INT16_BYTE_STEP = 2;
-        const string URI = "ip:pluto.local";
         const double TXLO = 1000000000;
         const double TXBW = 5000000;
         const double TXFS = 3000000;
@@ -36,10 +35,29 @@ namespace IIOCSharp
 
         static void Main(string[] args)
         {
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Scanning for available contexts...");
+                Scan scan = new Scan();
+                if (scan.nb_results > 0) {
+                    Console.WriteLine("* Scanned contexts: " + scan.nb_results);
+                }
+                foreach (var entry in scan.results) {
+                    Console.WriteLine("\t" + entry.Key + " " + entry.Value);
+                }
+                scan.Dispose();
+
+                Console.WriteLine("\nPlease provide the context URI.\n");
+                Console.WriteLine("Usage: PlutoExample <uri>");
+                Console.WriteLine("Example: PlutoExample ip:pluto.local\n");
+                return;
+            }
+
+            string uri = args[0];
             Context ctx;
             try
             {
-                ctx = new Context(URI);
+                ctx = new Context(uri);
             }
             catch (IIOException e)
             {
