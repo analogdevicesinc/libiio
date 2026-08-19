@@ -77,6 +77,9 @@ namespace iio
 
         internal IIOEvent(IntPtr ev, Channel chn, Channel chndiff = null)
         {
+            if (ev == IntPtr.Zero)
+                throw new IIOException("Event pointer is null");
+
             this.ev = ev;
             event_ptr = (IIOEventPtr) Marshal.PtrToStructure(ev, typeof(IIOEventPtr));
             this.id = event_ptr.id;
