@@ -50,24 +50,37 @@ namespace iio
         /// <exception cref="IioLib.IIOException">Unable to read event.</exception>
         public IIOEvent read_event(bool nonblock)
         {
+            ThrowIfDisposed();
+
             IIOEventPtr iioeventptr;
             iioeventptr.id = 0;
             iioeventptr.timestamp = 0;
             IntPtr eventptr = Marshal.AllocHGlobal(Marshal.SizeOf(iioeventptr));
 
-            int ret = iio_event_stream_read(hdl, eventptr, nonblock);
-            if (ret < 0)
-                throw new IIOException("Unable to read event", ret);
-
-            IntPtr chnptr = iio_event_get_channel(eventptr, dev.dev, false);
-            Channel chn = new Channel(dev, chnptr);
-            IntPtr diffchnptr = iio_event_get_channel(eventptr, dev.dev, true);
-            if (diffchnptr != IntPtr.Zero)
+            try
             {
-                Channel chndiff = new Channel(dev, diffchnptr);
-                return new IIOEvent(eventptr, chn, chndiff);
+                int ret = iio_event_stream_read(hdl, eventptr, nonblock);
+                if (ret < 0)
+                    throw new IIOException("Unable to read event", ret);
+
+                IntPtr chnptr = iio_event_get_channel(eventptr, dev.dev, false);
+                if (chnptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get channel from event");
+
+                Channel chn = new Channel(dev, chnptr);
+                IntPtr diffchnptr = iio_event_get_channel(eventptr, dev.dev, true);
+                if (diffchnptr != IntPtr.Zero)
+                {
+                    Channel chndiff = new Channel(dev, diffchnptr);
+                    return new IIOEvent(eventptr, chn, chndiff);
+                }
+                return new IIOEvent(eventptr, chn);
             }
-            return new IIOEvent(eventptr, chn);
+            catch
+            {
+                Marshal.FreeHGlobal(eventptr);
+                throw;
+            }
         }
 
         protected override void Destroy()
