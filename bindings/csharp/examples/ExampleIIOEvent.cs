@@ -19,18 +19,25 @@ namespace IIOCSharp
     {
         static void Main(string[] args)
         {
-            Scan scan = new Scan();
-            if (scan.nb_results > 0) {
-                Console.WriteLine("* Scanned contexts: " + scan.nb_results);
-            }
-            foreach (var entry in scan.results) {
-                Console.WriteLine("\t" + entry.Key + " " + entry.Value);
-            }
-            scan.Dispose();
-
-            if (args.Length <= 1)
+            if (args.Length < 2)
             {
+                if (args.Length == 0)
+                {
+                    Console.WriteLine("Scanning for available contexts...");
+                    Scan scan = new Scan();
+                    if (scan.nb_results > 0) {
+                        Console.WriteLine("* Scanned contexts: " + scan.nb_results);
+                    }
+                    foreach (var entry in scan.results) {
+                        Console.WriteLine("\t" + entry.Key + " " + entry.Value);
+                    }
+                    scan.Dispose();
+                    Console.WriteLine();
+                }
+
                 Console.WriteLine("Please provide the context URI and IIO device.\n");
+                Console.WriteLine("Usage: ExampleIIOEvent <uri> <device>");
+                Console.WriteLine("Example: ExampleIIOEvent ip:192.168.2.1 iio:device0\n");
                 return;
             }
 

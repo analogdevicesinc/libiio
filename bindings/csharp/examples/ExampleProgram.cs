@@ -20,19 +20,30 @@ namespace IIOCSharp
         static void Main(string[] args)
         {
             const uint blocksize = 1024;
-            Scan scan = new Scan();
-            if (scan.nb_results > 0) {
-                Console.WriteLine("* Scanned contexts: " + scan.nb_results);
-            }
-            foreach (var entry in scan.results) {
-                Console.WriteLine("\t" + entry.Key + " " + entry.Value);
-            }
-            scan.Dispose();
 
+            if (args.Length < 1)
+            {
+                Console.WriteLine("Scanning for available contexts...");
+                Scan scan = new Scan();
+                if (scan.nb_results > 0) {
+                    Console.WriteLine("* Scanned contexts: " + scan.nb_results);
+                }
+                foreach (var entry in scan.results) {
+                    Console.WriteLine("\t" + entry.Key + " " + entry.Value);
+                }
+                scan.Dispose();
+
+                Console.WriteLine("\nPlease provide the context URI.\n");
+                Console.WriteLine("Usage: ExampleProgram <uri>");
+                Console.WriteLine("Example: ExampleProgram ip:192.168.2.1\n");
+                return;
+            }
+
+            string uri = args[0];
             Context ctx;
             try
             {
-                ctx = new Context("ip:192.168.2.1");
+                ctx = new Context(uri);
                 Console.WriteLine(ctx.xml);
             } catch (IIOException e)
             {
