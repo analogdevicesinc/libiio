@@ -607,6 +607,7 @@ static int usb_sync_transfer(struct iio_context_pdata *pdata, struct iiod_client
 {
 	unsigned char ep;
 	struct libusb_transfer *transfer = NULL;
+	bool cancel_requested = false;
 	int completed = 0;
 	int ret;
 
@@ -665,12 +666,32 @@ unlock:
 		return ret;
 
 	while (!completed) {
-		ret = libusb_handle_events_completed(pdata->ctx, &completed);
+		/*
+		 * Wait in bounded steps rather than indefinitely, so that a
+		 * cancellation requested after this transfer was submitted is
+		 * still acted upon. usb_cancel() can only cancel a transfer that
+		 * is already in flight; without this, a cancellation that lands
+		 * in the window before submission leaves this loop waiting for a
+		 * transfer that never completes, and the iiod-responder reader
+		 * thread can never be joined.
+		 */
+		struct timeval tv = { .tv_sec = 0, .tv_usec = 100 * 1000 };
+
+		ret = libusb_handle_events_timeout_completed(pdata->ctx, &tv, &completed);
 		if (ret < 0) {
 			if (ret == LIBUSB_ERROR_INTERRUPTED)
 				continue;
 			libusb_cancel_transfer(transfer);
 			continue;
+		}
+
+		if (!completed && !cancel_requested) {
+			iio_mutex_lock(io_ctx->lock);
+			cancel_requested = io_ctx->cancelled;
+			iio_mutex_unlock(io_ctx->lock);
+
+			if (cancel_requested)
+				libusb_cancel_transfer(transfer);
 		}
 	}
 
