@@ -31,6 +31,7 @@
 
 #include "attr.h"
 #include "deps/libini/ini.h"
+#include "iio-config.h"
 #include "iio-private.h"
 #include "local.h"
 #include "sort.h"
@@ -2079,7 +2080,9 @@ static struct iio_context *local_create_context(
 	if (!description)
 		return iio_ptr(-ENOMEM);
 
-	ctx = iio_context_create_from_backend(params, &iio_local_backend, description, 0, 0, NULL);
+	ctx = iio_context_create_from_backend(params, &iio_local_backend, description,
+			LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR, LIBIIO_VERSION_PATCH,
+			LIBIIO_VERSION_GIT);
 	free(description);
 	ret = iio_err(ctx);
 	if (ret)

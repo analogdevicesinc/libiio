@@ -468,7 +468,7 @@ out_free_values:
 
 struct iio_context *iio_context_create_from_backend(const struct iio_context_params *params,
 		const struct iio_backend *backend, const char *description, unsigned int major,
-		unsigned int minor, const char *git_tag)
+		unsigned int minor, unsigned int patch, const char *git_tag)
 {
 	struct iio_context *ctx;
 	int ret = -ENOMEM;
@@ -492,6 +492,7 @@ struct iio_context *iio_context_create_from_backend(const struct iio_context_par
 
 	ctx->major = major;
 	ctx->minor = minor;
+	ctx->patch = patch;
 
 	if (git_tag) {
 		ctx->git_tag = iio_strdup(git_tag);

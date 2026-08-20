@@ -829,7 +829,7 @@ static struct iio_context *emu_create_context(
 	xmlAttr *attr;
 	const char *description = NULL, *git_tag = NULL, *content;
 	char *end;
-	long major = 0, minor = 0;
+	long major = 0, minor = 0, patch = 0;
 	int ret;
 
 	if (!args || !*args) {
@@ -867,6 +867,11 @@ static struct iio_context *emu_create_context(
 			minor = strtol(content, &end, 10);
 			if (*end != '\0' || errno == ERANGE)
 				prm_warn(params, "invalid format for minor version\n");
+		} else if (!strcmp((char *)attr->name, "version-patch")) {
+			errno = 0;
+			patch = strtol(content, &end, 10);
+			if (*end != '\0' || errno == ERANGE)
+				prm_warn(params, "invalid format for patch version\n");
 		} else if (!strcmp((char *)attr->name, "version-git")) {
 			git_tag = content;
 		} else if (strcmp((char *)attr->name, "name")) {
@@ -880,7 +885,7 @@ static struct iio_context *emu_create_context(
 		git_tag = "emu-v1";
 
 	ctx = iio_context_create_from_backend(
-			params, &iio_emu_backend, description, major, minor, git_tag);
+			params, &iio_emu_backend, description, major, minor, patch, git_tag);
 
 	ret = iio_err(ctx);
 	if (ret) {
