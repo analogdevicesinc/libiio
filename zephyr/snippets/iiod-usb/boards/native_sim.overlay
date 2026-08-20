@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: MIT
+ */
+
+/* Replace native_sim's default udc0 with a virtual UHC+UDC pair exported
+ * to the Linux kernel via USB/IP. The iio-usb class node is nested inside
+ * the virtual UDC so the adi,iio-usb driver binds to it automatically.
+ */
+/delete-node/ &zephyr_udc0;
+
+/ {
+	zephyr_uhc0: uhc_vrt0 {
+		compatible = "zephyr,uhc-virtual";
+
+		zephyr_udc0: udc_vrt0 {
+			compatible = "zephyr,udc-virtual";
+			num-bidir-endpoints = <8>;
+			maximum-speed = "high-speed";
+
+			iio_usb0: iio-usb {
+				compatible = "adi,iio-usb";
+			};
+		};
+	};
+};
