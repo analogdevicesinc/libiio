@@ -10,7 +10,7 @@ cmake_policy(SET CMP0048 NEW) # project() sets the VERSION variables
 project(
     libiio
     LANGUAGES C
-    VERSION 1.0)
+    VERSION 1.0.0)
 
 include(cmake/Utilities.cmake)
 
@@ -27,6 +27,7 @@ endif ()
 
 set(LIBIIO_VERSION_MAJOR ${PROJECT_VERSION_MAJOR})
 set(LIBIIO_VERSION_MINOR ${PROJECT_VERSION_MINOR})
+set(LIBIIO_VERSION_PATCH ${PROJECT_VERSION_PATCH})
 set(VERSION "${PROJECT_VERSION}")
 if (WIN32)
     string(TIMESTAMP BUILD_YEAR "%Y")
