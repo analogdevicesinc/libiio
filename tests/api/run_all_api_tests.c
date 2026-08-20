@@ -33,9 +33,11 @@ TEST_FUNCTION(library_version_info)
 {
 	unsigned int major = iio_context_get_version_major(NULL);
 	unsigned int minor = iio_context_get_version_minor(NULL);
+	unsigned int patch = iio_context_get_version_patch(NULL);
 	const char *tag = iio_context_get_version_tag(NULL);
 
-	DEBUG_PRINT("  INFO: libiio version %u.%u, tag: '%s'\n", major, minor, tag ? tag : "NULL");
+	DEBUG_PRINT("  INFO: libiio version %u.%u.%u, tag: '%s'\n", major, minor, patch,
+			tag ? tag : "NULL");
 	TEST_ASSERT(major > 0, "Library major version should be > 0");
 }
 
