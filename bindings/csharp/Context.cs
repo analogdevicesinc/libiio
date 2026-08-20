@@ -19,6 +19,7 @@ namespace iio
     {
         public readonly uint major;
         public readonly uint minor;
+        public readonly uint patch;
         public readonly string git_tag;
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -28,18 +29,23 @@ namespace iio
         private static extern uint iio_context_get_version_minor(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_context_get_version_patch(IntPtr ctx);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IntPtr iio_context_get_version_tag(IntPtr ctx);
 
-        internal Version(uint major, uint minor, string git_tag)
+        internal Version(uint major, uint minor, uint patch, string git_tag)
         {
             this.major = major;
             this.minor = minor;
+            this.patch = patch;
             this.git_tag = git_tag;
         }
 
         internal Version(IntPtr ctx)
 	    : this(iio_context_get_version_major(ctx),
                    iio_context_get_version_minor(ctx),
+                   iio_context_get_version_patch(ctx),
                    UTF8Marshaler.PtrToStringUTF8(iio_context_get_version_tag(ctx)))
 	{
         }

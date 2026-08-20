@@ -36,7 +36,7 @@ if (MCS_EXECUTABLE)
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
     endif ()
 
-    set(LIBIIO_CS_VERSION ${VERSION}.0.0)
+    set(LIBIIO_CS_VERSION ${VERSION}.0)
     set(LIBIIO_CS_INFO_IN ${CMAKE_CURRENT_SOURCE_DIR}/AssemblyInfo.cs.in)
     set(LIBIIO_CS_INFO ${CMAKE_CURRENT_BINARY_DIR}/AssemblyInfo.cs)
     configure_file(${LIBIIO_CS_INFO_IN} ${LIBIIO_CS_INFO} @ONLY)
