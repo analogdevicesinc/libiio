@@ -86,6 +86,7 @@ struct iio_context {
 
 	unsigned int major;
 	unsigned int minor;
+	unsigned int patch;
 	char *git_tag;
 
 	struct iio_device **devices;

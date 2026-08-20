@@ -509,7 +509,7 @@ static struct iio_context *iio_create_xml_context_helper(
 {
 	const char *description = NULL, *git_tag = NULL, *content;
 	struct iio_context *ctx;
-	long major = 0, minor = 0;
+	long major = 0, minor = 0, patch = 0;
 	xmlNode *root;
 	xmlAttr *attr;
 	char *end;
@@ -536,6 +536,11 @@ static struct iio_context *iio_create_xml_context_helper(
 			minor = strtol(content, &end, 10);
 			if (*end != '\0' || errno == ERANGE)
 				prm_warn(params, "invalid format for minor version\n");
+		} else if (!strcmp((char *)attr->name, "version-patch")) {
+			errno = 0;
+			patch = strtol(content, &end, 10);
+			if (*end != '\0' || errno == ERANGE)
+				prm_warn(params, "invalid format for patch version\n");
 		} else if (!strcmp((char *)attr->name, "version-git")) {
 			git_tag = content;
 		} else if (strcmp((char *)attr->name, "name")) {
@@ -544,7 +549,7 @@ static struct iio_context *iio_create_xml_context_helper(
 	}
 
 	ctx = iio_context_create_from_backend(
-			params, &iio_xml_backend, description, major, minor, git_tag);
+			params, &iio_xml_backend, description, major, minor, patch, git_tag);
 	err = iio_err(ctx);
 	if (err) {
 		prm_err(params, "Unable to allocate memory for context\n");

@@ -63,7 +63,7 @@ zephyr_create_context(const struct iio_context_params *params, const char *args)
 
 	ctx = iio_context_create_from_backend(params, &iio_external_backend,
 			description, KERNEL_VERSION_MAJOR, KERNEL_VERSION_MINOR,
-			BACKEND_VERSION_BUILD);
+			KERNEL_PATCHLEVEL, BACKEND_VERSION_BUILD);
 	if (iio_err(ctx)) {
 		return iio_err_cast(ctx);
 	}
