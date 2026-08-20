@@ -691,6 +691,15 @@ __api __pure unsigned int iio_context_get_version_major(const struct iio_context
  * library, if running remotely. */
 __api __pure unsigned int iio_context_get_version_minor(const struct iio_context *ctx);
 
+/** @brief Get the patch number of the library version
+ * @param ctx Optional pointer to an iio_context structure
+ * @return The patch number
+ *
+ * NOTE: If ctx is non-null, it will return the patch version of the remote
+ * library, if running remotely. Returns 0 for older remote servers that
+ * don't report patch version. */
+__api __pure unsigned int iio_context_get_version_patch(const struct iio_context *ctx);
+
 /** @brief Get the git hash string of the library version
  * @param ctx Optional pointer to an iio_context structure
  * @return A NULL-terminated string that contains the git tag or hash
