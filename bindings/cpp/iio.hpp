@@ -673,6 +673,7 @@ public:
 
     unsigned int version_major() const { return iio_context_get_version_major(p); }
     unsigned int version_minor() const { return iio_context_get_version_minor(p); }
+    unsigned int version_patch() const { return iio_context_get_version_patch(p); }
     cstr version_tag() const { return iio_context_get_version_tag(p); }
     CstrPtr xml() const { return CstrPtr{impl::check(iio_context_get_xml(p), "iio_context_get_xml")};}
     cstr name() const { return iio_context_get_name(p); }

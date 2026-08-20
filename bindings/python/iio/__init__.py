@@ -434,6 +434,10 @@ _get_version_minor = _lib.iio_context_get_version_minor
 _get_version_minor.restype = c_uint
 _get_version_minor.argtypes = (_ContextPtr,)
 
+_get_version_patch = _lib.iio_context_get_version_patch
+_get_version_patch.restype = c_uint
+_get_version_patch.argtypes = (_ContextPtr,)
+
 _get_version_tag = _lib.iio_context_get_version_tag
 _get_version_tag.restype = c_char_p
 _get_version_tag.argtypes = (_ContextPtr,)
@@ -817,7 +821,7 @@ _libc_free.argtypes = (c_void_p,)
 
 def _get_lib_version(ctx = None):
     return (_get_version_major(ctx), _get_version_minor(ctx),
-            _get_version_tag(ctx).decode("utf-8"))
+            _get_version_patch(ctx), _get_version_tag(ctx).decode("utf-8"))
 
 
 def _has_backend(backend):
