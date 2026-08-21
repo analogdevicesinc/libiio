@@ -10,12 +10,8 @@
 / {
 	iio-context {
 		iio-sensors {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			ltc2990@0 {
+			ltc2990 {
 				compatible = "iio,sensor";
-				reg = <0>;
 				sensor-device = <&adltc2990_emul>;
 				sensor-channels = <
 					IIO_SENSOR_CHAN_VOLTAGE

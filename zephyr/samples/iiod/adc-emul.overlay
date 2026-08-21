@@ -7,12 +7,8 @@
 / {
 	iio-context {
 		iio-adcs {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			adc-emul@0 {
+			adc-emul {
 				compatible = "iio,io-channels";
-				reg = <0>;
 				io-channels = <&adc_emul 0>, <&adc_emul 1>;
 				io-channel-names = "voltage0", "voltage1";
 				io-name = "adc-emul";
