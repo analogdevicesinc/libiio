@@ -4,9 +4,6 @@
 include: base.yaml
 
 properties:
-  reg:
-    required: true
-
   io-name:
     type: string
     description: |

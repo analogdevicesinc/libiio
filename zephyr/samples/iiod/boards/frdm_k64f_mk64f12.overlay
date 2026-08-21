@@ -8,12 +8,8 @@
 
 / {
 	iio-context {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		iio-device@3 {
+		fxos8700 {
 			compatible = "iio,sensor";
-			reg = <3>;
 			sensor-device = <&fxos8700>;
 			sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X
 					   IIO_SENSOR_CHAN_ACCEL_Y

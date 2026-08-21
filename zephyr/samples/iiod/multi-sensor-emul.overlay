@@ -10,13 +10,9 @@
 / {
 	iio-context {
 		iio-sensors {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
 			/* First ADLTC2990 instance — I2C address 0x4c */
-			ltc2990@0 {
+			ltc2990_0 {
 				compatible = "iio,sensor";
-				reg = <0>;
 				sensor-device = <&adltc2990_emul_0>;
 				sensor-channels = <
 					IIO_SENSOR_CHAN_VOLTAGE
@@ -32,9 +28,8 @@
 			};
 
 			/* Second ADLTC2990 instance — I2C address 0x4e */
-			ltc2990@1 {
+			ltc2990_1 {
 				compatible = "iio,sensor";
-				reg = <1>;
 				sensor-device = <&adltc2990_emul_1>;
 				sensor-channels = <
 					IIO_SENSOR_CHAN_VOLTAGE

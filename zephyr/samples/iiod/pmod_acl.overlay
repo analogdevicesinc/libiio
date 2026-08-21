@@ -9,12 +9,8 @@
 / {
 	iio-context {
 		iio-sensors {
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			adxl345@0 {
+			adxl345_pmod_acl {
 				compatible = "iio,sensor";
-				reg = <0>;
 				sensor-device = <&adxl345_pmod_acl>;
 				sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X
 						   IIO_SENSOR_CHAN_ACCEL_Y

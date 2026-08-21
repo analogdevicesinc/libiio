@@ -8,12 +8,8 @@
 
 / {
 	iio-context {
-		#address-cells = <1>;
-		#size-cells = <0>;
-
-		iio-device@4 {
+		adxl362_eval_adxl362_ardz {
 			compatible = "iio,sensor";
-			reg = <4>;
 			sensor-device = <&adxl362_eval_adxl362_ardz>;
 			sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X
 					   IIO_SENSOR_CHAN_ACCEL_Y
