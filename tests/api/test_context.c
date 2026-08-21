@@ -126,19 +126,21 @@ TEST_FUNCTION(context_version_info)
 
 	unsigned int major = iio_context_get_version_major(test_ctx);
 	unsigned int minor = iio_context_get_version_minor(test_ctx);
+	unsigned int patch = iio_context_get_version_patch(test_ctx);
 	const char *tag = iio_context_get_version_tag(test_ctx);
 
 	TEST_ASSERT(major > 0, "Major version should be greater than 0");
-	DEBUG_PRINT("  INFO: Context version: %u.%u, tag: '%s'\n", major, minor,
+	DEBUG_PRINT("  INFO: Context version: %u.%u.%u, tag: '%s'\n", major, minor, patch,
 			tag ? tag : "NULL");
 
 	unsigned int local_major = iio_context_get_version_major(NULL);
 	unsigned int local_minor = iio_context_get_version_minor(NULL);
+	unsigned int local_patch = iio_context_get_version_patch(NULL);
 	const char *local_tag = iio_context_get_version_tag(NULL);
 
 	TEST_ASSERT(local_major > 0, "Local major version should be greater than 0");
-	DEBUG_PRINT("  INFO: Local version: %u.%u, tag: '%s'\n", local_major, local_minor,
-			local_tag ? local_tag : "NULL");
+	DEBUG_PRINT("  INFO: Local version: %u.%u.%u, tag: '%s'\n", local_major, local_minor,
+			local_patch, local_tag ? local_tag : "NULL");
 }
 
 TEST_FUNCTION(context_properties)

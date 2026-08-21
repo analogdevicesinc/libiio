@@ -30,7 +30,7 @@ static const char xml_header[] =
 		"<!ELEMENT event-attribute EMPTY>"
 		"<!ELEMENT buffer-attribute EMPTY>"
 		"<!ATTLIST context name CDATA #REQUIRED version-major CDATA #REQUIRED "
-		"version-minor CDATA #REQUIRED version-git CDATA #REQUIRED description CDATA #IMPLIED>"
+		"version-minor CDATA #REQUIRED version-patch CDATA #REQUIRED version-git CDATA #REQUIRED description CDATA #IMPLIED>"
 		"<!ATTLIST context-attribute name CDATA #REQUIRED value CDATA #REQUIRED>"
 		"<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED label CDATA #IMPLIED>"
 		"<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED label CDATA #IMPLIED>"
@@ -125,9 +125,10 @@ static ssize_t iio_snprintf_context_xml(char *ptr, ssize_t len, const struct iio
 
 	ret = iio_snprintf(ptr, len,
 			"%s<context name=\"%s\" version-major=\"%u\" "
-			"version-minor=\"%u\" version-git=\"%s\" ",
+			"version-minor=\"%u\" version-patch=\"%u\" version-git=\"%s\" ",
 			xml_header, ctx->name, iio_context_get_version_major(ctx),
-			iio_context_get_version_minor(ctx), iio_context_get_version_tag(ctx));
+			iio_context_get_version_minor(ctx), iio_context_get_version_patch(ctx),
+			iio_context_get_version_tag(ctx));
 	if (ret < 0)
 		return ret;
 
@@ -468,7 +469,7 @@ out_free_values:
 
 struct iio_context *iio_context_create_from_backend(const struct iio_context_params *params,
 		const struct iio_backend *backend, const char *description, unsigned int major,
-		unsigned int minor, const char *git_tag)
+		unsigned int minor, unsigned int patch, const char *git_tag)
 {
 	struct iio_context *ctx;
 	int ret = -ENOMEM;
@@ -492,6 +493,7 @@ struct iio_context *iio_context_create_from_backend(const struct iio_context_par
 
 	ctx->major = major;
 	ctx->minor = minor;
+	ctx->patch = patch;
 
 	if (git_tag) {
 		ctx->git_tag = iio_strdup(git_tag);
@@ -624,6 +626,14 @@ unsigned int iio_context_get_version_minor(const struct iio_context *ctx)
 		return ctx->minor;
 
 	return LIBIIO_VERSION_MINOR;
+}
+
+unsigned int iio_context_get_version_patch(const struct iio_context *ctx)
+{
+	if (ctx && ctx->git_tag)
+		return ctx->patch;
+
+	return LIBIIO_VERSION_PATCH;
 }
 
 const char *iio_context_get_version_tag(const struct iio_context *ctx)

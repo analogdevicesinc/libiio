@@ -314,8 +314,9 @@ int main(int argc, char **argv)
 	version(MY_NAME);
 	printf("IIO context created with %s backend.\n", iio_context_get_name(ctx));
 
-	printf("Backend version: %u.%u (git tag: %s)\n", iio_context_get_version_major(ctx),
-			iio_context_get_version_minor(ctx), iio_context_get_version_tag(ctx));
+	printf("Backend version: %u.%u.%u (git tag: %s)\n", iio_context_get_version_major(ctx),
+			iio_context_get_version_minor(ctx), iio_context_get_version_patch(ctx),
+			iio_context_get_version_tag(ctx));
 
 	printf("Backend description string: %s\n", iio_context_get_description(ctx));
 

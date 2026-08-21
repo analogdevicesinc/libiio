@@ -409,10 +409,11 @@ void version(char *name)
 {
 	unsigned int i;
 
-	printf("%s version: %u.%u (git tag:%s)\n", name, LIBIIO_VERSION_MAJOR, LIBIIO_VERSION_MINOR,
-			LIBIIO_VERSION_GIT);
-	printf("Libiio version: %u.%u (git tag: %s) backends:", iio_context_get_version_major(NULL),
-			iio_context_get_version_minor(NULL), iio_context_get_version_tag(NULL));
+	printf("%s version: %u.%u.%u (git tag:%s)\n", name, LIBIIO_VERSION_MAJOR,
+			LIBIIO_VERSION_MINOR, LIBIIO_VERSION_PATCH, LIBIIO_VERSION_GIT);
+	printf("Libiio version: %u.%u.%u (git tag: %s) backends:",
+			iio_context_get_version_major(NULL), iio_context_get_version_minor(NULL),
+			iio_context_get_version_patch(NULL), iio_context_get_version_tag(NULL));
 	for (i = 0; i < iio_get_builtin_backends_count(); i++)
 		printf(" %s", iio_get_builtin_backend(i));
 	printf("\n");
