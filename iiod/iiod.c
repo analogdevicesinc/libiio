@@ -293,8 +293,8 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint, const char *u
 	size_t xml_zstd_len = 0;
 	int ret;
 
-	IIO_INFO("Starting IIO Daemon version %u.%u.%s\n", LIBIIO_VERSION_MAJOR,
-			LIBIIO_VERSION_MINOR, LIBIIO_VERSION_GIT);
+	IIO_INFO("Starting IIO Daemon version %u.%u.%u (git tag: %s)\n", LIBIIO_VERSION_MAJOR,
+			LIBIIO_VERSION_MINOR, LIBIIO_VERSION_PATCH, LIBIIO_VERSION_GIT);
 
 	if (!WITH_IIOD_NETWORK && (!WITH_IIOD_USBD || !ffs_mountpoint) &&
 			(!WITH_IIOD_SERIAL || !uart_params)) {
