@@ -41,7 +41,6 @@ struct iio_device_io_channels_channel {
 struct iio_device_io_channels_config {
 	const struct iio_device_io_channels_channel *channels;
 	size_t num_channels;
-	uint8_t address;
 };
 
 struct iio_device_io_channels_channel_adc_overrides {
@@ -776,7 +775,6 @@ static const struct iio_device_io_channels_channel iio_device_io_channels_##inst
 };												\
 												\
 static const struct iio_device_io_channels_config iio_device_io_channel_config_##inst = {	\
-	.address = DT_INST_REG_ADDR(inst),							\
 	.channels = iio_device_io_channels_##inst,						\
 	.num_channels = ARRAY_SIZE(iio_device_io_channels_##inst),				\
 };												\
