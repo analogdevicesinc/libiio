@@ -422,6 +422,12 @@ endif ()
 
 option(WITH_LIBTINYIIOD "Build libtinyiiod" OFF)
 
+if (WITH_LIBTINYIIOD)
+    set(WITH_EXTERNAL_BACKEND 1)
+else ()
+    set(WITH_EXTERNAL_BACKEND 0)
+endif ()
+
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
     iio_option(WITH_IIOD "Build the IIO Daemon" ON "POSIX")
     iio_option(WITH_LOCAL_BACKEND "Enable the local backend" ON "POSIX")
@@ -874,6 +880,10 @@ endif ()
 
 if (WITH_LIBTINYIIOD)
     add_subdirectory(tinyiiod)
+
+    if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+        add_subdirectory(examples/tinyiiod-linux)
+    endif ()
 endif ()
 
 if (((WITH_IIOD AND WITH_AIO) OR IIOD_CLIENT) AND NOT WITH_ZSTD)
