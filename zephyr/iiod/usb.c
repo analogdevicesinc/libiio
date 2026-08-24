@@ -109,6 +109,10 @@ struct iio_usb_pipe {
 	int rx_err;
 	int tx_err;
 	bool open; /* Whether this pipe has been opened by host */
+	/* Set by RESET_PIPES for pipe 0: discard stale ring-buffer bytes on
+	 * the next read instead of touching it from another thread.
+	 */
+	atomic_t reset_pending;
 	struct iio_usb_data *data; /* back-pointer to parent */
 };
 
@@ -289,6 +293,7 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 		pipe->rx_err = 0;
 		pipe->tx_err = 0;
 		pipe->open = false;
+		atomic_clear(&pipe->reset_pending);
 
 		LOG_INF("Pipe %d: IN=0x%02x OUT=0x%02x", i, pipe->ep_in, pipe->ep_out);
 	}
@@ -316,6 +321,11 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 	struct iio_usb_pipe *pipe = (struct iio_usb_pipe *)pdata;
 	size_t bytes_read = 0;
 	uint8_t *dest = (uint8_t *)buf;
+
+	/* Discard bytes left over from before a RESET_PIPES request. */
+	if (atomic_cas(&pipe->reset_pending, 1, 0)) {
+		ring_buf_reset(&pipe->rx_ringbuf);
+	}
 
 	LOG_DBG("Pipe 0x%02x: read %zu bytes requested", pipe->ep_out, size);
 
@@ -449,6 +459,12 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 				k_sem_give(&data->pipes[i].rx_sem);
 			}
 		}
+		/*
+		 * Pipe 0 stays alive across RESET_PIPES, but flag it so its
+		 * reader thread discards any stale bytes from an abandoned
+		 * connection on its next read.
+		 */
+		atomic_set(&data->pipes[0].reset_pending, 1);
 		break;
 
 	case IIO_USD_CMD_OPEN_PIPE:
