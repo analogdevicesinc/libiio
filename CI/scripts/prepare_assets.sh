@@ -70,55 +70,6 @@ release_artifacts() {
 
 }
 
-swdownloads_artifacts() {
-        local linux_dist='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Ubuntu-24.04 Ubuntu-26.04 Debian-11 Debian-12 openSUSE-15.4'
-        for distribution in $linux_dist; do
-		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Linux-${distribution}"
-		if [ "${distribution}" == "Fedora-34" ] || [ "${distribution}" == "Fedora-28" ]; then
-                        find . -name '*.rpm' -exec mv {} ../"${distribution}_latest_main_libiio.rpm" ";"
-                fi
-                find . -name '*.tar.gz' -exec mv {} ../"${distribution}_latest_main_libiio.tar.gz" ";"
-                find . -name '*.deb' -exec mv {} ../"${distribution}_latest_main_libiio.deb" ";"
-                rm -r ../Linux-"${distribution}"
-        done
-
-	local macOS_dist='macOS-14-arm64 macOS-15-arm64 macOS-latest-arm64'
-	for distribution in $macOS_dist; do
-                cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/${distribution}"
-                find . -name '*.pkg' -exec mv {} ../"${distribution}_latest_main_libiio.pkg" ";"
-                find . -name '*.tar.gz' -exec mv {} ../"${distribution}_latest_main_libiio.tar.gz" ";"
-                rm -r ../"${distribution}"
-        done
-
-	local windows_dist='2022'
-        for distribution in $windows_dist; do
-		cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
-                zip -r "Windows-VS-${distribution}-x64-latest_main_libiio".zip "Windows-VS-${distribution}-x64"
-                rm -r "Windows-VS-${distribution}-x64"
-        done
-
-	local arm_dist='arm32v7 arm64v8 ppc64le x390x'
-        for distribution in $arm_dist; do
-                cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Ubuntu-${distribution}"
-                find . -name '*.tar.gz' -exec mv {} ../"Ubuntu-${distribution}_latest_main_libiio.tar.gz" ";"
-                find . -name '*.deb' -exec mv {} ../"Ubuntu-${distribution}_latest_main_libiio.deb" ";"
-                rm -r ../Ubuntu-"${distribution}"
-        done
-
-        cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Debian12-arm"
-        find . -name '*.tar.gz' -exec mv {} ../"Debian12-arm_latest_main_libiio.tar.gz" ";"
-        find . -name '*.deb' -exec mv {} ../"Debian12-arm_latest_main_libiio.deb" ";"
-        rm -r ../Debian12-arm
-
-	cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Libiio-Setup-Exe"
-	mv libiio-setup.exe ../libiio-setup.exe
-	rm -r ../Libiio-Setup-Exe
-
-	cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
-	zip -r Windows-MinGW-W64-latest_main_libiio.zip Windows-MinGW-W64
-	rm -r Windows-MinGW-W64
-}
-
 check_artifacts() {
 	cd build
 	while IFS= read -r line; do

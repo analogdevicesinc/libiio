@@ -50,21 +50,31 @@ jobs:
     outputs:
       build-type: ${{ steps.set.outputs.build-type }}
       is-main: ${{ steps.set.outputs.is-main }}
+      is-v0: ${{ steps.set.outputs.is-v0 }}
       is-release: ${{ steps.set.outputs.is-release }}
+      cloudsmith-version: ${{ steps.set.outputs.cloudsmith-version }}
     steps:
       - id: set
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "build-type=Release" >> "${GITHUB_OUTPUT}"
             echo "is-release=true" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
           else
             echo "build-type=RelWithDebInfo" >> "${GITHUB_OUTPUT}"
             echo "is-release=false" >> "${GITHUB_OUTPUT}"
           fi
           if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
             echo "is-main=true" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=main~latest" >> "${GITHUB_OUTPUT}"
           else
             echo "is-main=false" >> "${GITHUB_OUTPUT}"
+          fi
+          if [[ "${GITHUB_REF}" == "refs/heads/libiio-v0" ]]; then
+            echo "is-v0=true" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=libiio-v0~latest" >> "${GITHUB_OUTPUT}"
+          else
+            echo "is-v0=false" >> "${GITHUB_OUTPUT}"
           fi
 
   #############################################
@@ -105,7 +115,7 @@ jobs:
   # Check Artifacts
   #############################################
   check-artifacts:
-    if: needs.config.outputs.is-main == 'true' || needs.config.outputs.is-release == 'true'
+    if: needs.config.outputs.is-main == 'true' || needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
     needs: [config, linux, windows, macos, arm]
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -141,37 +151,52 @@ jobs:
           path: build/artifact_manifest.txt
 
   #############################################
-  # Push to SW Downloads
+  # Push to Cloudsmith
   #############################################
-  push-swdownloads:
-    if: needs.config.outputs.is-main == 'true'
+  push-cloudsmith:
+    if: needs.config.outputs.is-main == 'true' || needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
     needs: [config, check-artifacts]
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
       - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: ${{ github.workspace }}/artifacts
 
-      - name: Prepare artifacts for SWDownloads
-        run: ./CI/scripts/prepare_assets.sh swdownloads
-        env:
-          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
-          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
+      - name: Install Cloudsmith CLI
+        run: pip install cloudsmith-cli
 
-      - name: Push artifacts to SW Downloads
+      - name: Upload to Cloudsmith
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
         run: |
           set -e
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i ~/.ssh/id_rsa -r ${{ github.workspace }}/artifacts/* ${{ secrets.SERVER_ADDRESS }}
-          rm -f ~/.ssh/id_rsa
+          VERSION="${{ needs.config.outputs.cloudsmith-version }}"
+          ARTIFACTS="${{ github.workspace }}/artifacts"
+          for dir in "${ARTIFACTS}"/*/; do
+            tag=$(basename "${dir}")
+            [[ "${tag}" == "Artifact manifest" ]] && continue
+            if [[ "${tag}" == Windows-* ]]; then
+              cd "${ARTIFACTS}"
+              zip -r "${tag}.zip" "${tag}"
+              rm -r "${tag}"
+              cloudsmith push raw --republish \
+                --tags "${tag}" \
+                --version "${VERSION}" \
+                adi/external "${tag}.zip"
+              rm "${tag}.zip"
+              cd -
+              continue
+            fi
+            for file in "${dir}"*; do
+              [[ -f "${file}" ]] || continue
+              cloudsmith push raw --republish \
+                --tags "${tag}" \
+                --version "${VERSION}" \
+                adi/external "${file}"
+            done
+          done
 
   #############################################
   # Push to GitHub Release

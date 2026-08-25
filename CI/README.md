@@ -121,14 +121,16 @@ Deployment jobs run only after all builds succeed:
 
 ### Artifact Check
 
-Runs on `main` and tag pushes. Downloads all artifacts and validates them
-against `artifact_manifest.txt` (generated from `artifact_manifest.txt.cmakein`
-by CMake).
+Runs on `main`, `libiio-v0`, and tag pushes. Downloads all artifacts and
+validates them against `artifact_manifest.txt` (generated from
+`artifact_manifest.txt.cmakein` by CMake).
 
-### SW Downloads
+### Cloudsmith
 
-Runs on `main` only. Pushes artifacts via SCP to the Analog Devices software
-downloads server.
+Runs on `main`, `libiio-v0`, and tag pushes. Uploads each artifact to the
+`adi/external` Cloudsmith repository using `cloudsmith push raw` with per-file
+platform tags (derived from artifact directory names). The `--version` flag
+is set to `main~latest`, `libiio-v0~latest`, or the release tag.
 
 ### GitHub Release
 
