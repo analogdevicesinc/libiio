@@ -12,6 +12,7 @@ on:
 
 jobs:
   msvc:
+    name: ${{ matrix.artifact-name }}
     strategy:
       fail-fast: false
       matrix:
@@ -26,10 +27,8 @@ jobs:
             arch: x64
             platform-toolset: v145
             artifact-name: Windows-VS-2026-x64
-            experimental: true
     runs-on: ${{ matrix.vmImage }}
     timeout-minutes: 15
-    continue-on-error: ${{ matrix.experimental || false }}
     env:
       COMPILER: ${{ matrix.compiler }}
       ARCH: ${{ matrix.arch }}
@@ -39,11 +38,11 @@ jobs:
       BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
       BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.9'
 
@@ -124,12 +123,13 @@ jobs:
           cmakeBuildType: ${{ inputs.build-type }}
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: staging/
 
   mingw:
+    name: Windows-MinGW-W64
     runs-on: windows-2022
     timeout-minutes: 15
     env:
@@ -137,11 +137,11 @@ jobs:
       cmakeBuildType: ${{ inputs.build-type }}
       BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.9'
 
@@ -184,12 +184,13 @@ jobs:
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
 
       - name: Upload artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Windows-MinGW-W64
           path: staging/
 
   generate-setup-exe:
+    name: Libiio-Setup-Exe
     needs: msvc
     runs-on: windows-2022
     timeout-minutes: 10
@@ -197,7 +198,7 @@ jobs:
       cmakeBuildType: ${{ inputs.build-type }}
       BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
@@ -205,7 +206,7 @@ jobs:
         run: mkdir staging
 
       - name: Download all MSVC artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: staging/
 
@@ -216,7 +217,7 @@ jobs:
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
 
       - name: Upload installer artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: Libiio-Setup-Exe
           path: staging/

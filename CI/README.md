@@ -26,8 +26,8 @@ build.yml                  <-- orchestrator (triggers, config, deploy)
   |
   +-- _linux-builds.yml    <-- 9 Linux distros in Docker containers
   +-- _windows-builds.yml  <-- MSVC, MinGW, and Windows installer
-  +-- _macos-builds.yml    <-- macOS 14, 15, and latest (all ARM64)
-  +-- _arm-builds.yml      <-- ARM/cross-arch via QEMU (5 configs)
+  +-- _macos-builds.yml    <-- macOS 15 + 26 (arm64 + x64) and 27 (arm64)
+  +-- _arm-builds.yml      <-- ARM/cross-arch via QEMU (10 configs)
   +-- _mcu-builds.yml      <-- ARM Cortex-M4 cross-compile
 ```
 
@@ -53,18 +53,15 @@ These run independently on push/PR and are not part of the build matrix:
 
 ### Linux (`_linux-builds.yml`)
 
-Builds inside pre-configured Docker containers (`tfcollins/libiio_*-ci`):
+Builds inside vanilla distro Docker containers with inline dependency
+installation:
 
 | Distro | Artifact |
 |--------|----------|
-| Ubuntu 20.04, 22.04, 24.04, 26.04 | `.deb` + `.tar.gz` |
-| Debian 11 (Bullseye), 12 (Bookworm) | `.deb` + `.tar.gz` |
-| Fedora 34 | `.rpm` + `.tar.gz` |
-| openSUSE 15.4 | `.rpm` + `.tar.gz` |
-
-Fedora 28 also builds but runs via `docker run` instead of the `container:`
-directive because its glibc (2.27) is too old for the Node.js 24 runtime that
-GitHub Actions requires inside containers.
+| Ubuntu 22.04, 24.04, 26.04 | `.deb` + `.tar.gz` |
+| Debian 12 (Bookworm), 13 (Trixie) | `.deb` + `.tar.gz` |
+| Fedora 42, 44 | `.rpm` + `.tar.gz` |
+| openSUSE Leap 15.6, 16.0 | `.rpm` + `.tar.gz` |
 
 On PRs targeting `main`, the Ubuntu 22.04 build also runs:
 - **Kernel check** -- verifies IIO channel types/modifiers match the upstream Linux kernel
@@ -81,32 +78,41 @@ Three jobs:
 
 ### macOS (`_macos-builds.yml`)
 
-Builds on GitHub-hosted ARM64 (Apple Silicon) runners:
+Builds on GitHub-hosted ARM64 and Intel runners:
 
-| Runner | Artifact |
-|--------|----------|
-| `macos-14` | `macOS-14-arm64` |
-| `macos-15` | `macOS-15-arm64` |
-| `macos-latest` | `macOS-latest-arm64` |
+| Runner | Architecture | Artifact |
+|--------|-------------|----------|
+| `macos-15` | arm64 | `macOS-15-arm64` |
+| `macos-15-large` | x64 | `macOS-15-x64` |
+| `macos-26` | arm64 | `macOS-26-arm64` |
+| `macos-26-large` | x64 | `macOS-26-x64` |
+| `xcode-27` | arm64 | `macOS-27-arm64` |
 
 Each produces a `.pkg` installer and a `.tar.gz` archive.
 
 ### ARM / Cross-Architecture (`_arm-builds.yml`)
 
-Uses QEMU user-space emulation to cross-compile in Docker:
+Uses QEMU user-space emulation to cross-compile in vanilla distro Docker
+containers with inline dependency installation:
 
 | Architecture | Image | Artifact |
 |-------------|-------|----------|
-| aarch64 | Ubuntu 20.04 | `Ubuntu-arm64v8` |
-| arm (32-bit) | Ubuntu 20.04 | `Ubuntu-arm32v7` |
-| ppc64le | Ubuntu 20.04 | `Ubuntu-ppc64le` |
-| s390x | Ubuntu 20.04 | `Ubuntu-x390x` |
-| arm (32-bit) | Debian Bookworm | `Debian12-arm` |
+| arm (32-bit) | Ubuntu 22.04 | `Ubuntu-22.04-arm32v7` |
+| aarch64 | Ubuntu 22.04 | `Ubuntu-22.04-arm64v8` |
+| ppc64le | Ubuntu 22.04 | `Ubuntu-22.04-ppc64le` |
+| s390x | Ubuntu 22.04 | `Ubuntu-22.04-s390x` |
+| arm (32-bit) | Ubuntu 26.04 | `Ubuntu-26.04-arm32v7` |
+| aarch64 | Ubuntu 26.04 | `Ubuntu-26.04-arm64v8` |
+| ppc64le | Ubuntu 26.04 | `Ubuntu-26.04-ppc64le` |
+| s390x | Ubuntu 26.04 | `Ubuntu-26.04-s390x` |
+| arm (32-bit) | Debian 12 (Bookworm) | `Debian-12-arm` |
+| arm (32-bit) | Debian 13 (Trixie) | `Debian-13-arm` |
 
 ### MCU (`_mcu-builds.yml`)
 
-Cross-compiles for ARM Cortex-M4 using `gcc-arm-none-eabi`. Build-only (no
-artifacts uploaded) -- verifies the tinyiiod embedded target compiles.
+Cross-compiles for ARM Cortex-M4 using `gcc-arm-none-eabi` on Ubuntu 22.04
+and 26.04. Build-only (no artifacts uploaded) -- verifies the tinyiiod
+embedded target compiles.
 
 ## Build Type
 
@@ -143,7 +149,7 @@ Build logic lives in `CI/scripts/` and `CI/` scripts, called from the workflows:
 
 | Script | Used by |
 |--------|---------|
-| `CI/scripts/ci-ubuntu.sh` | ARM cross-arch Docker builds |
+| `CI/scripts/ci-ubuntu.sh` | Legacy ARM build script (unused, deps now inline) |
 | `CI/scripts/build_mingw.sh` | MinGW dependency install + build |
 | `CI/scripts/windows_build_deps.cmd` | MSVC dependency download + build |
 | `CI/scripts/check_kernel.sh` | Kernel IIO type/modifier sync check |

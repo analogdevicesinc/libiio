@@ -1,11 +1,11 @@
 #!/bin/bash -e
 
 release_artifacts() {
-        local deb_linux_assets='Fedora-34 Fedora-28 Ubuntu-20.04 Ubuntu-22.04 Ubuntu-24.04 Ubuntu-26.04 Debian-11 Debian-12 openSUSE-15.4'
+        local deb_linux_assets='Fedora-42 Fedora-44 Ubuntu-22.04 Ubuntu-24.04 Ubuntu-26.04 Debian-12 Debian-13 openSUSE-15.6 openSUSE-16.0'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_linux_assets; do
                 cd "Linux-${i}"
-		if [ "${i}" == "Fedora-34" ] || [ "${i}" == "Fedora-28" ]; then
+		if [[ "${i}" == Fedora-* ]]; then
 			find . -name '*.rpm' -exec mv {} ../ ";"
 		fi
                 find . -name '*.deb' -exec mv {} ../ ";"
@@ -14,7 +14,7 @@ release_artifacts() {
                 rm -r "Linux-${i}"
         done
 
-	local pkg_assets='macOS-14-arm64 macOS-15-arm64 macOS-latest-arm64'
+	local pkg_assets='macOS-15-arm64 macOS-15-x64 macOS-26-arm64 macOS-26-x64 macOS-27-arm64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $pkg_assets; do
                 cd "${i}"
@@ -31,7 +31,7 @@ release_artifacts() {
                 rm -r "${i}"
         done
 
-        local zip_assets='VS-2022-x64 MinGW-W64'
+        local zip_assets='VS-2022-x64 VS-2026-x64 MinGW-W64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
 	mkdir Windows
 	cd Windows
@@ -53,20 +53,15 @@ release_artifacts() {
 	cd ..
 	rm -r Windows
 
-        local deb_arm_assets='arm32v7 arm64v8 ppc64le x390x'
+        local deb_arm_assets='Ubuntu-22.04-arm32v7 Ubuntu-22.04-arm64v8 Ubuntu-22.04-ppc64le Ubuntu-22.04-s390x Ubuntu-26.04-arm32v7 Ubuntu-26.04-arm64v8 Ubuntu-26.04-ppc64le Ubuntu-26.04-s390x Debian-12-arm Debian-13-arm'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_arm_assets; do
-                cd "Ubuntu-${i}"
+                cd "${i}"
                 find . -name '*.deb' -exec mv {} ../ ";"
 		find . -name '*.tar.gz' -exec mv {} ../ ";"
                 cd ../
-                rm -r "Ubuntu-${i}"
+                rm -r "${i}"
         done
-
-        cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/Debian12-arm"
-        find . -name '*.deb' -exec mv {} ../ ";"
-        find . -name '*.tar.gz' -exec mv {} ../ ";"
-        rm -r ../Debian12-arm
 
 }
 
