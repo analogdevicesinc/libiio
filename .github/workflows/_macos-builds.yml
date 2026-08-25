@@ -13,22 +13,27 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - os: macos-14
-            artifact-name: macOS-14-arm64
           - os: macos-15
             artifact-name: macOS-15-arm64
-          - os: macos-latest
-            artifact-name: macOS-latest-arm64
+          - os: macos-15-large
+            artifact-name: macOS-15-x64
+          - os: macos-26
+            artifact-name: macOS-26-arm64
+          - os: macos-26-large
+            artifact-name: macOS-26-x64
+          - os: xcode-27
+            artifact-name: macOS-27-arm64
+    name: ${{ matrix.artifact-name }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
     env:
       ARTIFACTNAME: ${{ matrix.artifact-name }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.x'
 
@@ -67,7 +72,7 @@ jobs:
           cp build_tar/*.tar.gz staging/
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: staging/
