@@ -1,0 +1,206 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - main
+      - next_stable
+      - dev
+      - libiio-v0
+      - 'staging/*'
+      - '20*'
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - '.gitignore'
+      - 'LICENSE*'
+      - 'COPYING*'
+      - 'CODE_OF_CONDUCT*'
+      - 'CONTRIBUTING*'
+  pull_request:
+    branches:
+      - main
+      - next_stable
+      - dev
+      - '20*'
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - '.gitignore'
+      - 'LICENSE*'
+      - 'COPYING*'
+      - 'CODE_OF_CONDUCT*'
+      - 'CONTRIBUTING*'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  #############################################
+  # Configuration
+  #############################################
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      build-type: ${{ steps.set.outputs.build-type }}
+      is-main: ${{ steps.set.outputs.is-main }}
+      is-release: ${{ steps.set.outputs.is-release }}
+    steps:
+      - id: set
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "build-type=Release" >> "${GITHUB_OUTPUT}"
+            echo "is-release=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "build-type=RelWithDebInfo" >> "${GITHUB_OUTPUT}"
+            echo "is-release=false" >> "${GITHUB_OUTPUT}"
+          fi
+          if [[ "${GITHUB_REF}" == "refs/heads/main" ]]; then
+            echo "is-main=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "is-main=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  #############################################
+  # Builds
+  #############################################
+  linux:
+    needs: config
+    uses: ./.github/workflows/_linux-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  windows:
+    needs: config
+    uses: ./.github/workflows/_windows-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+      is-release: ${{ needs.config.outputs.is-release }}
+
+  macos:
+    needs: config
+    uses: ./.github/workflows/_macos-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  arm:
+    needs: config
+    uses: ./.github/workflows/_arm-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  mcu:
+    needs: config
+    uses: ./.github/workflows/_mcu-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  #############################################
+  # Check Artifacts
+  #############################################
+  check-artifacts:
+    if: needs.config.outputs.is-main == 'true' || needs.config.outputs.is-release == 'true'
+    needs: [config, linux, windows, macos, arm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: tfcollins/libiio_ubuntu_20_04-ci:latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Build artifact manifest
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake ..
+          mkdir artifacts
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: build/artifacts/
+
+      - name: Check files
+        run: ./CI/scripts/prepare_assets.sh check
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/build/artifacts
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v4
+        with:
+          name: Artifact manifest
+          path: build/artifact_manifest.txt
+
+  #############################################
+  # Push to SW Downloads
+  #############################################
+  push-swdownloads:
+    if: needs.config.outputs.is-main == 'true'
+    needs: [config, check-artifacts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Prepare artifacts for SWDownloads
+        run: ./CI/scripts/prepare_assets.sh swdownloads
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
+
+      - name: Push artifacts to SW Downloads
+        run: |
+          set -e
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          scp -2 -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o HostKeyAlgorithms=+ssh-dss -i ~/.ssh/id_rsa -r ${{ github.workspace }}/artifacts/* ${{ secrets.SERVER_ADDRESS }}
+          rm -f ~/.ssh/id_rsa
+
+  #############################################
+  # Push to GitHub Release
+  #############################################
+  push-github-release:
+    if: needs.config.outputs.is-release == 'true'
+    needs: [config, check-artifacts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Prepare assets for release
+        run: ./CI/scripts/prepare_assets.sh release
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: "Libiio release ${{ github.ref_name }}"
+          files: ${{ github.workspace }}/artifacts/*
+          generate_release_notes: true

@@ -14,11 +14,11 @@ release_artifacts() {
                 rm -r "Linux-${i}"
         done
 
-	local pkg_assets='macOS-13-arm64 macOS-14-x64 macOS-15-x64'
+	local pkg_assets='macOS-14-arm64 macOS-15-arm64 macOS-latest-arm64'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $pkg_assets; do
                 cd "${i}"
-		
+
 		# All three macOS jobs produce an identically named .pkg, so tag
 		# each one with its artifact name before they are moved into a
 		# shared directory. Derive the new name from the file itself: byte
@@ -51,7 +51,7 @@ release_artifacts() {
 		rm -r ./"Windows-${i}"/iio
 		mv ./"Windows-${i}" Windows
         done
-	cp "${BUILD_SOURCESDIRECTORY}"/CI/azure/README.txt ./Windows
+	cp "${BUILD_SOURCESDIRECTORY}/CI/scripts/README.txt" ./Windows
 	cd Windows
 	zip -r Windows.zip ./*
 	cp ./Windows.zip ../
@@ -87,7 +87,7 @@ swdownloads_artifacts() {
                 rm -r ../Linux-"${distribution}"
         done
 
-	local macOS_dist='macOS-13-arm64 macOS-14-x64 macOS-15-x64'
+	local macOS_dist='macOS-14-arm64 macOS-15-arm64 macOS-latest-arm64'
 	for distribution in $macOS_dist; do
                 cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}/${distribution}"
                 find . -name '*.pkg' -exec mv {} ../"${distribution}_latest_main_libiio.pkg" ";"
