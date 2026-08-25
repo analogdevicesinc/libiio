@@ -10,6 +10,7 @@
 #include <errno.h>
 #include <iio/iio-backend.h>
 #include <iio/iio.h>
+#include <math.h>
 #include <netinet/in.h>
 #include <signal.h>
 #include <stdbool.h>
@@ -17,6 +18,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <tinyiiod/tinyiiod.h>
 #include <unistd.h>
 
@@ -34,63 +36,180 @@ static void signal_handler(int signum)
 }
 
 /* ========================================================================
- * SIMPLE BACKEND IMPLEMENTATION
+ * ADC SIMULATION BACKEND
  * ======================================================================== */
 
-struct simple_device {
+#define ADC_NUM_CHANNELS 4
+#define ADC_RESOLUTION_BITS 12
+#define ADC_MAX_VALUE ((1 << ADC_RESOLUTION_BITS) - 1)  /* 4095 for 12-bit */
+#define ADC_VREF_MV 3300  /* 3.3V reference in millivolts */
+
+/* ADC channel state */
+struct adc_channel {
+	int channel_num;
+	uint16_t raw_value;
+	uint32_t read_count;  /* Increments on each read for simulation */
+};
+
+/* ADC device state */
+struct adc_device {
 	char name[64];
-	int test_value;
+	uint32_t sampling_frequency;  /* Hz */
+	struct adc_channel channels[ADC_NUM_CHANNELS];
+	time_t start_time;
 };
 
-static struct simple_device g_simple = {
-	.name = "Simple IIO Device",
-	.test_value = 42,
+static struct adc_device g_adc = {
+	.name = "ADC Simulator",
+	.sampling_frequency = 1000,  /* 1 kHz default */
 };
 
-static ssize_t simple_read_attr(const struct iio_attr *attr, char *dst, size_t len)
+/* Initialize ADC channels with different simulation patterns */
+static void adc_init_channels(void)
 {
-	const char *attr_name = iio_attr_get_name(attr);
-	ssize_t ret;
+	int i;
 
-	if (strcmp(attr_name, "name") == 0) {
-		ret = snprintf(dst, len, "%s", g_simple.name);
-	} else if (strcmp(attr_name, "test_value") == 0) {
-		ret = snprintf(dst, len, "%d", g_simple.test_value);
-	} else {
-		return -ENOENT;
+	g_adc.start_time = time(NULL);
+
+	for (i = 0; i < ADC_NUM_CHANNELS; i++) {
+		g_adc.channels[i].channel_num = i;
+		g_adc.channels[i].raw_value = 0;
+		g_adc.channels[i].read_count = 0;
+	}
+}
+
+/* Simulate ADC readings - different pattern per channel */
+static uint16_t adc_simulate_reading(int channel_num)
+{
+	struct adc_channel *ch = &g_adc.channels[channel_num];
+	time_t elapsed = time(NULL) - g_adc.start_time;
+	uint16_t value;
+
+	ch->read_count++;
+
+	/* Different simulation pattern per channel:
+	 * Channel 0: Sine wave
+	 * Channel 1: Sawtooth ramp
+	 * Channel 2: Square wave
+	 * Channel 3: Random noise
+	 */
+	switch (channel_num) {
+	case 0:
+		/* Sine wave: varies between 0 and ADC_MAX_VALUE */
+		value = (uint16_t)((sin(elapsed * 0.5) + 1.0) * (ADC_MAX_VALUE / 2.0));
+		break;
+	case 1:
+		/* Sawtooth: ramps from 0 to max over 10 seconds */
+		value = (uint16_t)((elapsed % 10) * (ADC_MAX_VALUE / 10));
+		break;
+	case 2:
+		/* Square wave: alternates between 25% and 75% every 3 seconds */
+		value = ((elapsed / 3) % 2) ? (ADC_MAX_VALUE * 3 / 4) : (ADC_MAX_VALUE / 4);
+		break;
+	case 3:
+		/* Pseudo-random using read count */
+		value = (uint16_t)((ch->read_count * 1103515245 + 12345) % (ADC_MAX_VALUE + 1));
+		break;
+	default:
+		value = 0;
 	}
 
+	ch->raw_value = value;
+	return value;
+}
+
+static ssize_t adc_read_attr(const struct iio_attr *attr, char *dst, size_t len)
+{
+	const char *attr_name = iio_attr_get_name(attr);
+	const struct iio_channel *chn = NULL;
+	ssize_t ret;
+
+	/* Check if this is a channel attribute */
+	if (attr->type == IIO_ATTR_TYPE_CHANNEL) {
+		chn = attr->iio.chn;
+	}
+
+	/* Device attributes */
+	if (!chn) {
+		if (strcmp(attr_name, "name") == 0) {
+			ret = snprintf(dst, len, "%s", g_adc.name);
+		} else if (strcmp(attr_name, "sampling_frequency") == 0) {
+			ret = snprintf(dst, len, "%u", g_adc.sampling_frequency);
+		} else {
+			return -ENOENT;
+		}
+	} else {
+		/* Channel attributes */
+		const char *chn_id = iio_channel_get_id(chn);
+		int channel_num;
+
+		/* Extract channel number from id (e.g., "voltage0" -> 0) */
+		if (sscanf(chn_id, "voltage%d", &channel_num) != 1 ||
+		    channel_num < 0 || channel_num >= ADC_NUM_CHANNELS) {
+			return -EINVAL;
+		}
+
+		if (strcmp(attr_name, "raw") == 0) {
+			uint16_t value = adc_simulate_reading(channel_num);
+			ret = snprintf(dst, len, "%u", value);
+		} else if (strcmp(attr_name, "scale") == 0) {
+			/* Scale factor: millivolts per LSB */
+			double scale = (double)ADC_VREF_MV / (double)(ADC_MAX_VALUE + 1);
+			ret = snprintf(dst, len, "%.6f", scale);
+		} else if (strcmp(attr_name, "offset") == 0) {
+			ret = snprintf(dst, len, "0");
+		} else {
+			return -ENOENT;
+		}
+	}
+
+	/* Include null terminator in length (protocol requirement) */
 	if (ret >= 0 && ret < (ssize_t)len - 1) {
-		return ret + 1;  /* Include the null terminator */
+		return ret + 1;
 	}
 
 	return ret;
 }
 
-static ssize_t simple_write_attr(const struct iio_attr *attr, const char *src, size_t len)
+static ssize_t adc_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 {
 	const char *attr_name = iio_attr_get_name(attr);
 
-	if (strcmp(attr_name, "test_value") == 0) {
-		int value;
-		if (sscanf(src, "%d", &value) != 1) {
+	/* Only device attributes are writable - check if this is a channel attribute */
+	if (attr->type == IIO_ATTR_TYPE_CHANNEL) {
+		return -EPERM;  /* Channel attributes are read-only */
+	}
+
+	if (strcmp(attr_name, "sampling_frequency") == 0) {
+		unsigned int freq;
+		if (sscanf(src, "%u", &freq) != 1) {
 			return -EINVAL;
 		}
-		g_simple.test_value = value;
+		/* Validate range: 1 Hz to 100 kHz */
+		if (freq < 1 || freq > 100000) {
+			return -EINVAL;
+		}
+		g_adc.sampling_frequency = freq;
 		return len;
 	}
 
 	return -ENOENT;
 }
 
-static struct iio_context *simple_create_context(
+static struct iio_context *adc_create_context(
 		const struct iio_context_params *params, const char *args)
 {
 	struct iio_context *ctx;
 	struct iio_device *dev;
+	struct iio_channel *chn;
+	char channel_id[16];
 	int ret;
+	int i;
 
 	(void)args;
+
+	/* Initialize ADC simulation */
+	adc_init_channels();
 
 	ctx = iio_context_create_from_backend(
 			params, &iio_external_backend, "Linux tinyIIOD reference", 1, 0, 0, "v1.0.0");
@@ -98,7 +217,8 @@ static struct iio_context *simple_create_context(
 		return ctx;
 	}
 
-	dev = iio_context_add_device(ctx, "iio:device0", "simple0", NULL);
+	/* Add ADC device */
+	dev = iio_context_add_device(ctx, "iio:device0", "adc0", NULL);
 	if (iio_err(dev)) {
 		iio_context_destroy(ctx);
 		return iio_err_cast(dev);
@@ -110,29 +230,61 @@ static struct iio_context *simple_create_context(
 		return iio_ptr(ret);
 	}
 
-	ret = iio_device_add_attr(dev, "test_value", IIO_ATTR_TYPE_DEVICE);
+	ret = iio_device_add_attr(dev, "sampling_frequency", IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0) {
 		iio_context_destroy(ctx);
 		return iio_ptr(ret);
 	}
 
+	/* Add voltage input channels */
+	for (i = 0; i < ADC_NUM_CHANNELS; i++) {
+		struct iio_data_format fmt = {
+			.length = 16,  /* 16-bit storage */
+			.bits = ADC_RESOLUTION_BITS,  /* 12 bits of data */
+			.shift = 0,
+			.is_signed = false,
+			.is_fully_defined = true,
+		};
+
+		snprintf(channel_id, sizeof(channel_id), "voltage%d", i);
+
+		chn = iio_device_add_channel(dev, i, channel_id, NULL, NULL,
+					     false, false, &fmt);
+		if (iio_err(chn)) {
+			iio_context_destroy(ctx);
+			return iio_err_cast(chn);
+		}
+
+		/* Add channel attributes */
+		ret = iio_channel_add_attr(chn, "raw", IIO_ATTR_TYPE_CHANNEL, NULL);
+		if (ret >= 0) {
+			ret = iio_channel_add_attr(chn, "scale", IIO_ATTR_TYPE_CHANNEL, NULL);
+		}
+		if (ret >= 0) {
+			ret = iio_channel_add_attr(chn, "offset", IIO_ATTR_TYPE_CHANNEL, NULL);
+		}
+		if (ret < 0) {
+			iio_context_destroy(ctx);
+			return iio_ptr(ret);
+		}
+	}
+
 	return ctx;
 }
-
 /* Backend operations */
-static const struct iio_backend_ops simple_ops = {
-	.create = simple_create_context,
-	.read_attr = simple_read_attr,
-	.write_attr = simple_write_attr,
+static const struct iio_backend_ops adc_ops = {
+	.create = adc_create_context,
+	.read_attr = adc_read_attr,
+	.write_attr = adc_write_attr,
 };
 
 /* Backend definition */
 const struct iio_backend iio_external_backend = {
-	.name = "simple",
+	.name = "adc",
 	.api_version = IIO_BACKEND_API_V1,
 	.default_timeout_ms = 5000,
-	.uri_prefix = "simple:",
-	.ops = &simple_ops,
+	.uri_prefix = "adc:",
+	.ops = &adc_ops,
 };
 
 /* ========================================================================
@@ -144,7 +296,6 @@ struct client_data {
 	struct sockaddr_in addr;
 };
 
-/* Network read callback - blocks until data arrives */
 static ssize_t network_read(struct iiod_pdata *pdata, void *buf, size_t size)
 {
 	struct client_data *client = (struct client_data *)pdata;
@@ -245,7 +396,6 @@ static void handle_client(int client_fd, struct sockaddr_in *client_addr, struct
 	inet_ntop(AF_INET, &client_addr->sin_addr, client_ip, sizeof(client_ip));
 	printf("Client connected from %s:%d\n", client_ip, ntohs(client_addr->sin_port));
 
-	/* Run tinyIIOD interpreter */
 	iiod_interpreter(ctx, (struct iiod_pdata *)&client, network_read, network_write, xml,
 			xml_len);
 
@@ -281,7 +431,7 @@ int main(void)
 	}
 
 	/* Create IIO context */
-	ctx = iio_create_context(&params, "simple:");
+	ctx = iio_create_context(&params, "adc:");
 	if (iio_err(ctx)) {
 		char err_buf[256];
 		iio_strerror(-iio_err(ctx), err_buf, sizeof(err_buf));
