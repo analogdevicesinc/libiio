@@ -60,10 +60,14 @@ jobs:
           ./macos_tar_fixup.sh
           cd ..
 
+      - name: Collect artifacts
+        run: |
+          mkdir -p staging
+          cp build/*.pkg staging/
+          cp build_tar/*.tar.gz staging/
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.artifact-name }}
-          path: |
-            build/*.pkg
-            build_tar/*.tar.gz
+          path: staging/
