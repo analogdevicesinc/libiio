@@ -59,6 +59,17 @@ struct adc_device {
 	time_t start_time;
 };
 
+/* Buffer state - tracks active streaming configuration */
+struct adc_buffer {
+	const struct iio_device *dev;
+	bool enabled;
+	bool cyclic;
+	size_t nb_samples;
+	uint64_t sample_count;  /* Total samples generated */
+	bool channel_enabled[ADC_NUM_CHANNELS];
+	int num_enabled_channels;
+};
+
 static struct adc_device g_adc = {
 	.name = "ADC Simulator",
 	.sampling_frequency = 1000,  /* 1 kHz default */
@@ -196,6 +207,116 @@ static ssize_t adc_write_attr(const struct iio_attr *attr, const char *src, size
 	return -ENOENT;
 }
 
+/* Buffer operations for streaming data */
+
+/* Open a buffer for streaming */
+static struct iio_buffer_pdata *adc_open_buffer(const struct iio_device *dev, unsigned int idx,
+		struct iio_channels_mask *mask)
+{
+	struct adc_buffer *buf;
+	int i;
+
+	(void)idx;  /* We only support one buffer per device */
+
+	buf = calloc(1, sizeof(*buf));
+	if (!buf) {
+		return iio_ptr(-ENOMEM);
+	}
+
+	buf->dev = dev;
+	buf->enabled = false;
+	buf->cyclic = false;
+	buf->nb_samples = 0;
+	buf->sample_count = 0;
+	buf->num_enabled_channels = 0;
+
+	/* Determine which channels are enabled */
+	for (i = 0; i < ADC_NUM_CHANNELS; i++) {
+		const struct iio_channel *chn = iio_device_get_channel(dev, i);
+		if (chn && iio_channel_is_enabled(chn, mask)) {
+			buf->channel_enabled[i] = true;
+			buf->num_enabled_channels++;
+		} else {
+			buf->channel_enabled[i] = false;
+		}
+	}
+
+	return (struct iio_buffer_pdata *)buf;
+}
+
+/* Close buffer and free resources */
+static void adc_close_buffer(struct iio_buffer_pdata *pdata)
+{
+	struct adc_buffer *buf = (struct adc_buffer *)pdata;
+	if (buf) {
+		free(buf);
+	}
+}
+
+/* Enable or disable the buffer */
+static int adc_enable_buffer(struct iio_buffer_pdata *pdata, size_t nb_samples, bool enable,
+		bool cyclic)
+{
+	struct adc_buffer *buf = (struct adc_buffer *)pdata;
+
+	buf->enabled = enable;
+	buf->cyclic = cyclic;
+	buf->nb_samples = nb_samples;
+
+	if (enable) {
+		buf->sample_count = 0;
+	}
+
+	return 0;
+}
+
+/* Cancel buffer operation */
+static void adc_cancel_buffer(struct iio_buffer_pdata *pdata)
+{
+	struct adc_buffer *buf = (struct adc_buffer *)pdata;
+	buf->enabled = false;
+}
+
+/* Read buffer data - generate simulated samples */
+static ssize_t adc_readbuf(struct iio_buffer_pdata *pdata, void *dst, size_t len)
+{
+	struct adc_buffer *buf = (struct adc_buffer *)pdata;
+	uint16_t *samples = (uint16_t *)dst;
+	size_t bytes_per_sample = sizeof(uint16_t);
+	size_t samples_requested = len / bytes_per_sample;
+	size_t sample_idx = 0;
+	int ch;
+
+	if (!buf->enabled) {
+		return -EPERM;
+	}
+
+	if (buf->num_enabled_channels == 0) {
+		return 0;
+	}
+
+	/* Generate interleaved samples for all enabled channels */
+	while (sample_idx < samples_requested) {
+		for (ch = 0; ch < ADC_NUM_CHANNELS; ch++) {
+			if (!buf->channel_enabled[ch]) {
+				continue;
+			}
+
+			if (sample_idx >= samples_requested) {
+				break;
+			}
+
+			/* Generate simulated sample for this channel */
+			samples[sample_idx] = adc_simulate_reading(ch);
+			sample_idx++;
+		}
+
+		buf->sample_count++;
+	}
+
+	return sample_idx * bytes_per_sample;
+}
+
 static struct iio_context *adc_create_context(
 		const struct iio_context_params *params, const char *args)
 {
@@ -249,7 +370,7 @@ static struct iio_context *adc_create_context(
 		snprintf(channel_id, sizeof(channel_id), "voltage%d", i);
 
 		chn = iio_device_add_channel(dev, i, channel_id, NULL, NULL,
-					     false, false, &fmt);
+					     false, true, &fmt);
 		if (iio_err(chn)) {
 			iio_context_destroy(ctx);
 			return iio_err_cast(chn);
@@ -269,6 +390,23 @@ static struct iio_context *adc_create_context(
 		}
 	}
 
+	/* Add buffer for streaming data */
+	struct iio_buffer *buf = iio_device_add_buffer(dev, 0);
+	if (!buf) {
+		iio_context_destroy(ctx);
+		return iio_ptr(-ENOMEM);
+	}
+
+	/* Add scan elements for all channels */
+	for (i = 0; i < ADC_NUM_CHANNELS; i++) {
+		chn = iio_device_get_channel(dev, i);
+		ret = iio_buffer_add_scan_element(buf, chn, NULL);
+		if (ret < 0) {
+			iio_context_destroy(ctx);
+			return iio_ptr(ret);
+		}
+	}
+
 	return ctx;
 }
 /* Backend operations */
@@ -276,6 +414,11 @@ static const struct iio_backend_ops adc_ops = {
 	.create = adc_create_context,
 	.read_attr = adc_read_attr,
 	.write_attr = adc_write_attr,
+	.open_buffer = adc_open_buffer,
+	.close_buffer = adc_close_buffer,
+	.enable_buffer = adc_enable_buffer,
+	.cancel_buffer = adc_cancel_buffer,
+	.readbuf = adc_readbuf,
 };
 
 /* Backend definition */
