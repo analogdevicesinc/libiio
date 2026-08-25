@@ -11,18 +11,25 @@ jobs:
   mcu:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:22.04
+          - image: ubuntu:26.04
     container:
-      image: tfcollins/libiio_ubuntu_22_04-ci:latest
+      image: ${{ matrix.image }}
     steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
-
-      - name: Install cross-compiler
+      - name: Install dependencies
         run: |
           set -e
-          sudo apt-get update
-          sudo apt-get install -y gcc-arm-none-eabi
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y build-essential git cmake gcc-arm-none-eabi
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
 
       - name: Build
         run: |
