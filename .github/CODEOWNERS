@@ -17,4 +17,4 @@
 
 ##### Code owners for CI related files/folders #####
 /CI/	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com
-azure-pipelines.yml	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com
+/.github/workflows/	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com

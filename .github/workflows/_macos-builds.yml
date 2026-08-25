@@ -1,0 +1,69 @@
+name: macOS Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-14
+            artifact-name: macOS-14-arm64
+          - os: macos-15
+            artifact-name: macOS-15-arm64
+          - os: macos-latest
+            artifact-name: macOS-latest-arm64
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      ARTIFACTNAME: ${{ matrix.artifact-name }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          set -e
+          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
+          pip3 install sphinx setuptools
+
+      - name: Build
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python3 -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python3'))") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON
+          make VERBOSE=1
+          cmake -DLICENSE_CHECK=ON ..
+          sudo make install
+          cd ..
+
+      - name: Build tar
+        run: |
+          set -e
+          mkdir build_tar && cd build_tar
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -Wno-error=install-absolute-destination -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DCPACK_SYSTEM_NAME=${{ matrix.artifact-name }}
+          make
+          make package
+          mv ../CI/scripts/macos_tar_fixup.sh .
+          chmod +x macos_tar_fixup.sh
+          ./macos_tar_fixup.sh
+          cd ..
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            build/*.pkg
+            build_tar/*.tar.gz
