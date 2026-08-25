@@ -30,7 +30,7 @@ o Visual Studio:
 o WDK/DDK:
   - The following is an example of a sources files that you can use to compile
     a libiio 1.0 based console application. In this sample ..\libiio\ is the
-    directory where you would have copied libiio.h as well as the relevant 
+    directory where you would have copied libiio.h as well as the relevant
     libiio.lib
 
 	TARGETNAME=your_app
@@ -55,6 +55,6 @@ o Additional information:
     and tests/ directories
   - The MinGW and MS generated DLLs are fully interchangeable, provided that you
     use the import libs provided or generate one from the .def also provided.
-  - If you find any issue, please visit 
+  - If you find any issue, please visit
     http://analogdevicesinc.github.io/libiio/
     and check the Issues section

@@ -1,0 +1,222 @@
+name: Windows Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+      is-release:
+        required: true
+        type: string
+
+jobs:
+  msvc:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: Visual Studio 17 2022
+            vmImage: windows-2022
+            arch: x64
+            platform-toolset: v143
+            artifact-name: Windows-VS-2022-x64
+          - compiler: Visual Studio 18 2026
+            vmImage: windows-2025
+            arch: x64
+            platform-toolset: v145
+            artifact-name: Windows-VS-2026-x64
+            experimental: true
+    runs-on: ${{ matrix.vmImage }}
+    timeout-minutes: 15
+    continue-on-error: ${{ matrix.experimental || false }}
+    env:
+      COMPILER: ${{ matrix.compiler }}
+      ARCH: ${{ matrix.arch }}
+      PLATFORM_TOOLSET: ${{ matrix.platform-toolset }}
+      cmakeBuildType: ${{ inputs.build-type }}
+      isRelease: ${{ inputs.is-release }}
+      BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+      BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install CMake 4.2.3
+        if: matrix.vmImage == 'windows-2025'
+        run: |
+          choco install cmake --version 4.2.3 -y --no-progress --force
+          echo "C:\Program Files\CMake\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          cmake --version
+
+      - name: Build dependencies
+        run: |
+          git submodule update --init
+          .\CI\scripts\windows_build_deps.cmd
+
+      - name: Create staging directory
+        run: mkdir staging
+
+      - name: Build
+        run: .\CI\build_win_msvc.ps1
+        env:
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Create staging subdirectories
+        run: |
+          New-Item -ItemType Directory -Force -Path "staging/${{ inputs.build-type }}"
+          if ("${{ inputs.is-release }}" -ne "true") {
+            New-Item -ItemType Directory -Force -Path "staging/Debug"
+          }
+        shell: pwsh
+
+      - name: Copy libraries
+        run: |
+          Copy-Item -Path "build-msvc/${{ inputs.build-type }}/*" -Destination "staging/${{ inputs.build-type }}/" -Recurse -Force
+        shell: pwsh
+
+      - name: Copy libraries (Debug)
+        if: inputs.is-release != 'true'
+        run: |
+          Copy-Item -Path "build-msvc/Debug/*" -Destination "staging/Debug/" -Recurse -Force
+        shell: pwsh
+
+      - name: Copy public headers
+        run: Copy-Item -Path "include/*" -Destination "staging/" -Recurse -Force
+        shell: pwsh
+
+      - name: Copy exe files
+        run: |
+          Copy-Item -Path "build-msvc/utils/${{ inputs.build-type }}/*.exe" -Destination "staging/${{ inputs.build-type }}/" -Force
+        shell: pwsh
+
+      - name: Copy exe files (Debug)
+        if: inputs.is-release != 'true'
+        run: |
+          Copy-Item -Path "build-msvc/utils/Debug/*.exe" -Destination "staging/Debug/" -Force
+        shell: pwsh
+
+      - name: Copy libiio-sharp.dll
+        run: |
+          Copy-Item -Path "build-msvc/bindings/csharp/libiio-sharp.dll" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy dependencies sources archive
+        run: |
+          Copy-Item -Path "Windows-msvc-deps.zip" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy dependencies
+        run: .\CI\publish_deps.ps1
+        env:
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Run C# Integration Tests
+        if: matrix.compiler == 'Visual Studio 17 2022'
+        run: .\CI\run_csharp_tests.ps1
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          cmakeBuildType: ${{ inputs.build-type }}
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: staging/
+
+  mingw:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      COMPILER: MinGW Makefiles
+      cmakeBuildType: ${{ inputs.build-type }}
+      BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          git submodule update --init
+          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+          C:\msys64\usr\bin\bash.exe -c "./CI/scripts/build_mingw.sh install_pacman_deps"
+        shell: pwsh
+
+      - name: Build
+        run: |
+          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+          mkdir build-mingw
+          cd build-mingw
+          C:\msys64\usr\bin\bash.exe -c "../CI/scripts/build_mingw.sh build_libiio"
+        shell: pwsh
+
+      - name: Create staging directory
+        run: mkdir staging
+
+      - name: Copy exe files
+        run: Copy-Item -Path "build-mingw/utils/*.exe" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy public headers
+        run: Copy-Item -Path "include/*" -Destination "staging/" -Recurse -Force
+        shell: pwsh
+
+      - name: Copy DLLs
+        run: |
+          Copy-Item -Path "build-mingw/libiio.dll" -Destination "staging/" -Force
+          Copy-Item -Path "build-mingw/libiio.dll.a" -Destination "staging/" -Force
+          Copy-Item -Path "build-mingw/libiio1.dll" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy dependencies
+        run: .\CI\publish_deps.ps1
+        env:
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-MinGW-W64
+          path: staging/
+
+  generate-setup-exe:
+    needs: msvc
+    runs-on: windows-2022
+    timeout-minutes: 10
+    env:
+      cmakeBuildType: ${{ inputs.build-type }}
+      BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Create staging directory
+        run: mkdir staging
+
+      - name: Download all MSVC artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: staging/
+
+      - name: Generate libiio-setup.exe
+        run: .\CI\generate_exe.ps1
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Libiio-Setup-Exe
+          path: staging/

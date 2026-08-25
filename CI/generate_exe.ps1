@@ -18,10 +18,13 @@ Write-Output "Full paths to runtime DLLs:"
 Write-Output "  msvcp140.dll: ${vcRedistPath}${vcVersion}\x64\Microsoft.VC143.CRT\msvcp140.dll"
 Write-Output "  vcruntime140.dll: ${vcRedistPath}${vcVersion}\x64\Microsoft.VC143.CRT\vcruntime140.dll"
 
-# Replace placeholder with actual version in the .iss file
+# Replace placeholders in the .iss file
 $issFile = "$env:BUILD_ARTIFACTSTAGINGDIRECTORY\Windows-VS-2022-x64\libiio.iss"
 (Get-Content $issFile) -replace 'VCREDIST_VERSION', $vcVersion | Set-Content $issFile
 (Get-Content $issFile) -replace 'BUILD_TYPE', $Env:cmakeBuildType | Set-Content $issFile
+# Replace hardcoded paths in .iss template with actual CI workspace paths
+(Get-Content $issFile) -replace [regex]::Escape('D:\a\1\s'), $env:BUILD_SOURCESDIRECTORY | Set-Content $issFile
+(Get-Content $issFile) -replace [regex]::Escape('D:\a\1\a'), $env:BUILD_ARTIFACTSTAGINGDIRECTORY | Set-Content $issFile
 
 iscc $issFile
 

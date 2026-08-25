@@ -1,0 +1,62 @@
+name: ARM Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  arm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
+            arch: ppc64le
+            artifact-name: Ubuntu-ppc64le
+          - image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
+            arch: s390x
+            artifact-name: Ubuntu-x390x
+          - image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
+            arch: aarch64
+            artifact-name: Ubuntu-arm64v8
+          - image: tfcollins/libiio_ubuntu_20_04-ci-arm-ppc:latest
+            arch: arm
+            artifact-name: Ubuntu-arm32v7
+          - image: tfcollins/libiio_debian_bookworm-ci-arm-ppc:latest
+            arch: arm
+            artifact-name: Debian12-arm
+    env:
+      ARTIFACTNAME: ${{ matrix.artifact-name }}
+      CMAKE_BUILD_TYPE: ${{ inputs.build-type }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Build
+        run: |
+          set -e
+          sudo docker run \
+            --platform "linux/${{ matrix.arch }}" \
+            --rm -t --privileged \
+            -e ARTIFACTNAME=${{ matrix.artifact-name }} \
+            -e CMAKE_BUILD_TYPE=${{ inputs.build-type }} \
+            -v "${{ github.workspace }}":"/ci" \
+            "${{ matrix.image }}" \
+            /bin/bash -c "cd /ci/ && chmod +x ./CI/scripts/ci-ubuntu.sh && ./CI/scripts/ci-ubuntu.sh"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            build/*.deb
+            build/*.tar.gz

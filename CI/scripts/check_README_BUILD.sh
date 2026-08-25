@@ -11,7 +11,7 @@ options() {
 		grep option[[:space:]]*\( "${file}" | \
 			sed -e "s/^[[:space:]]*//g" -e "s/(/ /g" | \
 			awk '{print $2}'
-	done | sort | uniq 
+	done | sort | uniq
 }
 
 for opt in $(options)
