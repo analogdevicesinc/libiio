@@ -12,6 +12,7 @@
 #include <iio/iio.h>
 #include <math.h>
 #include <netinet/in.h>
+#include <pthread.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -75,6 +76,9 @@ static struct adc_device g_adc = {
 	.sampling_frequency = 1000,  /* 1 kHz default */
 };
 
+/* Protects g_adc, accessed concurrently by per-client threads */
+static pthread_mutex_t g_adc_lock = PTHREAD_MUTEX_INITIALIZER;
+
 /* Initialize ADC channels with different simulation patterns */
 static void adc_init_channels(void)
 {
@@ -92,9 +96,14 @@ static void adc_init_channels(void)
 /* Simulate ADC readings - different pattern per channel */
 static uint16_t adc_simulate_reading(int channel_num)
 {
-	struct adc_channel *ch = &g_adc.channels[channel_num];
-	time_t elapsed = time(NULL) - g_adc.start_time;
+	struct adc_channel *ch;
+	time_t elapsed;
 	uint16_t value;
+
+	pthread_mutex_lock(&g_adc_lock);
+
+	ch = &g_adc.channels[channel_num];
+	elapsed = time(NULL) - g_adc.start_time;
 
 	ch->read_count++;
 
@@ -126,6 +135,9 @@ static uint16_t adc_simulate_reading(int channel_num)
 	}
 
 	ch->raw_value = value;
+
+	pthread_mutex_unlock(&g_adc_lock);
+
 	return value;
 }
 
@@ -142,13 +154,16 @@ static ssize_t adc_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 
 	/* Device attributes */
 	if (!chn) {
+		pthread_mutex_lock(&g_adc_lock);
 		if (strcmp(attr_name, "name") == 0) {
 			ret = snprintf(dst, len, "%s", g_adc.name);
 		} else if (strcmp(attr_name, "sampling_frequency") == 0) {
 			ret = snprintf(dst, len, "%u", g_adc.sampling_frequency);
 		} else {
+			pthread_mutex_unlock(&g_adc_lock);
 			return -ENOENT;
 		}
+		pthread_mutex_unlock(&g_adc_lock);
 	} else {
 		/* Channel attributes */
 		const char *chn_id = iio_channel_get_id(chn);
@@ -200,7 +215,9 @@ static ssize_t adc_write_attr(const struct iio_attr *attr, const char *src, size
 		if (freq < 1 || freq > 100000) {
 			return -EINVAL;
 		}
+		pthread_mutex_lock(&g_adc_lock);
 		g_adc.sampling_frequency = freq;
+		pthread_mutex_unlock(&g_adc_lock);
 		return len;
 	}
 
@@ -439,6 +456,15 @@ struct client_data {
 	struct sockaddr_in addr;
 };
 
+/* Thread data for handling client connections */
+struct client_thread_data {
+	int client_fd;
+	struct sockaddr_in client_addr;
+	struct iio_context *ctx;
+	const void *xml;
+	size_t xml_len;
+};
+
 static ssize_t network_read(struct iiod_pdata *pdata, void *buf, size_t size)
 {
 	struct client_data *client = (struct client_data *)pdata;
@@ -527,22 +553,26 @@ static int create_server_socket(void)
 	return server_fd;
 }
 
-static void handle_client(int client_fd, struct sockaddr_in *client_addr, struct iio_context *ctx,
-		const void *xml, size_t xml_len)
+static void *client_thread(void *arg)
 {
+	struct client_thread_data *thread_data = (struct client_thread_data *)arg;
 	struct client_data client = {
-		.fd = client_fd,
-		.addr = *client_addr,
+		.fd = thread_data->client_fd,
+		.addr = thread_data->client_addr,
 	};
 	char client_ip[INET_ADDRSTRLEN];
 
-	inet_ntop(AF_INET, &client_addr->sin_addr, client_ip, sizeof(client_ip));
-	printf("Client connected from %s:%d\n", client_ip, ntohs(client_addr->sin_port));
+	inet_ntop(AF_INET, &thread_data->client_addr.sin_addr, client_ip, sizeof(client_ip));
+	printf("Client connected from %s:%d\n", client_ip, ntohs(thread_data->client_addr.sin_port));
 
-	iiod_interpreter(ctx, (struct iiod_pdata *)&client, network_read, network_write, xml,
-			xml_len);
+	iiod_interpreter(thread_data->ctx, (struct iiod_pdata *)&client, network_read, network_write,
+			thread_data->xml, thread_data->xml_len);
 
-	printf("Client disconnected from %s:%d\n", client_ip, ntohs(client_addr->sin_port));
+	printf("Client disconnected from %s:%d\n", client_ip, ntohs(thread_data->client_addr.sin_port));
+
+	close(thread_data->client_fd);
+	free(thread_data);
+	return NULL;
 }
 
 /* ========================================================================
@@ -608,11 +638,14 @@ int main(void)
 	printf("Connect with: iio_info -u ip:127.0.0.1\n");
 	printf("Press Ctrl+C to stop\n\n");
 
-	/* Accept and handle client connections */
+	/* Accept and handle client connections (multi-threaded) */
 	while (running) {
 		struct sockaddr_in client_addr;
 		socklen_t addr_len = sizeof(client_addr);
+		struct client_thread_data *thread_data;
+		pthread_t thread_id;
 		int client_fd;
+		int err;
 
 		client_fd = accept(server_fd, (struct sockaddr *)&client_addr, &addr_len);
 		if (client_fd < 0) {
@@ -622,8 +655,31 @@ int main(void)
 			continue;
 		}
 
-		handle_client(client_fd, &client_addr, ctx, xml, xml_len);
-		close(client_fd);
+		/* Allocate thread data */
+		thread_data = malloc(sizeof(*thread_data));
+		if (!thread_data) {
+			fprintf(stderr, "Failed to allocate thread data\n");
+			close(client_fd);
+			continue;
+		}
+
+		thread_data->client_fd = client_fd;
+		thread_data->client_addr = client_addr;
+		thread_data->ctx = ctx;
+		thread_data->xml = xml;
+		thread_data->xml_len = xml_len;
+
+		/* Create thread to handle client */
+		err = pthread_create(&thread_id, NULL, client_thread, thread_data);
+		if (err) {
+			fprintf(stderr, "Failed to create thread: %s\n", strerror(err));
+			free(thread_data);
+			close(client_fd);
+			continue;
+		}
+
+		/* Detach thread - we don't need to join it */
+		pthread_detach(thread_id);
 	}
 
 	printf("\nShutting down...\n");
