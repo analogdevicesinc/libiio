@@ -1,0 +1,191 @@
+name: Windows Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  msvc:
+    name: ${{ matrix.artifact-name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - compiler: Visual Studio 17 2022
+            vmImage: windows-2022
+            artifact-name: Windows-VS-2022-x64
+    runs-on: ${{ matrix.vmImage }}
+    timeout-minutes: 15
+    env:
+      COMPILER: ${{ matrix.compiler }}
+      USE_CSHARP: 'ON'
+      BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          git submodule update --init
+          if ( !( Test-Path deps ) ) {
+            mkdir deps
+          }
+          cd deps
+          mkdir libxml
+          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          7z x -y libxml.7z
+          rm libxml.7z
+          cd C:\
+          wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+          7z x -y "C:\libiio-win-deps.zip"
+
+      - name: Create staging directory
+        run: mkdir staging
+
+      - name: Build
+        run: .\CI\build_win.ps1
+
+      - name: Copy libraries
+        run: |
+          Copy-Item -Path "build-x64/Release/*" -Destination "staging/" -Recurse -Force
+        shell: pwsh
+
+      - name: Copy iio.h header
+        run: Copy-Item -Path "iio.h" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy .exe files
+        run: |
+          Copy-Item -Path "build-x64/tests/Release/*.exe" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy .tar.gz files
+        run: |
+          Copy-Item -Path "build-x64/bindings/python/*.gz" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy libiio-sharp.dll
+        run: |
+          Copy-Item -Path "build-x64/bindings/csharp/libiio-sharp.dll" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy dependencies
+        run: .\CI\publish_deps.ps1
+        env:
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: staging/
+
+  mingw:
+    name: Windows-MinGW-W64
+    runs-on: windows-2022
+    timeout-minutes: 15
+    env:
+      COMPILER: MinGW Makefiles
+      USE_CSHARP: 'OFF'
+      BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.9'
+
+      - name: Install dependencies
+        run: |
+          ghcup install ghc 9.2.8
+          git submodule update --init
+          if ( !( Test-Path deps ) ) {
+            mkdir deps
+          }
+          cd deps
+          mkdir libxml
+          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          7z x -y libxml.7z
+          rm libxml.7z
+          cd C:\
+          wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+          7z x -y "C:\libiio-win-deps.zip"
+
+      - name: Create staging directory
+        run: mkdir staging
+
+      - name: Build
+        run: .\CI\build_win.ps1
+
+      - name: Copy .exe files
+        run: |
+          Copy-Item -Path "build-x64/tests/*.exe" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy iio.h header
+        run: Copy-Item -Path "iio.h" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy DLLs
+        run: |
+          Copy-Item -Path "build-x64/libiio.dll" -Destination "staging/" -Force
+          Copy-Item -Path "build-x64/libiio.dll.a" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy .tar.gz files
+        run: |
+          Copy-Item -Path "build-x64/bindings/python/*.gz" -Destination "staging/" -Force
+        shell: pwsh
+
+      - name: Copy dependencies
+        run: .\CI\publish_deps.ps1
+        env:
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: Windows-MinGW-W64
+          path: staging/
+
+  generate-setup-exe:
+    name: Libiio-Setup-Exe
+    needs: msvc
+    runs-on: windows-2022
+    timeout-minutes: 10
+    env:
+      BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Create staging directory
+        run: mkdir staging
+
+      - name: Download all MSVC artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: staging/
+
+      - name: Generate libiio-setup.exe
+        run: .\CI\generate_exe.ps1
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: Libiio-Setup-Exe
+          path: staging/

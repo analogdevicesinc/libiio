@@ -1,0 +1,100 @@
+name: Linux Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  linux:
+    name: ${{ matrix.artifact-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:22.04
+            artifact-name: Linux-Ubuntu-22.04
+          - image: ubuntu:24.04
+            artifact-name: Linux-Ubuntu-24.04
+          - image: ubuntu:26.04
+            artifact-name: Linux-Ubuntu-26.04
+          - image: fedora:42
+            artifact-name: Linux-Fedora-42
+          - image: fedora:44
+            artifact-name: Linux-Fedora-44
+          - image: debian:bookworm
+            artifact-name: Linux-Debian-12
+          - image: debian:trixie
+            artifact-name: Linux-Debian-13
+          - image: opensuse/leap:15.6
+            artifact-name: Linux-openSUSE-15.6
+          - image: opensuse/leap:16.0
+            artifact-name: Linux-openSUSE-16.0
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install dependencies
+        run: |
+          set -e
+
+          # Ubuntu / Debian
+          if command -v apt-get &>/dev/null; then
+            export DEBIAN_FRONTEND=noninteractive
+            apt-get update
+            apt-get install -y build-essential git cmake libxml2-dev bison flex \
+              libcdk5-dev libaio-dev libusb-1.0-0-dev \
+              libserialport-dev libavahi-client-dev doxygen graphviz man2html \
+              python3 python3-pip python3-setuptools
+            pip3 install sphinx --break-system-packages 2>/dev/null || pip3 install sphinx
+
+          # Fedora
+          elif command -v dnf &>/dev/null; then
+            dnf install -y cmake gcc gcc-c++ git flex bison libxml2-devel \
+              libaio-devel libusb1-devel avahi-devel \
+              libserialport-devel rpm-build doxygen graphviz \
+              python3-pip python3-setuptools
+            pip3 install sphinx
+
+          # openSUSE
+          elif command -v zypper &>/dev/null; then
+            zypper --gpg-auto-import-keys ref
+            zypper in -y --allow-downgrade gcc-c++ make cmake git libxml2-devel bison flex cdk-devel \
+              libaio-devel libusb-1_0-devel \
+              libserialport-devel libavahi-devel avahi rpm-build doxygen graphviz \
+              python3-pip python3-setuptools
+            pip3 install sphinx --break-system-packages 2>/dev/null || pip3 install sphinx
+          fi
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Build
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${{ matrix.artifact-name }}
+          make VERBOSE=1
+          make package
+          make required2tar
+
+      - name: Kernel check
+        if: matrix.artifact-name == 'Linux-Ubuntu-22.04' && github.event_name == 'pull_request'
+        run: ./CI/azure/check_kernel.sh
+
+      - name: README_BUILD check
+        if: matrix.artifact-name == 'Linux-Ubuntu-22.04' && github.event_name == 'pull_request'
+        run: ./CI/azure/check_README_BUILD.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            build/*.deb
+            build/*.rpm
+            build/*.tar.gz
