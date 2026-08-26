@@ -698,7 +698,8 @@ unlock:
 
 	/* Same as above. This needs to be atomic in regards to usb_cancel(). */
 	iio_mutex_lock(io_ctx->lock);
-	io_ctx->transfer = NULL;
+	if (io_ctx->transfer == transfer)
+		io_ctx->transfer = NULL;
 	iio_mutex_unlock(io_ctx->lock);
 
 	libusb_free_transfer(transfer);
