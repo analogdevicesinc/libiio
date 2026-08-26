@@ -58,10 +58,14 @@ for each in $(otool -L "${libiio_loc}" |grep '\/usr\/local\|homebrew' |cut -f2 |
 	codesign --force -s - "${deps_dir}/${name}"
 done
 
+# Re-sign libiio after all install_name_tool modifications
+codesign --force -s - "${libiio_loc}"
+
 # Update tools
 for tool in "${fw_dir}"/Tools/*;
 do
         install_name_tool -add_rpath @loader_path/../.. "${tool}"
+        codesign --force -s - "${tool}"
 done
 
 # Remove old tar and create new one
