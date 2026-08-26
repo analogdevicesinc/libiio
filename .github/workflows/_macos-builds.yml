@@ -1,0 +1,73 @@
+name: macOS Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  macos:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-15
+            artifact-name: macOS-15-arm64
+          - os: macos-15-large
+            artifact-name: macOS-15-x64
+          - os: macos-26
+            artifact-name: macOS-26-arm64
+          - os: macos-26-large
+            artifact-name: macOS-26-x64
+          - os: xcode-27
+            artifact-name: macOS-27-arm64
+    name: ${{ matrix.artifact-name }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    env:
+      ARTIFACTNAME: ${{ matrix.artifact-name }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: |
+          set -e
+          brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config
+          pip3 install sphinx setuptools
+
+      - name: Build
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python3 -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python3'))") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON -DWITH_ZSTD=OFF
+          make VERBOSE=1
+          sudo make install
+          cd ..
+
+      - name: Build tar
+        run: |
+          set -e
+          mkdir build_tar && cd build_tar
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DCMAKE_INSTALL_PREFIX=/ -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=OFF -DENABLE_PACKAGING=ON -DWITH_SERIAL_BACKEND=ON -DWITH_ZSTD=OFF -DCPACK_SYSTEM_NAME=${{ matrix.artifact-name }}
+          make
+          make package
+          mv ../CI/azure/macos_tar_fixup.sh .
+          chmod +x macos_tar_fixup.sh
+          ./macos_tar_fixup.sh
+          cd ..
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            build/*.pkg
+            build_tar/*.tar.gz

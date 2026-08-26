@@ -1,0 +1,220 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches:
+      - libiio-v0
+      - 'staging/*'
+      - '20*'
+    tags:
+      - 'v*'
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - '.gitignore'
+      - 'LICENSE*'
+      - 'COPYING*'
+      - 'CODE_OF_CONDUCT*'
+      - 'CONTRIBUTING*'
+  pull_request:
+    branches:
+      - libiio-v0
+      - '20*'
+    paths-ignore:
+      - '**/*.md'
+      - 'doc/**'
+      - '.gitignore'
+      - 'LICENSE*'
+      - 'COPYING*'
+      - 'CODE_OF_CONDUCT*'
+      - 'CONTRIBUTING*'
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  #############################################
+  # Configuration
+  #############################################
+  config:
+    runs-on: ubuntu-latest
+    outputs:
+      build-type: ${{ steps.set.outputs.build-type }}
+      is-v0: ${{ steps.set.outputs.is-v0 }}
+      is-release: ${{ steps.set.outputs.is-release }}
+      cloudsmith-version: ${{ steps.set.outputs.cloudsmith-version }}
+    steps:
+      - id: set
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            echo "build-type=Release" >> "${GITHUB_OUTPUT}"
+            echo "is-release=true" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
+          else
+            echo "build-type=RelWithDebInfo" >> "${GITHUB_OUTPUT}"
+            echo "is-release=false" >> "${GITHUB_OUTPUT}"
+          fi
+          if [[ "${GITHUB_REF}" == "refs/heads/libiio-v0" ]]; then
+            echo "is-v0=true" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=libiio-v0~latest" >> "${GITHUB_OUTPUT}"
+          else
+            echo "is-v0=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+  #############################################
+  # Builds
+  #############################################
+  linux:
+    needs: config
+    uses: ./.github/workflows/_linux-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  windows:
+    needs: config
+    uses: ./.github/workflows/_windows-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  macos:
+    needs: config
+    uses: ./.github/workflows/_macos-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  arm:
+    needs: config
+    uses: ./.github/workflows/_arm-builds.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
+  #############################################
+  # Check Artifacts
+  #############################################
+  check-artifacts:
+    if: needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
+    needs: [config, linux, windows, macos, arm]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    container:
+      image: ubuntu:24.04
+    steps:
+      - name: Install dependencies
+        run: |
+          set -e
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y build-essential cmake git
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Build artifact manifest
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake ..
+          mkdir artifacts
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: build/artifacts/
+
+      - name: Check files
+        run: ./CI/azure/prepare_assets.sh check
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/build/artifacts
+
+      - name: Upload manifest
+        uses: actions/upload-artifact@v7
+        with:
+          name: Artifact manifest
+          path: build/artifact_manifest.txt
+
+  #############################################
+  # Push to Cloudsmith
+  #############################################
+  push-cloudsmith:
+    if: needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
+    needs: [config, check-artifacts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Install Cloudsmith CLI
+        run: pip install cloudsmith-cli
+
+      - name: Upload to Cloudsmith
+        env:
+          CLOUDSMITH_API_KEY: ${{ secrets.CLOUDSMITH_API_KEY }}
+        run: |
+          set -e
+          VERSION="${{ needs.config.outputs.cloudsmith-version }}"
+          ARTIFACTS="${{ github.workspace }}/artifacts"
+          for dir in "${ARTIFACTS}"/*/; do
+            tag=$(basename "${dir}")
+            [[ "${tag}" == "Artifact manifest" ]] && continue
+            if [[ "${tag}" == Windows-* ]]; then
+              cd "${ARTIFACTS}"
+              zip -r "${tag}.zip" "${tag}"
+              rm -r "${tag}"
+              cloudsmith push raw --republish \
+                --tags "${tag}" \
+                --version "${VERSION}" \
+                adi/external "${tag}.zip"
+              rm "${tag}.zip"
+              cd -
+              continue
+            fi
+            for file in "${dir}"*; do
+              [[ -f "${file}" ]] || continue
+              cloudsmith push raw --republish \
+                --tags "${tag}" \
+                --version "${VERSION}" \
+                adi/external "${file}"
+            done
+          done
+
+  #############################################
+  # Push to GitHub Release
+  #############################################
+  push-github-release:
+    if: needs.config.outputs.is-release == 'true'
+    needs: [config, check-artifacts]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v8
+        with:
+          path: ${{ github.workspace }}/artifacts
+
+      - name: Prepare assets for release
+        run: ./CI/azure/prepare_assets.sh release
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          draft: true
+          name: "Libiio release ${{ github.ref_name }}"
+          files: ${{ github.workspace }}/artifacts/*
+          generate_release_notes: true

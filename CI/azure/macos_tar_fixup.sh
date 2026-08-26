@@ -14,16 +14,36 @@ tar -xzf "${tarname}" -C temp_tar
 mv "temp_tar/${subfoldername}" temp
 cd temp
 
-deps_dir=Library/Frameworks/iio.framework/Versions/Current/Dependencies
-libiio_loc=Library/Frameworks/iio.framework/Versions/Current/iio
-libiioheader_loc=Library/Frameworks/iio.framework/Versions/Current/Headers/iio.h
+# Find the framework: it may be at Library/Frameworks/ or usr/Library/Frameworks/
+# depending on the install prefix and CMake version.
+fw_base=$(find . -path "*/iio.framework/Versions" -type d | head -1)
+if [ -z "${fw_base}" ]; then
+	echo "iio.framework/Versions not found in tar"
+	exit 1
+fi
+fw_versions="${fw_base}"
+fw_dir=$(dirname "${fw_base}")
+fw_version=$(ls "${fw_versions}" | grep -v Current | sort -V | tail -1)
+if [ -z "${fw_version}" ]; then
+	echo "No version directory found in ${fw_versions}"
+	exit 1
+fi
+
+# Create the Current symlink if it doesn't exist
+if [ ! -e "${fw_versions}/Current" ]; then
+	ln -s "${fw_version}" "${fw_versions}/Current"
+fi
+
+deps_dir="${fw_versions}/${fw_version}/Dependencies"
+libiio_loc="${fw_versions}/${fw_version}/iio"
+libiioheader_loc="${fw_versions}/${fw_version}/Headers/iio.h"
 
 mkdir -p "${deps_dir}"
 
 # Create links to framework files
 mkdir -p usr/local/{lib,include}
-ln -fs "../../../${libiio_loc}" usr/local/lib/libiio.dylib
-ln -fs "../../../${libiioheader_loc}" usr/local/include/iio.h
+ln -fs "$(python3 -c "import os; print(os.path.relpath('${libiio_loc}', 'usr/local/lib'))")" usr/local/lib/libiio.dylib
+ln -fs "$(python3 -c "import os; print(os.path.relpath('${libiioheader_loc}', 'usr/local/include'))")" usr/local/include/iio.h
 
 # Update rpath of library
 install_name_tool -add_rpath @loader_path/. "${libiio_loc}"
@@ -38,10 +58,14 @@ for each in $(otool -L "${libiio_loc}" |grep '\/usr\/local\|homebrew' |cut -f2 |
 	codesign --force -s - "${deps_dir}/${name}"
 done
 
+# Re-sign libiio after all install_name_tool modifications
+codesign --force -s - "${libiio_loc}"
+
 # Update tools
-for tool in Library/Frameworks/iio.framework/Tools/*;
+for tool in "${fw_dir}"/Tools/*;
 do
         install_name_tool -add_rpath @loader_path/../.. "${tool}"
+        codesign --force -s - "${tool}"
 done
 
 # Remove old tar and create new one
