@@ -102,6 +102,7 @@
 <li><a class="reference internal" href="#_CPPv419iio_context_destroyP11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_destroy()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv429iio_context_get_version_majorPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_major()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv429iio_context_get_version_minorPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_minor()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv429iio_context_get_version_patchPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_patch()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv427iio_context_get_version_tagPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_tag()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv419iio_context_get_xmlPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_xml()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv420iio_context_get_namePK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_name()</span></code></a></li>
@@ -357,6 +358,22 @@ NOTE: If ctx is non-null, it will return the minor version of the remote library
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
 <dd class="field-even"><p>The minor number</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv429iio_context_get_version_patchPK11iio_context">
+<span id="_CPPv329iio_context_get_version_patchPK11iio_context"></span><span id="_CPPv229iio_context_get_version_patchPK11iio_context"></span><span id="iio_context_get_version_patch__iio_contextCP"></span><span class="target" id="group__Context_1ga66b1df27585979a092f6391aea0b5fe0"></span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_context_get_version_patch</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv411iio_context" title="iio_context"><span class="n"><span class="pre">iio_context</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ctx</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv429iio_context_get_version_patchPK11iio_context" title="Link to this definition"></a><br /></dt>
+<dd><p>Get the patch number of the library version. </p>
+<p>
+NOTE: If ctx is non-null, it will return the patch version of the remote library, if running remotely. Returns 0 for older remote servers that don’t report patch version. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ctx</strong> – Optional pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The patch number</p>
 </dd>
 </dl>
 </dd></dl>
