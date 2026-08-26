@@ -36,14 +36,16 @@ fi
 
 deps_dir="${fw_versions}/${fw_version}/Dependencies"
 libiio_loc="${fw_versions}/${fw_version}/iio"
-libiioheader_loc="${fw_versions}/${fw_version}/Headers/iio.h"
+libiioheaders_dir="${fw_versions}/${fw_version}/Headers"
 
 mkdir -p "${deps_dir}"
 
 # Create links to framework files
-mkdir -p usr/local/{lib,include}
+mkdir -p usr/local/{lib,include/iio}
 ln -fs "$(python3 -c "import os; print(os.path.relpath('${libiio_loc}', 'usr/local/lib'))")" usr/local/lib/libiio.dylib
-ln -fs "$(python3 -c "import os; print(os.path.relpath('${libiioheader_loc}', 'usr/local/include'))")" usr/local/include/iio.h
+for header in "${libiioheaders_dir}"/*.h; do
+	ln -fs "$(python3 -c "import os; print(os.path.relpath('${header}', 'usr/local/include/iio'))")" "usr/local/include/iio/$(basename "${header}")"
+done
 
 # Update rpath of library
 install_name_tool -add_rpath @loader_path/. "${libiio_loc}"
@@ -58,10 +60,14 @@ for each in $(otool -L "${libiio_loc}" |grep '\/usr\/local\|homebrew' |cut -f2 |
 	codesign --force -s - "${deps_dir}/${name}"
 done
 
+# Re-sign libiio after all install_name_tool modifications
+codesign --force -s - "${libiio_loc}"
+
 # Update tools
 for tool in "${fw_dir}"/Tools/*;
 do
         install_name_tool -add_rpath @loader_path/../.. "${tool}"
+        codesign --force -s - "${tool}"
 done
 
 # Remove old tar and create new one
