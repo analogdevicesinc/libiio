@@ -3,6 +3,7 @@
 
 menuconfig LIBIIO_IIOD_NETWORK
 	bool "Network iiod server"
+	imply LIBIIO_MULTITHREADING
 	help
 	  Enable the iiod server over a network interface.
 
@@ -83,6 +84,7 @@ endif # LIBIIO_IIOD_UART
 
 menuconfig LIBIIO_IIOD_USB
 	bool "USB iiod server"
+	imply LIBIIO_MULTITHREADING
 	depends on USB_DEVICE_STACK_NEXT
 	depends on DT_HAS_ADI_IIO_USB_ENABLED
 	help
