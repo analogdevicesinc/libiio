@@ -101,6 +101,12 @@ struct DevEntry {
 	bool closed;
 	bool cancelled;
 
+	/*
+	 * Set once every output block has been queued with data. Guards
+	 * iio_block_dequeue(), like stream.c's all_enqueued.
+	 */
+	bool tx_all_enqueued;
+
 	unsigned int nb_blocks, curr_block;
 
 	/* Linked list of ThdEntry structures corresponding
@@ -370,6 +376,7 @@ static int create_buf_and_blocks(
 
 	entry->nb_blocks = nb_blocks;
 	entry->curr_block = 0;
+	entry->tx_all_enqueued = false;
 
 	return 0;
 
@@ -417,6 +424,8 @@ static void rw_thd(struct thread_pool *pool, void *d)
 	unsigned int nb_channels = iio_device_get_channels_count(dev);
 	struct iio_channel *chn;
 	struct iio_block *block;
+	struct iio_buffer *buf0 = iio_device_get_buffer(dev, 0);
+	bool is_output = buf0 && iio_buffer_is_output(buf0);
 	ssize_t nb_bytes, ret = 0;
 
 	IIO_DEBUG("R/W thread started for device %s\n", dev_label_or_name_or_id(dev));
@@ -462,13 +471,20 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			}
 			entry->cancelled = false;
 
-			/* Enqueue empty blocks, to make sure they can be queued with data */
-			for (i = 0; !ret && i < entry->nb_blocks; i++)
-				ret = iio_block_enqueue(entry->blocks[i], 0, false);
+			/*
+			 * Enqueue empty blocks, to make sure they can be queued
+			 * with data. Input only: iio_block_enqueue() promotes
+			 * bytes_used == 0 to the full block size, which on an
+			 * output buffer would transmit an uninitialised block.
+			 */
+			if (!is_output) {
+				for (i = 0; !ret && i < entry->nb_blocks; i++)
+					ret = iio_block_enqueue(entry->blocks[i], 0, false);
 
-			if (i < entry->nb_blocks) {
-				IIO_ERROR("Unable to enqueue blocks\n");
-				break;
+				if (i < entry->nb_blocks) {
+					IIO_ERROR("Unable to enqueue blocks\n");
+					break;
+				}
 			}
 
 			ret = iio_buffer_stream_start(entry->buf_stream);
@@ -520,7 +536,20 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 		block = entry->blocks[entry->curr_block];
 
-		ret = iio_block_dequeue(block, false);
+		if (entry->cyclic) {
+			/*
+			 * A cyclic transfer has no completion callback, so the
+			 * block never comes back and there is nothing to wait
+			 * for. responder.c does the same.
+			 */
+			ret = 0;
+		} else if (is_output && !entry->tx_all_enqueued) {
+			/* Nothing queued on this output buffer yet, so there is
+			 * nothing to dequeue. */
+			ret = 0;
+		} else {
+			ret = iio_block_dequeue(block, false);
+		}
 
 		pthread_mutex_lock(&entry->thdlist_lock);
 
@@ -532,9 +561,15 @@ static void rw_thd(struct thread_pool *pool, void *d)
 			for (thd = SLIST_FIRST(&entry->thdlist_head); thd; thd = next_thd) {
 				next_thd = SLIST_NEXT(thd, dev_list_entry);
 
-				if (!thd->active || thd->is_writer)
+				if (!thd->active)
 					continue;
 
+				/*
+				 * Writers too: only signal_thread() clears
+				 * thd->nb, so an unsignalled writer keeps
+				 * has_writers true and this loop spins on the
+				 * same failing dequeue.
+				 */
 				signal_thread(thd, ret);
 			}
 
@@ -613,6 +648,7 @@ static void rw_thd(struct thread_pool *pool, void *d)
 
 		ret = iio_block_enqueue(block, nb_bytes, entry->cyclic);
 		entry->curr_block = (entry->curr_block + 1) % entry->nb_blocks;
+		entry->tx_all_enqueued |= is_output && entry->curr_block == 0;
 
 		if (entry->cancelled) {
 			pthread_mutex_unlock(&entry->thdlist_lock);
