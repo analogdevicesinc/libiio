@@ -1,0 +1,76 @@
+name: TinyIIOD Linux Server Tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  tinyiiod-linux-test:
+    name: Test tinyIIOD Linux Reference Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxml2-dev cmake build-essential libavahi-common-dev libavahi-client-dev libaio-dev libusb-1.0-0-dev libxml2-dev tar bzip2 gzip flex bison libzstd-dev
+
+      - name: Build libiio with tinyIIOD support
+        run: |
+          mkdir build-tinyiiod
+          cd build-tinyiiod
+          cmake -DWITH_LIBTINYIIOD=ON \
+                ..
+          make -j$(nproc)
+
+      - name: Build libiio utilities
+        run: |
+          mkdir build-utils
+          cd build-utils
+          cmake ..
+          make -j$(nproc) iio_info iio_attr
+
+      - name: Verify build artifacts
+        run: |
+          echo "Checking tinyiiod-server binary..."
+          ls -lh build-tinyiiod/examples/tinyiiod-linux/tinyiiod-server
+
+          echo "Checking utilities..."
+          ls -lh build-utils/utils/iio_info
+          ls -lh build-utils/utils/iio_attr
+
+          echo "Checking test scripts..."
+          ls -lh examples/tinyiiod-linux/tests/run_tests.sh
+
+      - name: Run tinyiiod-linux tests
+        run: |
+          # Add utilities to PATH
+          export PATH="$PWD/build-utils/utils:$PATH"
+
+          # Set BUILD_DIR for test scripts
+          export BUILD_DIR="$PWD/build-tinyiiod"
+
+          # Verify utilities are accessible
+          which iio_info
+          which iio_attr
+
+          # Run test suite
+          cd examples/tinyiiod-linux/tests
+          bash run_tests.sh
+
+      - name: Show server logs on failure
+        if: failure()
+        run: |
+          echo "Checking for server logs..."
+          if [ -f /tmp/tinyiiod-test-*.log ]; then
+            echo "=== Server Log ==="
+            cat /tmp/tinyiiod-test-*.log
+          fi
