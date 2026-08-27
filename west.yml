@@ -17,4 +17,5 @@ manifest:
           - hal_adi
           - hal_nxp
           - hal_stm32
+          - net-tools
           - picolibc

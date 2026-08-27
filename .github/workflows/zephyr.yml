@@ -60,7 +60,8 @@ jobs:
           if [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
-          west twister -T samples -v --force-color --inline-logs --integration $EXTRA_TWISTER_FLAGS
+          west twister -T samples -v --force-color --inline-logs --integration \
+            --exclude-tag usb-hostreq $EXTRA_TWISTER_FLAGS
 
   regression-tests:
     name: Regression tests against Zephyr IIOD backend
@@ -125,3 +126,79 @@ jobs:
       - name: Stop IIOD server
         if: always()
         run: kill $(cat /tmp/zephyr_pid) 2>/dev/null || true
+
+  usb-regression-tests:
+    name: Regression tests against Zephyr IIOD backend (USB)
+    runs-on: ubuntu-22.04
+    # Exercises the full virtual UDC<->UHC<->USB/IP<->vhci_hcd chain, which
+    # can wedge a host's kernel USB state on an abandoned connection (see
+    # iiod/usb.c). Kept non-blocking and time-boxed until proven reliable.
+    continue-on-error: true
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: libiio
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
+        with:
+          app-path: libiio
+          toolchains: arm-zephyr-eabi
+          ccache-cache-key: usb-regression-ubuntu-22.04
+
+      - name: Install libiio build dependencies
+        run: sudo apt-get install -y libxml2-dev libusb-1.0-0-dev
+
+      - name: Install USB/IP client tooling
+        run: |
+          # No standalone "usbip" apt package on Ubuntu 22.04 -- the usbip
+          # binary is provided by linux-tools-generic itself, under
+          # /usr/lib/linux-tools/*/usbip (see conftest.py's
+          # _find_usbip_binary()).
+          sudo apt-get install -y linux-tools-generic linux-cloud-tools-generic
+          # Grant non-root access to the emulated device (VID 0456) so
+          # iio.Context() can open its device node.
+          echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="0456", MODE="0666"' \
+            | sudo tee /etc/udev/rules.d/90-libiio-usb.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger
+
+      - name: Load vhci-hcd
+        run: |
+          # vhci-hcd isn't loaded by default on GitHub-hosted ubuntu-22.04
+          # runners, and the module itself isn't even present until
+          # linux-modules-extra-<kernel> (matching the running kernel
+          # exactly) is installed -- it's not part of the base image.
+          sudo apt-get install -y "linux-modules-extra-$(uname -r)"
+          sudo modprobe vhci-hcd
+
+      - name: Start TAP interface (net-setup.sh)
+        working-directory: tools/net-tools
+        run: sudo ./net-setup.sh start
+
+      - name: Build and install libiio C library
+        working-directory: libiio
+        run: |
+          mkdir build && cd build
+          cmake -DWITH_TESTS=OFF -DWITH_USB_BACKEND=ON -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF ..
+          make -j$(nproc)
+          sudo make install
+          sudo ldconfig
+
+      - name: Install Python bindings
+        working-directory: libiio
+        run: pip install bindings/python
+
+      - name: Run USB regression tests against Zephyr IIOD backend
+        working-directory: libiio/zephyr
+        run: |
+          west twister -p native_sim -v --force-color --inline-logs \
+            -T samples --test sample.iiod.usb.pytest
