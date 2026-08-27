@@ -70,6 +70,23 @@ tests:
       pytest_args:
         - --iiod-transport=uart
 
+  sample.iiod.uart.multithread.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_MULTITHREADING=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 120
+    harness_config:
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
+
   sample.iiod.usb:
     extra_args:
       - SNIPPET=iiod-usb
