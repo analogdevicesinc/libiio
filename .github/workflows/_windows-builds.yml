@@ -40,11 +40,11 @@ jobs:
           }
           cd deps
           mkdir libxml
-          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          Invoke-WebRequest https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
           7z x -y libxml.7z
           rm libxml.7z
           cd C:\
-          wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+          Invoke-WebRequest http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
           7z x -y "C:\libiio-win-deps.zip"
 
       - name: Create staging directory
@@ -114,11 +114,11 @@ jobs:
           }
           cd deps
           mkdir libxml
-          wget https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
+          Invoke-WebRequest https://www.zlatkovic.com/pub/libxml/64bit/libxml2-2.9.3-win32-x86_64.7z -OutFile "libxml.7z"
           7z x -y libxml.7z
           rm libxml.7z
           cd C:\
-          wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+          Invoke-WebRequest http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
           7z x -y "C:\libiio-win-deps.zip"
 
       - name: Create staging directory

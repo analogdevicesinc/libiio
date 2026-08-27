@@ -8,7 +8,7 @@ $COMPILER=$Env:COMPILER
 cd $src_dir
 mkdir dependencies
 cd dependencies
-wget http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
+Invoke-WebRequest http://swdownloads.analog.com/cse/build/libiio-win-deps-libusb1.0.24.zip -OutFile "libiio-win-deps.zip"
 7z x -y "libiio-win-deps.zip"
 
 # Version numbers inside this directory change all the time; print what's

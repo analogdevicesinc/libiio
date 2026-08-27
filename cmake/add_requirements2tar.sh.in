@@ -45,9 +45,12 @@ do
 		cd ./tarball_fixup$(dirname ${line})
 		line=$(basename ${line})
 
-		until echo ${line} | grep -q \.so.[0-9]*$
+		until echo ${line} | grep -q '\.so\.[^.]*$'
                 do
 			tmp=$(echo ${line} | sed 's/\.[0-9]*$//')
+			if [ "${tmp}" = "${line}" ] ; then
+				break
+			fi
 			if [ ! -f "${tmp}" ] ; then
 				ln -s ${line} ${tmp}
 			else

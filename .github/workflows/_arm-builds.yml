@@ -72,6 +72,7 @@ jobs:
             --rm -t --privileged \
             -e ARTIFACTNAME=${{ matrix.artifact-name }} \
             -e CMAKE_BUILD_TYPE=${{ inputs.build-type }} \
+            -e CFLAGS="-Wno-error=deprecated-declarations -Wno-error=format" \
             -v "${{ github.workspace }}":"/ci" \
             "${{ matrix.image }}" \
             /bin/bash -c "
