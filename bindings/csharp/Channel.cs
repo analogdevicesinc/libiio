@@ -169,6 +169,7 @@ namespace iio
             IIO_ATTENTION,
             IIO_ALTCURRENT,
             IIO_COVERAGE,
+            IIO_VOLUMEFLOW,
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
