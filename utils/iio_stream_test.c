@@ -46,6 +46,21 @@
 #define DEFAULT_PIPELINE_DEPTH 4  /* Number of in-flight blocks in the RX stream */
 #define MAX_LATENCY_SAMPLES (16 * 1024 * 1024)  /* Safety cap, ~128 MiB of uint64_t */
 
+/* Optional T4 correlation log: when IIO_T4_LOG points to a writable path,
+ * every completed iio_stream_get_next_block() call appends a
+ * CLOCK_MONOTONIC nanosecond timestamp, in the same clock domain as the
+ * kernel's ktime_get()-based T0-T3 trace_printk markers, so the two logs
+ * can be correlated to find where in the pipeline latency is introduced. */
+static FILE *t4_log = NULL;
+
+static uint64_t get_time_ns(void)
+{
+	struct timespec tp;
+
+	clock_gettime(CLOCK_MONOTONIC, &tp);
+	return (uint64_t)tp.tv_sec * 1000000000ull + (uint64_t)tp.tv_nsec;
+}
+
 /* Test modes */
 enum test_mode {
 	MODE_RX_128,
@@ -301,6 +316,16 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 		printf("Loopback mode enabled (digital loopback configured)\n");
 	}
 
+	if (!t4_log) {
+		const char *t4_log_path = getenv("IIO_T4_LOG");
+
+		if (t4_log_path) {
+			t4_log = fopen(t4_log_path, "w");
+			if (!t4_log)
+				fprintf(stderr, "Warning: could not open IIO_T4_LOG '%s'\n", t4_log_path);
+		}
+	}
+
 	/* Find RX channels */
 	rx0_i = iio_device_find_channel(rx_dev, "voltage0", false);
 	rx0_q = iio_device_find_channel(rx_dev, "voltage1", false);
@@ -371,6 +396,8 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 		block_wait_start_us = get_time_us();
 		rx_block = iio_stream_get_next_block(rx_stream);
 		block_wait_end_us = get_time_us();
+		if (t4_log)
+			fprintf(t4_log, "T4 t4=%" PRIu64 "\n", get_time_ns());
 		ret = iio_err(rx_block);
 		if (ret) {
 			if (app_running)
@@ -441,6 +468,11 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 	}
 
 	print_latency_stats(&lat_stats);
+
+	if (t4_log) {
+		fclose(t4_log);
+		t4_log = NULL;
+	}
 
 cleanup:
 	if (rx_stream && !iio_err(rx_stream))
