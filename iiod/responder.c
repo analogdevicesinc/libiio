@@ -1350,10 +1350,12 @@ static void iiod_responder_free_resources(struct parser_pdata *pdata)
 int binary_parse(struct parser_pdata *pdata)
 {
 	struct iiod_responder *responder;
+	int ret;
 
 	responder = iiod_responder_create(&iiod_responder_ops, pdata);
-	if (!responder)
-		return -ENOMEM;
+	ret = iio_err(responder);
+	if (ret)
+		return ret;
 
 	/* TODO: poll main thread pool FD */
 
