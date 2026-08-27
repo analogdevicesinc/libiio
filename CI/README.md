@@ -48,6 +48,7 @@ These run independently on push/PR and are not part of the build matrix:
 | `zephyr.yml` | Zephyr RTOS build with Twister |
 | `codespell.yml` | Spelling checks |
 | `vale.yml` | Documentation prose linting |
+| `scheduled-v0.yml` | Weekly Saturday dispatch of `build.yml` for `libiio-v0` |
 
 ## Build Matrix
 
