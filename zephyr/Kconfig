@@ -22,6 +22,70 @@ config LIBIIO_LOG_MSG_SIZE
 	  logging subsystem. Increase this value if libiio log messages are
 	  being truncated.
 
+config LIBIIO_MULTITHREADING
+	bool "libiio multi-threading support"
+	help
+	  Build libiio with real locking and threading, backed by Zephyr
+	  k_mutex/k_condvar/k_thread instead of the no-op stubs in
+	  lock-dummy.c, and with NO_THREADS=0. The two must change together:
+	  the NO_THREADS paths in task.c run task bodies inline and release a
+	  mutex they do not hold, which is only harmless with no-op mutexes.
+
+	  Enable this when more than one iiod interpreter runs concurrently, as
+	  the network and USB transports already do. The responder then gets
+	  its own reader and writer threads and the locks on the shared buffer
+	  and event stream lists take effect.
+
+if LIBIIO_MULTITHREADING
+
+config LIBIIO_THREAD_POOL_SIZE
+	int "Maximum number of libiio internal threads"
+	default 12 if LIBIIO_IIOD_NETWORK
+	default 6
+	help
+	  Slots in the static libiio thread pool. Each costs
+	  LIBIIO_THREAD_STACK_SIZE bytes whether used or not.
+
+	  Demand is 2 per connection (responder reader and writer), plus 2 per
+	  iiod buffer and 1 per buffer or event stream.
+
+config LIBIIO_THREAD_STACK_SIZE
+	int "Stack size for libiio internal threads"
+	default 4096
+	help
+	  Stack size for each pool slot. The deepest user is the responder
+	  reader thread running the iiod command dispatch.
+
+config LIBIIO_THREAD_PRIORITY
+	int "Priority for libiio internal threads"
+	default 5
+	help
+	  Priority for every thread in the pool.
+
+config LIBIIO_MUTEX_POOL_SIZE
+	int "Maximum number of libiio mutexes"
+	default 48 if LIBIIO_IIOD_NETWORK
+	default 24
+	help
+	  Slots in the static iio_mutex pool. Three are held permanently by
+	  tinyiiod. Each connection needs one for the responder, one for its
+	  default io, one for the writer task, and one per in-flight task token
+	  and command-created io. Each iiod buffer adds one for the buffer
+	  entry, one for the stream, one per enqueue/dequeue task and one per
+	  block token.
+
+config LIBIIO_COND_POOL_SIZE
+	int "Maximum number of libiio condition variables"
+	default 32 if LIBIIO_IIOD_NETWORK
+	default 16
+	help
+	  Slots in the static iio_cond pool. Condition variables pair with
+	  mutexes everywhere except the global tinyiiod locks and the
+	  per-buffer and per-stream locks, so this can be smaller than
+	  LIBIIO_MUTEX_POOL_SIZE.
+
+endif # LIBIIO_MULTITHREADING
+
 rsource "drivers/Kconfig"
 rsource "iiod/Kconfig"
 
