@@ -1967,7 +1967,12 @@ struct iio_buffer *iio_device_create_buffer(
 	}
 
 	if (!dev_compat->is_tx) {
-		for (j = 1; j < nb_blocks; j++) {
+		/*
+		 * Enqueue every block, block 0 included, before the stream is
+		 * started. On an input buffer the kernel is the writer, so
+		 * there is nothing for userspace to hold back.
+		 */
+		for (j = 0; j < nb_blocks; j++) {
 			err = IIO_CALL(iio_block_enqueue)(compat->blocks[j], 0, false);
 			if (err)
 				goto err_free_blocks;
@@ -1977,6 +1982,8 @@ struct iio_buffer *iio_device_create_buffer(
 		if (err)
 			goto err_free_blocks;
 
+		/* Block 0 is already queued, so refill() must not queue it again. */
+		compat->enqueued = true;
 		compat->all_enqueued = true;
 	}
 
