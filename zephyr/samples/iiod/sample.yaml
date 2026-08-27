@@ -9,6 +9,32 @@ common:
     regex:
       - "Booting Zephyr OS"
 tests:
+  sample.iiod.usb.pytest:
+    # Needs privileged one-time host setup (usbip client, TAP interface,
+    # vhci_hcd, udev rule -- see conftest.py's _usb_context()), so no
+    # integration_platforms. Run manually with:
+    #   west twister -p native_sim --test sample.iiod.usb.pytest
+    tags: usb-hostreq
+    extra_args:
+      - SNIPPET=iiod-usb
+      # Overlays/confs set here, not via CMakeLists.txt's Kconfig-gated
+      # append, which gets shadowed once EXTRA_DTC_OVERLAY_FILE is set.
+      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
+      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+    platform_allow:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+
   sample.iiod.network.pytest:
     extra_args:
       - SNIPPET=iiod-network
@@ -21,6 +47,8 @@ tests:
     harness: pytest
     timeout: 120
     harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
       pytest_dut_scope: session
       pytest_args:
         - --iiod-transport=network
@@ -36,6 +64,8 @@ tests:
       - native_sim
     harness: pytest
     harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
       pytest_dut_scope: session
       pytest_args:
         - --iiod-transport=uart
