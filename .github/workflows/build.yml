@@ -110,7 +110,8 @@ jobs:
           export DEBIAN_FRONTEND=noninteractive
           apt-get update
           apt-get install -y build-essential cmake git pkg-config \
-            libxml2-dev libusb-1.0-0-dev libavahi-client-dev bison flex
+            libxml2-dev libusb-1.0-0-dev libavahi-client-dev libaio-dev \
+            bison flex
 
       - uses: actions/checkout@v7
         with:
