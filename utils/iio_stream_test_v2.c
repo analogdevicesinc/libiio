@@ -59,6 +59,7 @@
 #define BUFFER_SIZE_256 256  /* 256 complex samples */
 #define BYTES_PER_COMPLEX_SAMPLE 4  /* I and Q are int16_t each */
 #define DEFAULT_PIPELINE_DEPTH 4  /* Number of blocks in the RX ring */
+#define MAX_BLOCK_SIZE_SAMPLES (16 * 1024 * 1024)  /* Sanity cap for -b */
 #define MAX_LATENCY_SAMPLES (16 * 1024 * 1024)  /* Safety cap, ~128 MiB of uint64_t */
 
 /* Test modes */
@@ -94,12 +95,14 @@ static const struct option options[] = {
 	{ "rate", required_argument, 0, 'r' },
 	{ "loopback", no_argument, 0, 'l' },
 	{ "num-blocks", required_argument, 0, 'n' },
+	{ "block-size", required_argument, 0, 'b' },
 	{ "quiet", no_argument, 0, 'q' },
 	{ 0, 0, 0, 0 },
 };
 
 static const char *options_descriptions[] = {
-	"[-i <ip>] [-m <mode>] [-s <samples>] [-o <file>] [-r <rate>] [-l] [-n <blocks>] [-q]",
+	"[-i <ip>] [-m <mode>] [-s <samples>] [-o <file>] [-r <rate>] [-l] [-n <blocks>] "
+	"[-b <samples>] [-q]",
 	"IP address/hostname of the remote board, or a full IIO URI "
 	"(e.g. 'local:', 'usb:1.5.5') to use a different backend (required).",
 	"Test mode: rx128, rx256, rxtx128 (default: rx128).",
@@ -108,6 +111,7 @@ static const char *options_descriptions[] = {
 	"Sample rate in Hz (default: 8000000).",
 	"Enable digital loopback mode (default: disabled).",
 	"Number of blocks in the RX ring, i.e. pipeline depth (default: 4).",
+	"Block size in complex samples; overrides the size implied by -m.",
 	"Suppress progress output (recommended for timing-sensitive runs, e.g. under 'time').",
 };
 
@@ -1002,7 +1006,9 @@ int main(int argc, char **argv)
 	FILE *out_file = NULL;
 	FILE *tx_ref_file = NULL;
 	size_t block_size;
+	size_t block_size_override = 0;
 	size_t pipeline_depth = DEFAULT_PIPELINE_DEPTH;
+	char tx_filename[256];
 	int c, ret = EXIT_FAILURE;
 
 	/* Parse arguments */
@@ -1012,7 +1018,7 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
-	while ((c = getopt_long(argc, argv, "i:m:s:o:r:ln:q" COMMON_OPTIONS, opts, NULL)) != -1) {
+	while ((c = getopt_long(argc, argv, "i:m:s:o:r:ln:b:q" COMMON_OPTIONS, opts, NULL)) != -1) {
 		switch (c) {
 		case 'i':
 			ip_addr = optarg;
@@ -1056,6 +1062,10 @@ int main(int argc, char **argv)
 		case 'n':
 			pipeline_depth = sanitize_clamp("ring depth", optarg, 1, UINT32_MAX);
 			break;
+		case 'b':
+			block_size_override = sanitize_clamp("block size", optarg,
+			                                     1, MAX_BLOCK_SIZE_SAMPLES);
+			break;
 		case 'q':
 			quiet = true;
 			break;
@@ -1078,27 +1088,39 @@ int main(int argc, char **argv)
 	if (!ip_addr) {
 		fprintf(stderr, "Error: IP address or URI is required\n");
 		fprintf(stderr, "Usage: %s -i <ip_address|uri> [-m <mode>] [-s <samples>] "
-		        "[-o <output_file>] [-r <sample_rate>] [-n <ring_depth>] [-q]\n", MY_NAME);
+		        "[-o <output_file>] [-r <sample_rate>] [-n <ring_depth>] "
+		        "[-b <block_size>] [-q]\n", MY_NAME);
 		return EXIT_FAILURE;
 	}
 
-	/* Determine block size and default output filename */
+	/* Determine block size; -b overrides the size implied by the mode */
 	switch (mode) {
 	case MODE_RX_128:
+	case MODE_RXTX_128:
 		block_size = BUFFER_SIZE_128;
-		snprintf(default_filename, sizeof(default_filename), "capture_rx128_v2.bin");
 		break;
 	case MODE_RX_256:
 		block_size = BUFFER_SIZE_256;
-		snprintf(default_filename, sizeof(default_filename), "capture_rx256_v2.bin");
-		break;
-	case MODE_RXTX_128:
-		block_size = BUFFER_SIZE_128;
-		snprintf(default_filename, sizeof(default_filename), "capture_rxtx128_v2_rx.bin");
 		break;
 	default:
 		fprintf(stderr, "Unknown mode\n");
 		return EXIT_FAILURE;
+	}
+
+	if (block_size_override)
+		block_size = block_size_override;
+
+	/* Default output filenames carry the mode and the actual block size, so
+	 * that runs with different -b values do not overwrite each other. */
+	if (mode == MODE_RXTX_128) {
+		snprintf(default_filename, sizeof(default_filename),
+		         "capture_rxtx%zu_v2_rx.bin", block_size);
+		snprintf(tx_filename, sizeof(tx_filename),
+		         "capture_rxtx%zu_v2_tx.bin", block_size);
+	} else {
+		snprintf(default_filename, sizeof(default_filename),
+		         "capture_rx%zu_v2.bin", block_size);
+		tx_filename[0] = '\0';
 	}
 
 	if (!output_file)
@@ -1121,8 +1143,6 @@ int main(int argc, char **argv)
 
 	/* For RXTX mode, also open a file for TX reference pattern */
 	if (mode == MODE_RXTX_128) {
-		char tx_filename[256];
-		iio_snprintf(tx_filename, sizeof(tx_filename), "capture_rxtx128_v2_tx.bin");
 		tx_ref_file = iio_fopen(tx_filename, "wb");
 		if (tx_ref_file)
 			printf("TX reference file: %s\n", tx_filename);
@@ -1207,7 +1227,7 @@ int main(int argc, char **argv)
 		printf("\nCapture completed successfully\n");
 		printf("Data saved to: %s\n", output_file);
 		if (tx_ref_file)
-			printf("TX reference saved to: capture_rxtx128_v2_tx.bin\n");
+			printf("TX reference saved to: %s\n", tx_filename);
 		printf("\nYou can analyze the captured data using external tools.\n");
 	}
 
