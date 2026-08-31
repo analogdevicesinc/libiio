@@ -128,6 +128,8 @@ struct iio_usb_data {
 	uint16_t tx_buf_size;
 	uint16_t rx_fifo_size;
 	uint8_t *rx_fifo_data;
+	struct net_buf_pool *rx_pool;
+	struct net_buf_pool *tx_pool;
 	struct iio_usb_pipe pipes[IIO_USB_MAX_PIPES];
 	bool enabled;
 
@@ -171,7 +173,32 @@ static inline uint8_t pipe_get_bulk_out(struct iio_usb_pipe *pipe)
 	return pipe->ep_out;
 }
 
-/* Queue a receive buffer on a specific pipe's OUT endpoint */
+/*
+ * Take a buffer from one of the class's own pools rather than from the shared
+ * udc_ep_pool.
+ */
+static struct net_buf *iio_usb_buf_alloc(struct net_buf_pool *pool, const uint8_t ep)
+{
+	struct net_buf *buf;
+	struct udc_buf_info *bi;
+
+	buf = net_buf_alloc(pool, K_NO_WAIT);
+	if (buf == NULL) {
+		return NULL;
+	}
+
+	bi = udc_get_buf_info(buf);
+	memset(bi, 0, sizeof(*bi));
+	bi->ep = ep;
+
+	return buf;
+}
+
+/*
+ * Queue a receive buffer on a specific pipe's OUT endpoint. Exactly one is
+ * outstanding per pipe at a time: the completion handler unrefs the buffer it was
+ * handed before asking for the next.
+ */
 static int iio_usb_queue_rx_pipe(struct usbd_class_data *const c_data, struct iio_usb_pipe *pipe)
 {
 	struct iio_usb_data *data = usbd_class_get_private(c_data);
@@ -182,7 +209,7 @@ static int iio_usb_queue_rx_pipe(struct usbd_class_data *const c_data, struct ii
 		return -ENODEV;
 	}
 
-	buf = usbd_ep_buf_alloc(c_data, pipe_get_bulk_out(pipe), data->rx_buf_size);
+	buf = iio_usb_buf_alloc(data->rx_pool, pipe_get_bulk_out(pipe));
 	if (buf == NULL) {
 		LOG_ERR("Pipe 0x%02x: Failed to allocate RX buffer", pipe->ep_out);
 		return -ENOMEM;
@@ -378,7 +405,8 @@ static ssize_t iiod_usb_pipe_write(struct iiod_pdata *pdata, const void *buf, si
 	while (bytes_sent < size) {
 		size_t chunk_size = MIN(size - bytes_sent, data->tx_buf_size);
 
-		net_buf = usbd_ep_buf_alloc(c_data, pipe_get_bulk_in(pipe), chunk_size);
+		net_buf = iio_usb_buf_alloc(data->tx_pool, pipe_get_bulk_in(pipe));
+
 		if (net_buf == NULL) {
 			LOG_ERR("Pipe 0x%02x: Failed to allocate TX buffer for %zu bytes",
 				pipe->ep_in, chunk_size);
@@ -717,6 +745,16 @@ static const struct usb_desc_header *iio_hs_desc_##inst[] = {                   
 static uint8_t iio_usb_rx_fifo_data_##inst                                                         \
 	[DT_INST_PROP(inst, num_pipes)][DT_INST_PROP(inst, rx_fifo_size)];                         \
                                                                                                    \
+BUILD_ASSERT(DT_INST_PROP(inst, rx_buf_size) % USBD_MAX_BULK_MPS == 0,                             \
+	"node " DT_NODE_PATH(DT_DRV_INST(inst))                                                    \
+	" rx-buf-size is not a multiple of the bulk endpoint max packet size");                    \
+                                                                                                   \
+UDC_BUF_POOL_DEFINE(iio_usb_rx_pool_##inst, DT_INST_PROP(inst, num_pipes),                         \
+		    DT_INST_PROP(inst, rx_buf_size), sizeof(struct udc_buf_info), NULL);           \
+                                                                                                   \
+UDC_BUF_POOL_DEFINE(iio_usb_tx_pool_##inst, DT_INST_PROP(inst, num_pipes),                         \
+		    DT_INST_PROP(inst, tx_buf_size), sizeof(struct udc_buf_info), NULL);           \
+                                                                                                   \
 COND_CODE_1(UTIL_BOOL(DT_INST_PROP(inst, num_pipes) - 1), (                                        \
 	static K_THREAD_STACK_ARRAY_DEFINE(iio_usb_pipe_stacks_##inst,                             \
 					   DT_INST_PROP(inst, num_pipes) - 1,                      \
@@ -735,6 +773,8 @@ static struct iio_usb_data iio_usb_data_##inst = {                              
 	.tx_buf_size = DT_INST_PROP(inst, tx_buf_size),                                            \
 	.rx_fifo_size = DT_INST_PROP(inst, rx_fifo_size),                                          \
 	.rx_fifo_data = (uint8_t *)iio_usb_rx_fifo_data_##inst,                                    \
+	.rx_pool = &iio_usb_rx_pool_##inst,                                                        \
+	.tx_pool = &iio_usb_tx_pool_##inst,                                                        \
 	.c_data = NULL,                                                                            \
 	.enabled = false,                                                                          \
 	COND_CODE_1(UTIL_BOOL(DT_INST_PROP(inst, num_pipes) - 1), (                                \
