@@ -60,6 +60,7 @@ static const struct sensor_channel_map channel_map[] = {
 
 	{SENSOR_CHAN_PRESS,         "pressure",         NULL,      16, false},
 	{SENSOR_CHAN_HUMIDITY,      "humidityrelative", NULL,      16, false},
+	{SENSOR_CHAN_LIGHT,         "illuminance",      NULL,      16, false},
 	{SENSOR_CHAN_AMBIENT_LIGHT, "illuminance",      NULL,      16, false},
 };
 
