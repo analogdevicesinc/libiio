@@ -1831,7 +1831,7 @@ struct iio_event_stream_pdata *iiod_client_open_event_stream(
 	/* Use infinite timeout for blocking events reads, as those only make
 	 * sense when running in a thread, and we don't want them to return
 	 * without any event. */
-	iiod_io_set_timeout(pdata->io, 0);
+	iiod_io_set_timeout(pdata->io, -1);
 
 	/* Send a request to read an event. This bootstraps the event reading
 	 * mechanism. */
