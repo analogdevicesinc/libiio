@@ -1196,6 +1196,14 @@ int main(int argc, char **argv)
 	       block_size, block_size * BYTES_PER_COMPLEX_SAMPLE);
 	printf("  Sample rate: %" PRIu64 " Hz (%.1f Msps)\n",
 	       sample_rate, (double)sample_rate / 1000000.0);
+	/* Time the hardware needs to fill one block. This is the per-block
+	 * deadline: one block is one DMA transfer, one interrupt and one
+	 * dequeue, so the ring depth does not enter the calculation. If the
+	 * measured dequeue + enqueue cycle exceeds this, the ring runs out of
+	 * empty blocks and the DMA stalls. */
+	printf("  Block fill time: %zu samples / %.1f Msps = %.2f us\n",
+	       block_size, (double)sample_rate / 1000000.0,
+	       (double)block_size * 1000000.0 / (double)sample_rate);
 	printf("  Total samples: %" PRIu64 " (%.3f seconds)\n",
 	       total_samples, (double)total_samples / sample_rate);
 	printf("  URI: %s (%s)\n", uri, uri_is_local ? "local backend" : "remote backend");
