@@ -179,5 +179,6 @@ Project Pages
    bindings
    tools/index
    iiod
+   tls_userguide
    training
    related
