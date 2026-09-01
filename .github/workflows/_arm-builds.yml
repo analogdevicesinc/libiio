@@ -8,9 +8,9 @@ on:
         type: string
 
 jobs:
-  arm:
+  arm-native:
     name: ${{ matrix.artifact-name }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04-arm
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -18,41 +18,101 @@ jobs:
         include:
           # Ubuntu 22.04
           - image: ubuntu:22.04
-            arch: arm
-            artifact-name: Ubuntu-22.04-arm32v7
-          - image: ubuntu:22.04
-            arch: aarch64
+            platform-flag: ''
             artifact-name: Ubuntu-22.04-arm64v8
+          - image: arm32v7/ubuntu:22.04
+            platform-flag: '--platform linux/arm/v7'
+            artifact-name: Ubuntu-22.04-arm32v7
+
+          # Ubuntu 26.04
+          - image: ubuntu:26.04
+            platform-flag: ''
+            artifact-name: Ubuntu-26.04-arm64v8
+          - image: arm32v7/ubuntu:26.04
+            platform-flag: '--platform linux/arm/v7'
+            artifact-name: Ubuntu-26.04-arm32v7
+
+          # Debian 12 (bookworm)
+          - image: debian:bookworm
+            platform-flag: ''
+            artifact-name: Debian-12-arm64
+          - image: arm32v7/debian:bookworm
+            platform-flag: '--platform linux/arm/v7'
+            artifact-name: Debian-12-armhf
+
+          # Debian 13 (trixie)
+          - image: debian:trixie
+            platform-flag: ''
+            artifact-name: Debian-13-arm64
+          - image: arm32v7/debian:trixie
+            platform-flag: '--platform linux/arm/v7'
+            artifact-name: Debian-13-armhf
+    env:
+      ARTIFACTNAME: ${{ matrix.artifact-name }}
+      CMAKE_BUILD_TYPE: ${{ inputs.build-type }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Build
+        run: |
+          set -e
+          docker run \
+            ${{ matrix.platform-flag }} \
+            --rm -t --privileged \
+            -e ARTIFACTNAME=${{ matrix.artifact-name }} \
+            -e CMAKE_BUILD_TYPE=${{ inputs.build-type }} \
+            -v "${{ github.workspace }}":"/ci" \
+            "${{ matrix.image }}" \
+            /bin/bash -c "
+              set -e
+              export DEBIAN_FRONTEND=noninteractive
+              apt-get update
+              apt-get install -y build-essential git cmake libxml2-dev bison flex \
+                libcdk5-dev libaio-dev libusb-1.0-0-dev libzstd-dev \
+                libserialport-dev libavahi-client-dev \
+                python3 python3-pip python3-setuptools
+
+              git clone --depth 1 https://github.com/pcercuei/libini.git
+              cd libini && mkdir build && cd build && cmake .. && make && make install && ldconfig
+              cd /ci
+
+              mkdir build && cd build
+              cmake .. -DCMAKE_BUILD_TYPE=\${CMAKE_BUILD_TYPE:-RelWithDebInfo} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DWITH_EXAMPLES=ON -DPYTHON_BINDINGS=ON -DCPP_BINDINGS=ON -DENABLE_PACKAGING=ON -DCPACK_SYSTEM_NAME=\${ARTIFACTNAME}
+              make
+              make package
+              make required2tar
+            "
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            build/*.deb
+            build/*.tar.gz
+
+  cross-arch:
+    name: ${{ matrix.artifact-name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - image: ubuntu:22.04
             arch: ppc64le
             artifact-name: Ubuntu-22.04-ppc64le
           - image: ubuntu:22.04
             arch: s390x
             artifact-name: Ubuntu-22.04-s390x
-
-            # Ubuntu 26.04
-          - image: ubuntu:26.04
-            arch: arm
-            artifact-name: Ubuntu-26.04-arm32v7
-          - image: ubuntu:26.04
-            arch: aarch64
-            artifact-name: Ubuntu-26.04-arm64v8
           - image: ubuntu:26.04
             arch: ppc64le
             artifact-name: Ubuntu-26.04-ppc64le
           - image: ubuntu:26.04
             arch: s390x
             artifact-name: Ubuntu-26.04-s390x
-
-            # Debian 12 (bookworm)
-          - image: debian:bookworm
-            arch: arm
-            artifact-name: Debian-12-arm
-
-            # Debian 13 (trixie)
-          - image: debian:trixie
-            arch: arm
-            artifact-name: Debian-13-arm
     env:
       ARTIFACTNAME: ${{ matrix.artifact-name }}
       CMAKE_BUILD_TYPE: ${{ inputs.build-type }}

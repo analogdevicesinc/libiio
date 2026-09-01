@@ -66,11 +66,17 @@ Ubuntu-26.04-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-ppc64le
 Ubuntu-26.04-s390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-s390x.deb
 Ubuntu-26.04-s390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-s390x.tar.gz
 
-Debian-12-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-arm.deb
-Debian-12-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-arm.tar.gz
+Debian-12-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-arm64.deb
+Debian-12-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-arm64.tar.gz
 
-Debian-13-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-arm.deb
-Debian-13-arm/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-arm.tar.gz
+Debian-12-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-armhf.deb
+Debian-12-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-armhf.tar.gz
+
+Debian-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-arm64.deb
+Debian-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-arm64.tar.gz
+
+Debian-13-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-armhf.deb
+Debian-13-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-armhf.tar.gz
 
 Windows-VS-2022-x64/Windows-msvc-deps.zip
 Windows-VS-2022-x64/iio/iio.h
