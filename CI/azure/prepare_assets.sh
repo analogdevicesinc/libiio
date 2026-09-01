@@ -49,7 +49,7 @@ release_artifacts() {
 	cd ..
 	rm -r Windows
 
-        local deb_arm_assets='Ubuntu-22.04-arm32v7 Ubuntu-22.04-arm64v8 Ubuntu-22.04-ppc64le Ubuntu-22.04-s390x Ubuntu-26.04-arm32v7 Ubuntu-26.04-arm64v8 Ubuntu-26.04-ppc64le Ubuntu-26.04-s390x Debian-12-arm Debian-13-arm'
+        local deb_arm_assets='Ubuntu-22.04-arm32v7 Ubuntu-22.04-arm64v8 Ubuntu-22.04-ppc64le Ubuntu-22.04-s390x Ubuntu-26.04-arm32v7 Ubuntu-26.04-arm64v8 Ubuntu-26.04-ppc64le Ubuntu-26.04-s390x Debian-12-arm64 Debian-12-armhf Debian-13-arm64 Debian-13-armhf'
         cd "${BUILD_ARTIFACTSTAGINGDIRECTORY}"
         for i in $deb_arm_assets; do
                 cd "${i}"
