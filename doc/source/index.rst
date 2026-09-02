@@ -69,7 +69,7 @@ Use libiio with your favourite open source or commercial signal processing frame
    * - Framework/Application
      - OS
      - Description
-   * - :external+documentation:ref:`libiio cli`
+   * - :external+system-level:ref:`libiio cli`
      - Windows, Linux, macOS
      - `iio_info <https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_info>`_, `iio_attr <https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_attr>`_, `iio_readdev <https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_readdev>`_, `iio_writedev <https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_writedev>`_, `iio_reg <https://wiki.analog.com/resources/tools-software/linux-software/libiio/iio_reg>`_ for interacting with IIO devices from your favorite shell. These are included in the default builds, but many distributions package them into a separate libiio-utils package. When you want to try a simple example, check these out.
    * - .. image:: _static/PyADI-IIO_Logo_72.png

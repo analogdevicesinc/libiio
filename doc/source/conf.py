@@ -84,7 +84,7 @@ matlab_short_links = True
 
 interref_repos = [
     'doctools',
-    'documentation',
+    'system-level',
     'hdl',
     'pyadi-iio',
     'scopy',
