@@ -36,7 +36,7 @@ jobs:
           mkdir build-utils
           cd build-utils
           cmake ..
-          make -j$(nproc) iio_info iio_attr
+          make -j$(nproc) iio_info iio_attr iio_event
 
       - name: Verify build artifacts
         run: |
@@ -46,6 +46,7 @@ jobs:
           echo "Checking utilities..."
           ls -lh build-utils/utils/iio_info
           ls -lh build-utils/utils/iio_attr
+          ls -lh build-utils/utils/iio_event
 
           echo "Checking test scripts..."
           ls -lh examples/tinyiiod-linux/tests/run_tests.sh
@@ -61,6 +62,7 @@ jobs:
           # Verify utilities are accessible
           which iio_info
           which iio_attr
+          which iio_event
 
           # Run test suite
           cd examples/tinyiiod-linux/tests
