@@ -60,6 +60,12 @@ struct adc_device {
 	time_t start_time;
 };
 
+/* Event stream state - tracks fake event generation */
+struct adc_event_stream {
+	const struct iio_device *dev;
+	unsigned int nonblock_count;
+};
+
 /* Buffer state - tracks active streaming configuration */
 struct adc_buffer {
 	const struct iio_device *dev;
@@ -425,6 +431,63 @@ static struct iio_context *adc_create_context(
 
 	return ctx;
 }
+/* Open an event stream for the device */
+static struct iio_event_stream_pdata *adc_open_ev(const struct iio_device *dev)
+{
+	struct adc_event_stream *ev;
+	struct iio_event_stream_pdata *ret;
+
+	ev = calloc(1, sizeof(*ev));
+	if (!ev) {
+		ret = iio_ptr(-ENOMEM);
+		return ret;
+	}
+
+	ev->dev = dev;
+
+	ret = (struct iio_event_stream_pdata *)ev;
+
+	return ret;
+}
+
+/* Close event stream and free resources */
+static void adc_close_ev(struct iio_event_stream_pdata *pdata)
+{
+	struct adc_event_stream *ev = (struct adc_event_stream *)pdata;
+
+	free(ev);
+}
+
+/* Fake a rising threshold event on channel voltage0 */
+static void adc_fill_fake_event(struct iio_event *out_event)
+{
+	out_event->id = ((uint64_t)IIO_EV_TYPE_THRESH << 56) | ((uint64_t)IIO_EV_DIR_RISING << 48) |
+			((uint64_t)IIO_NO_MOD << 40) | ((uint64_t)IIO_VOLTAGE << 32);
+	out_event->timestamp = (int64_t)time(NULL) * 1000000000LL;
+}
+
+/* Read an event - simulate one every 3 nonblocking calls, or every second when blocking */
+static int adc_read_ev(
+		struct iio_event_stream_pdata *pdata, struct iio_event *out_event, bool nonblock)
+{
+	struct adc_event_stream *ev = (struct adc_event_stream *)pdata;
+
+	if (nonblock) {
+		ev->nonblock_count++;
+		if (ev->nonblock_count < 3) {
+			return -EAGAIN;
+		}
+
+		ev->nonblock_count = 0;
+	} else {
+		sleep(1);
+	}
+
+	adc_fill_fake_event(out_event);
+
+	return 0;
+}
+
 /* Backend operations */
 static const struct iio_backend_ops adc_ops = {
 	.create = adc_create_context,
@@ -435,6 +498,9 @@ static const struct iio_backend_ops adc_ops = {
 	.enable_buffer = adc_enable_buffer,
 	.cancel_buffer = adc_cancel_buffer,
 	.readbuf = adc_readbuf,
+	.open_ev = adc_open_ev,
+	.close_ev = adc_close_ev,
+	.read_ev = adc_read_ev,
 };
 
 /* Backend definition */
