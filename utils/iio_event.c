@@ -132,6 +132,9 @@ int main(int argc, char **argv)
 		goto out_ctx_destroy;
 	}
 
+	if (!ctx)
+		goto out_ctx_destroy;
+
 	name = cmn_strndup(argw[optind], NAME_MAX);
 	dev = iio_context_find_device(ctx, name);
 	free(name);
