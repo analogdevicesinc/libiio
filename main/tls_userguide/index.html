@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="By default, the libiio network backend and iiod communicate using a binary protocol (the older text-based protocol, used up to version 0.26, is still supported for backwards compatibility, but is no longer the default). Regardless of which protocol is used, none of this traffic is encrypted: anyone with access to the network path between a client and an iiod server can read or tamper with it. This page shows how to add Transport Layer Security (TLS) encryption to an existing libiio/iiod deployment using stunnel, a standalone TLS proxy." name="description" />
+
+    <title>Encrypting Connections to iiod with stunnel &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=748bb8f3" />
+    <script src="../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Training Material" href="../training/" />
+    <link rel="prev" title="IIOD: libiio Server Daemon" href="../iiod/" />
+   
+  
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="main">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Encrypting Connections to iiod with stunnel</a><ul>
+<li><a class="reference internal" href="#prerequisites">Prerequisites</a></li>
+<li><a class="reference internal" href="#step-1-generate-a-tls-certificate-on-the-server">Step 1: Generate a TLS certificate on the server</a></li>
+<li><a class="reference internal" href="#step-2-configure-and-start-stunnel-on-the-server">Step 2: Configure and start stunnel on the server</a><ul>
+<li><a class="reference internal" href="#restrict-direct-unencrypted-access-to-iiod">Restrict direct (unencrypted) access to iiod</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#step-3-configure-and-start-stunnel-on-the-client">Step 3: Configure and start stunnel on the client</a></li>
+<li><a class="reference internal" href="#step-4-connect-with-libiio">Step 4: Connect with libiio</a></li>
+<li><a class="reference internal" href="#connecting-to-multiple-servers">Connecting to multiple servers</a></li>
+<li><a class="reference internal" href="#verifying-the-tunnel">Verifying the tunnel</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../install/">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install/source/">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../migration/">Libiio 0.x to 1.x API update guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../theory/">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../api/">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/top/">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/scan/">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/attributes/">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/context/">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/device/">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/channel/">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/buffer/">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/event/">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/hwmon/">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/debug/">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../bindings/">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../api/python/">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/context/">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/buffer/">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/channel/">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/trigger/">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../api/python/examples/">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_readdev/">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_writedev/">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_attr/">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_info/">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../api/csharp/">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/context/">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/channel/">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/buffer/">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/block/">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/trigger/">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/scan/">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/eventstream/">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/event/">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/stream/">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iioobject/">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/attr/">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/channelsmask/">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/bufferstream/">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/version/">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iiocontextparams/">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iiologlevel/">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/examples/">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../api/cpp/">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/context/">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/channel/">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/buffer/">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/block/">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/stream/">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/bufferstream/">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/channelsmask/">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/scan/">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/eventstream/">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/event/">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/attr/">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/ptr/">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/cstr/">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/error/">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/examples/">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../tools/">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_attr/">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_info/">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_genxml/">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_rwdev/">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_reg/">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_stresstest/">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../iiod/">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Encrypting Connections to iiod with stunnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training/">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related/">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="encrypting-connections-to-iiod-with-stunnel">
+<h1>Encrypting Connections to iiod with stunnel<a class="headerlink" href="#encrypting-connections-to-iiod-with-stunnel" title="Link to this heading"></a></h1>
+<p>By default, the libiio network backend and <code class="docutils literal notranslate"><span class="pre">iiod</span></code> communicate using a binary protocol (the older text-based protocol, used up to version 0.26, is still supported for backwards compatibility, but is no longer the default). Regardless of which protocol is used, none of this traffic is encrypted: anyone with access to the network path between a client and an <code class="docutils literal notranslate"><span class="pre">iiod</span></code> server can read or tamper with it. This page shows how to add Transport Layer Security (TLS) encryption to an existing libiio/iiod deployment using <a class="icon link reference external" href="https://www.stunnel.org/" target="_blank">stunnel</a>, a standalone TLS proxy.</p>
+<p>Because stunnel sits outside libiio and <code class="docutils literal notranslate"><span class="pre">iiod</span></code>, <strong>no code changes or recompilation are required</strong>. It works by wrapping the plain <code class="docutils literal notranslate"><span class="pre">iiod</span></code> connection in a TLS tunnel:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>┌─────────────────────────────┐         ┌─────────────────────────────┐
+│       CLIENT MACHINE        │         │       SERVER MACHINE        │
+│                             │         │                             │
+│ ┌────────┐    ┌───────────┐ │   TLS   │ ┌───────────┐    ┌────────┐ │
+│ │ libiio │───►│  stunnel  │ │════════►│ │  stunnel  │───►│  iiod  │ │
+│ │ client │    │  client   │ │  :30432 │ │  server   │    │        │ │
+│ └────────┘    └───────────┘ │         │ └───────────┘    └────────┘ │
+│         127.0.0.1:30431     │         │ 127.0.0.1:30431             │
+└─────────────────────────────┘         └─────────────────────────────┘
+</pre></div>
+</div>
+<p>The libiio client keeps connecting to <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code>, exactly as it would to a local <code class="docutils literal notranslate"><span class="pre">iiod</span></code>. The client-side stunnel process encrypts that traffic and forwards it over TLS (port 30432) to the server-side stunnel process, which decrypts it and forwards it to the real <code class="docutils literal notranslate"><span class="pre">iiod</span></code> (port 30431), listening only on <code class="docutils literal notranslate"><span class="pre">localhost</span></code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This setup encrypts the connection and lets the client verify the server’s identity (server-authenticated TLS). Keep in mind a few practical limitations of this approach:</p>
+<ul class="simple">
+<li><p>The client always connects to <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code>; the <em>actual</em> remote server is determined by the client’s stunnel configuration, not by the libiio URI.</p></li>
+<li><p>Each remote <code class="docutils literal notranslate"><span class="pre">iiod</span></code> server needs its own local stunnel listening port on the client.</p></li>
+<li><p>stunnel requires a full OS userspace, so this approach does not apply to deeply embedded or RTOS targets (e.g. Zephyr).</p></li>
+</ul>
+</div>
+<section id="prerequisites">
+<h2>Prerequisites<a class="headerlink" href="#prerequisites" title="Link to this heading"></a></h2>
+<ul class="simple">
+<li><p>An <code class="docutils literal notranslate"><span class="pre">iiod</span></code> server already running and reachable on the server machine (default port 30431).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">openssl</span></code>, to generate a certificate.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stunnel</span></code> installed on <strong>both</strong> the server and the client machine.</p></li>
+</ul>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--0-input--1" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--1">Linux</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Debian/Ubuntu</span>
+sudo<span class="w"> </span>apt-get<span class="w"> </span>install<span class="w"> </span>stunnel4<span class="w"> </span>openssl
+
+<span class="c1"># RHEL/CentOS/Fedora</span>
+sudo<span class="w"> </span>yum<span class="w"> </span>install<span class="w"> </span>stunnel<span class="w"> </span>openssl
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--2" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--2">macOS</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>brew<span class="w"> </span>install<span class="w"> </span>stunnel<span class="w"> </span>openssl
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--0-input--3" name="tab-set--0" type="radio" /><label class="tab-label" for="tab-set--0-input--3">Windows</label><div class="tab-content docutils">
+<p>Download and run the installer from the <a class="icon link reference external" href="https://www.stunnel.org/downloads.html" target="_blank">stunnel downloads page</a>. Accept the default installation directory (typically <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\stunnel</span></code>); it comes bundled with <code class="docutils literal notranslate"><span class="pre">openssl.exe</span></code>.</p>
+</div>
+</div>
+</section>
+<section id="step-1-generate-a-tls-certificate-on-the-server">
+<span id="id1"></span><h2>Step 1: Generate a TLS certificate on the server<a class="headerlink" href="#step-1-generate-a-tls-certificate-on-the-server" title="Link to this heading"></a></h2>
+<p>For testing, a self-signed certificate is enough. For a production deployment, use a certificate signed by a trusted (internal or public) Certificate Authority instead.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>openssl<span class="w"> </span>req<span class="w"> </span>-new<span class="w"> </span>-x509<span class="w"> </span>-days<span class="w"> </span><span class="m">365</span><span class="w"> </span>-nodes<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-out<span class="w"> </span>server.crt<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-keyout<span class="w"> </span>server.key<span class="w"> </span><span class="se">\</span>
+<span class="w">    </span>-subj<span class="w"> </span><span class="s2">"/CN=iiod-server"</span>
+</pre></div>
+</div>
+<p>This creates <code class="docutils literal notranslate"><span class="pre">server.crt</span></code> (the certificate, safe to share with clients) and <code class="docutils literal notranslate"><span class="pre">server.key</span></code> (the private key, must stay on the server only).</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--1-input--1" name="tab-set--1" type="radio" /><label class="tab-label" for="tab-set--1-input--1">Linux</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/etc/stunnel/certs
+sudo<span class="w"> </span>mv<span class="w"> </span>server.crt<span class="w"> </span>server.key<span class="w"> </span>/etc/stunnel/certs/
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>/etc/stunnel/certs/server.key
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>/etc/stunnel/certs/server.crt
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--1-input--2" name="tab-set--1" type="radio" /><label class="tab-label" for="tab-set--1-input--2">macOS</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>mkdir<span class="w"> </span>-p<span class="w"> </span>/usr/local/etc/stunnel/certs
+sudo<span class="w"> </span>mv<span class="w"> </span>server.crt<span class="w"> </span>server.key<span class="w"> </span>/usr/local/etc/stunnel/certs/
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">600</span><span class="w"> </span>/usr/local/etc/stunnel/certs/server.key
+sudo<span class="w"> </span>chmod<span class="w"> </span><span class="m">644</span><span class="w"> </span>/usr/local/etc/stunnel/certs/server.crt
+</pre></div>
+</div>
+<p>On Apple Silicon Macs with Homebrew, replace <code class="docutils literal notranslate"><span class="pre">/usr/local</span></code> with <code class="docutils literal notranslate"><span class="pre">/opt/homebrew</span></code>.</p>
+</div>
+<input class="tab-input" id="tab-set--1-input--3" name="tab-set--1" type="radio" /><label class="tab-label" for="tab-set--1-input--3">Windows</label><div class="tab-content docutils">
+<p>Copy <code class="docutils literal notranslate"><span class="pre">server.crt</span></code> and <code class="docutils literal notranslate"><span class="pre">server.key</span></code> into a <code class="docutils literal notranslate"><span class="pre">certs</span></code> folder inside the stunnel installation directory, e.g. <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\stunnel\config\certs\</span></code>.</p>
+</div>
+</div>
+<p>You will need to copy <code class="docutils literal notranslate"><span class="pre">server.crt</span></code> (only the certificate, <strong>not</strong> the key) to the client machine later, so the client can verify the server’s identity.</p>
+</section>
+<section id="step-2-configure-and-start-stunnel-on-the-server">
+<h2>Step 2: Configure and start stunnel on the server<a class="headerlink" href="#step-2-configure-and-start-stunnel-on-the-server" title="Link to this heading"></a></h2>
+<p>Create a stunnel configuration file that accepts TLS connections and forwards the decrypted traffic to the local <code class="docutils literal notranslate"><span class="pre">iiod</span></code>.</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--2-input--1" name="tab-set--2" type="radio" /><label class="tab-label" for="tab-set--2-input--1">Linux</label><div class="tab-content docutils">
+<p><code class="docutils literal notranslate"><span class="pre">/etc/stunnel/iiod.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/run/stunnel-iiod.pid</span>
+<span class="na">setuid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nobody</span>
+<span class="na">setgid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">nogroup</span>
+<span class="na">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/log/stunnel-iiod.log</span>
+
+<span class="k">[iiod]</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0.0.0:30432</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">cert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/stunnel/certs/server.crt</span>
+<span class="na">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/stunnel/certs/server.key</span>
+<span class="na">sslVersion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TLSv1.2</span>
+<span class="na">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">NO_SSLv2</span>
+<span class="na">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">NO_SSLv3</span>
+</pre></div>
+</div>
+<p>Start stunnel with:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>stunnel<span class="w"> </span>/etc/stunnel/iiod.conf
+</pre></div>
+</div>
+<p>To run it automatically as a systemd service, create <code class="docutils literal notranslate"><span class="pre">/etc/systemd/system/stunnel-iiod.service</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[Unit]</span>
+<span class="na">Description</span><span class="o">=</span><span class="s">TLS tunnel for iiod</span>
+<span class="na">After</span><span class="o">=</span><span class="s">network.target iiod.service</span>
+<span class="na">Requires</span><span class="o">=</span><span class="s">iiod.service</span>
+
+<span class="k">[Service]</span>
+<span class="na">Type</span><span class="o">=</span><span class="s">forking</span>
+<span class="na">ExecStart</span><span class="o">=</span><span class="s">/usr/bin/stunnel /etc/stunnel/iiod.conf</span>
+<span class="na">ExecStop</span><span class="o">=</span><span class="s">/bin/kill -TERM $MAINPID</span>
+<span class="na">PIDFile</span><span class="o">=</span><span class="s">/var/run/stunnel-iiod.pid</span>
+<span class="na">Restart</span><span class="o">=</span><span class="s">on-failure</span>
+
+<span class="k">[Install]</span>
+<span class="na">WantedBy</span><span class="o">=</span><span class="s">multi-user.target</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>systemctl<span class="w"> </span><span class="nb">enable</span><span class="w"> </span>--now<span class="w"> </span>stunnel-iiod.service
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--2-input--2" name="tab-set--2" type="radio" /><label class="tab-label" for="tab-set--2-input--2">macOS</label><div class="tab-content docutils">
+<p><code class="docutils literal notranslate"><span class="pre">/usr/local/etc/stunnel/iiod.conf</span></code> (use <code class="docutils literal notranslate"><span class="pre">/opt/homebrew/etc/stunnel/iiod.conf</span></code> on Apple Silicon):</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">foreground</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/usr/local/var/log/stunnel-iiod.log</span>
+
+<span class="k">[iiod]</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0.0.0:30432</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">cert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/usr/local/etc/stunnel/certs/server.crt</span>
+<span class="na">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/usr/local/etc/stunnel/certs/server.key</span>
+<span class="na">sslVersion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TLSv1.2</span>
+</pre></div>
+</div>
+<p>Start it in the foreground to test:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>stunnel<span class="w"> </span>/usr/local/etc/stunnel/iiod.conf
+</pre></div>
+</div>
+<p>To run it automatically at boot, create a launchd job, e.g. <code class="docutils literal notranslate"><span class="pre">/Library/LaunchDaemons/com.stunnel.iiod.plist</span></code>:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="cp">&lt;!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"</span>
+<span class="cp"> "http://www.apple.com/DTDs/PropertyList-1.0.dtd"&gt;</span>
+<span class="nt">&lt;plist</span><span class="w"> </span><span class="na">version=</span><span class="s">"1.0"</span><span class="nt">&gt;</span>
+<span class="nt">&lt;dict&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>Label<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;string&gt;</span>com.stunnel.iiod<span class="nt">&lt;/string&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>ProgramArguments<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;array&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>/usr/local/bin/stunnel<span class="nt">&lt;/string&gt;</span>
+<span class="w">        </span><span class="nt">&lt;string&gt;</span>/usr/local/etc/stunnel/iiod.conf<span class="nt">&lt;/string&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/array&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>RunAtLoad<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;true/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;key&gt;</span>KeepAlive<span class="nt">&lt;/key&gt;</span>
+<span class="w">    </span><span class="nt">&lt;true/&gt;</span>
+<span class="nt">&lt;/dict&gt;</span>
+<span class="nt">&lt;/plist&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>launchctl<span class="w"> </span>load<span class="w"> </span>/Library/LaunchDaemons/com.stunnel.iiod.plist
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--2-input--3" name="tab-set--2" type="radio" /><label class="tab-label" for="tab-set--2-input--3">Windows</label><div class="tab-content docutils">
+<p><code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\stunnel\config\iiod.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">output</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">C:\Program Files\stunnel\iiod.log</span>
+
+<span class="k">[iiod]</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">0.0.0.0:30432</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">cert</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">C:\Program Files\stunnel\config\certs\server.crt</span>
+<span class="na">key</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">C:\Program Files\stunnel\config\certs\server.key</span>
+<span class="na">sslVersion</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">TLSv1.2</span>
+</pre></div>
+</div>
+<p>Run stunnel from the Start Menu shortcut, or install it as a Windows service from an elevated command prompt:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">cd</span> <span class="s2">"C:\Program Files\stunnel"</span>
+<span class="n">stunnel</span><span class="o">.</span><span class="n">exe</span> <span class="o">-</span><span class="n">install</span> <span class="o">-</span><span class="n">quiet</span>
+<span class="n">net</span> <span class="n">start</span> <span class="n">stunnel</span>
+</pre></div>
+</div>
+<p>Manage the service afterward through the Windows <em>Services</em> panel (<code class="docutils literal notranslate"><span class="pre">services.msc</span></code>).</p>
+</div>
+</div>
+<section id="restrict-direct-unencrypted-access-to-iiod">
+<h3>Restrict direct (unencrypted) access to iiod<a class="headerlink" href="#restrict-direct-unencrypted-access-to-iiod" title="Link to this heading"></a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">iiod</span></code> itself listens on all interfaces and has no built-in option to restrict itself to <code class="docutils literal notranslate"><span class="pre">localhost</span></code>, so once stunnel is running, block external access to the plain port (30431) with a firewall, and only allow the TLS port (30432):</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--3-input--1" name="tab-set--3" type="radio" /><label class="tab-label" for="tab-set--3-input--1">Linux</label><div class="tab-content docutils">
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">30431</span><span class="w"> </span>!<span class="w"> </span>-s<span class="w"> </span><span class="m">127</span>.0.0.1<span class="w"> </span>-j<span class="w"> </span>DROP
+sudo<span class="w"> </span>iptables<span class="w"> </span>-A<span class="w"> </span>INPUT<span class="w"> </span>-p<span class="w"> </span>tcp<span class="w"> </span>--dport<span class="w"> </span><span class="m">30432</span><span class="w"> </span>-j<span class="w"> </span>ACCEPT
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--3-input--2" name="tab-set--3" type="radio" /><label class="tab-label" for="tab-set--3-input--2">macOS</label><div class="tab-content docutils">
+<p>Add a rule to <code class="docutils literal notranslate"><span class="pre">pf</span></code> (Packet Filter), e.g. in <code class="docutils literal notranslate"><span class="pre">/etc/pf.anchors/iiod</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">block</span> <span class="ow">in</span> <span class="n">proto</span> <span class="n">tcp</span> <span class="kn">from</span><span class="w"> </span><span class="nn">any</span> <span class="n">to</span> <span class="nb">any</span> <span class="n">port</span> <span class="mi">30431</span>
+<span class="k">pass</span> <span class="ow">in</span> <span class="n">proto</span> <span class="n">tcp</span> <span class="kn">from</span><span class="w"> </span><span class="nn">any</span> <span class="n">to</span> <span class="nb">any</span> <span class="n">port</span> <span class="mi">30432</span>
+</pre></div>
+</div>
+<p>Load it with <code class="docutils literal notranslate"><span class="pre">sudo</span> <span class="pre">pfctl</span> <span class="pre">-f</span> <span class="pre">/etc/pf.conf</span></code> after referencing the anchor in <code class="docutils literal notranslate"><span class="pre">pf.conf</span></code>.</p>
+</div>
+<input class="tab-input" id="tab-set--3-input--3" name="tab-set--3" type="radio" /><label class="tab-label" for="tab-set--3-input--3">Windows</label><div class="tab-content docutils">
+<div class="highlight-powershell notranslate"><div class="highlight"><pre><span></span><span class="nb">New-NetFirewallRule</span> <span class="n">-DisplayName</span> <span class="s2">"Block iiod plain TCP"</span> <span class="n">-Direction</span> <span class="n">Inbound</span> <span class="n">-Protocol</span> <span class="n">TCP</span> <span class="n">-LocalPort</span> <span class="n">30431</span> <span class="n">-RemoteAddress</span> <span class="n">Any</span> <span class="n">-Action</span> <span class="n">Block</span>
+<span class="nb">New-NetFirewallRule</span> <span class="n">-DisplayName</span> <span class="s2">"Allow iiod TLS"</span> <span class="n">-Direction</span> <span class="n">Inbound</span> <span class="n">-Protocol</span> <span class="n">TCP</span> <span class="n">-LocalPort</span> <span class="n">30432</span> <span class="n">-Action</span> <span class="n">Allow</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="step-3-configure-and-start-stunnel-on-the-client">
+<h2>Step 3: Configure and start stunnel on the client<a class="headerlink" href="#step-3-configure-and-start-stunnel-on-the-client" title="Link to this heading"></a></h2>
+<p>Copy the server’s <code class="docutils literal notranslate"><span class="pre">server.crt</span></code> (the certificate only, generated in <a class="reference internal" href="#step-1-generate-a-tls-certificate-on-the-server">Step 1</a>) to the client machine over a secure channel.</p>
+<div class="tab-set docutils">
+<input checked="True" class="tab-input" id="tab-set--4-input--1" name="tab-set--4" type="radio" /><label class="tab-label" for="tab-set--4-input--1">Linux</label><div class="tab-content docutils">
+<p><code class="docutils literal notranslate"><span class="pre">/etc/stunnel/iiod.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">pid</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/var/run/stunnel-iiod-client.pid</span>
+<span class="na">foreground</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">no</span>
+
+<span class="k">[iiod]</span>
+<span class="na">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&lt;SERVER_IP_OR_HOSTNAME&gt;:30432</span>
+<span class="na">CAfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/stunnel/certs/server.crt</span>
+<span class="na">verifyChain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">checkHost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&lt;SERVER_HOSTNAME&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>stunnel<span class="w"> </span>/etc/stunnel/iiod.conf
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--4-input--2" name="tab-set--4" type="radio" /><label class="tab-label" for="tab-set--4-input--2">macOS</label><div class="tab-content docutils">
+<p><code class="docutils literal notranslate"><span class="pre">/usr/local/etc/stunnel/iiod.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="na">foreground</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+
+<span class="k">[iiod]</span>
+<span class="na">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&lt;SERVER_IP_OR_HOSTNAME&gt;:30432</span>
+<span class="na">CAfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/usr/local/etc/stunnel/certs/server.crt</span>
+<span class="na">verifyChain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">checkHost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&lt;SERVER_HOSTNAME&gt;</span>
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>stunnel<span class="w"> </span>/usr/local/etc/stunnel/iiod.conf
+</pre></div>
+</div>
+</div>
+<input class="tab-input" id="tab-set--4-input--3" name="tab-set--4" type="radio" /><label class="tab-label" for="tab-set--4-input--3">Windows</label><div class="tab-content docutils">
+<p><code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\stunnel\config\iiod.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[iiod]</span>
+<span class="na">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&lt;SERVER_IP_OR_HOSTNAME&gt;:30432</span>
+<span class="na">CAfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">C:\Program Files\stunnel\config\certs\server.crt</span>
+<span class="na">verifyChain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">checkHost</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&lt;SERVER_HOSTNAME&gt;</span>
+</pre></div>
+</div>
+<p>Run stunnel from the Start Menu shortcut, or as a service the same way as described for the server.</p>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">verifyChain</span> <span class="pre">=</span> <span class="pre">yes</span></code> together with <code class="docutils literal notranslate"><span class="pre">CAfile</span></code> and <code class="docutils literal notranslate"><span class="pre">checkHost</span></code> make the client verify that it is really talking to the expected server, instead of blindly trusting any TLS endpoint.</p>
+</section>
+<section id="step-4-connect-with-libiio">
+<h2>Step 4: Connect with libiio<a class="headerlink" href="#step-4-connect-with-libiio" title="Link to this heading"></a></h2>
+<p>With both stunnel processes running, point any libiio application at <code class="docutils literal notranslate"><span class="pre">127.0.0.1</span></code> exactly as if <code class="docutils literal notranslate"><span class="pre">iiod</span></code> were running locally — the client-side stunnel transparently forwards the traffic over TLS:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>iio_info<span class="w"> </span>-u<span class="w"> </span>ip:127.0.0.1
+</pre></div>
+</div>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>iio_readdev<span class="w"> </span>-u<span class="w"> </span>ip:127.0.0.1<span class="w"> </span>-b<span class="w"> </span><span class="m">1024</span><span class="w"> </span>&lt;device&gt;<span class="w"> </span>&lt;channel&gt;
+</pre></div>
+</div>
+</section>
+<section id="connecting-to-multiple-servers">
+<h2>Connecting to multiple servers<a class="headerlink" href="#connecting-to-multiple-servers" title="Link to this heading"></a></h2>
+<p>Each remote server needs its own local port on the client. Add one <code class="docutils literal notranslate"><span class="pre">[section]</span></code> per server to the client’s <code class="docutils literal notranslate"><span class="pre">iiod.conf</span></code>:</p>
+<div class="highlight-ini notranslate"><div class="highlight"><pre><span></span><span class="k">[server1]</span>
+<span class="na">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30431</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">server1.example.com:30432</span>
+<span class="na">CAfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/stunnel/certs/server1.crt</span>
+<span class="na">verifyChain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+
+<span class="k">[server2]</span>
+<span class="na">client</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+<span class="na">accept</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">127.0.0.1:30441</span>
+<span class="na">connect</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">server2.example.com:30432</span>
+<span class="na">CAfile</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">/etc/stunnel/certs/server2.crt</span>
+<span class="na">verifyChain</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">yes</span>
+</pre></div>
+</div>
+<p>Then connect to each one using its local port:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>iio_info<span class="w"> </span>-u<span class="w"> </span>ip:127.0.0.1:30431<span class="w">  </span><span class="c1"># server1</span>
+iio_info<span class="w"> </span>-u<span class="w"> </span>ip:127.0.0.1:30441<span class="w">  </span><span class="c1"># server2</span>
+</pre></div>
+</div>
+</section>
+<section id="verifying-the-tunnel">
+<h2>Verifying the tunnel<a class="headerlink" href="#verifying-the-tunnel" title="Link to this heading"></a></h2>
+<p>To check that the server is only reachable through TLS, and that the certificate is what you expect:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="c1"># Confirm iiod is bound (locally) on 30431</span>
+ss<span class="w"> </span>-tlnp<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span><span class="m">30431</span>
+
+<span class="c1"># Manually open a TLS connection to the server and inspect its certificate</span>
+openssl<span class="w"> </span>s_client<span class="w"> </span>-connect<span class="w"> </span>&lt;SERVER_IP_OR_HOSTNAME&gt;:30432<span class="w"> </span>-CAfile<span class="w"> </span>server.crt
+</pre></div>
+</div>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="../iiod/" title="Previous document (Alt+Shift+LeftArrow)" class="prev">IIOD: libiio Server Daemon</a>
+    <a href="../training/" title="Next document (Alt+Shift+RightArrow)" class="next">Training Material</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
