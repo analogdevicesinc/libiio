@@ -310,6 +310,28 @@ static void latency_stats_add(struct block_latency_stats *stats, uint64_t delta_
 		stats->samples_us[stats->count++] = delta_us;
 }
 
+/* Write one sample per line, in the order blocks were processed, before
+ * print_latency_stats() sorts the array in place and that order is lost.
+ * Column is the block index so the values can be plotted as a time series. */
+static void dump_latency_samples(const char *path, const struct block_latency_stats *stats)
+{
+	FILE *f;
+	uint64_t i;
+
+	f = fopen(path, "w");
+	if (!f) {
+		fprintf(stderr, "Warning: could not open '%s' for latency dump: %s\n",
+			path, strerror(errno));
+		return;
+	}
+
+	fprintf(f, "block,latency_us\n");
+	for (i = 0; i < stats->count; i++)
+		fprintf(f, "%" PRIu64 ",%" PRIu64 "\n", i, stats->samples_us[i]);
+
+	fclose(f);
+}
+
 /* Compute and print min/max/mean/percentile latency stats from a bounded sample set.
  * Sorts the array in place; only ever called once, after capture has completed. */
 static void print_latency_stats(const char *label, struct block_latency_stats *stats)
@@ -701,6 +723,11 @@ static int capture_rx_only(size_t block_size, uint64_t total_samples,
 		printf("Rate error: %.2f%%\n", rate_error);
 	}
 
+	if (getenv("IIO_DEQ_LOG"))
+		dump_latency_samples(getenv("IIO_DEQ_LOG"), &deq_stats);
+	if (getenv("IIO_ENQ_LOG"))
+		dump_latency_samples(getenv("IIO_ENQ_LOG"), &enq_stats);
+
 	print_latency_stats("Block dequeue wait time", &deq_stats);
 	print_latency_stats("Block enqueue cost", &enq_stats);
 
@@ -957,6 +984,9 @@ static int capture_rxtx_simultaneous(size_t block_size, uint64_t total_samples,
 		printf("Expected sample rate: %.3f Msps\n", expected_rate / 1000000.0);
 		printf("Rate error: %.2f%%\n", rate_error);
 	}
+
+	if (getenv("IIO_DEQ_LOG"))
+		dump_latency_samples(getenv("IIO_DEQ_LOG"), &deq_stats);
 
 	print_latency_stats("Block dequeue wait time", &deq_stats);
 
