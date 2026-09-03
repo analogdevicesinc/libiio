@@ -98,7 +98,7 @@ These issues are often discovered by end users in production rather than during 
 
 These integration tests catch deployment and compatibility issues early:
 
-1. **CI/CD Integration**: Tests run automatically on every Windows build in Azure Pipelines
+1. **CI/CD Integration**: Tests run automatically on every Windows build in GitHub Actions
 2. **Fail Fast**: Build fails if C# bindings cannot be used, preventing broken releases
 3. **Clear Diagnostics**: Detailed error messages identify exactly which DLL is missing or which API call failed
 4. **No Hardware Required**: Smoke tests validate deployment without needing physical IIO devices
@@ -135,9 +135,9 @@ From the repository root:
 .\CI\run_csharp_tests.ps1 -BuildDir "C:\path\to\build" -Configuration "Debug"
 ```
 
-### Azure Pipelines
+### GitHub Actions
 
-Tests run automatically on the `WindowsBuilds` job (VS 2022 x64 configuration only) after the build completes. The pipeline will fail if tests fail.
+Tests run automatically on the `WindowsBuilds` job (VS 2022 x64 configuration only) after the build completes. The workflow will fail if tests fail.
 
 ### Manual Execution
 

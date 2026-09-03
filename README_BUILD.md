@@ -423,7 +423,7 @@ $env:ARCH = "Win32"
 From the root of the libiio project, run the dependency build script:
 
 ```powershell
-.\CI\azure\windows_build_deps.cmd
+.\CI\scripts\windows_build_deps.cmd
 ```
 
 This script will:

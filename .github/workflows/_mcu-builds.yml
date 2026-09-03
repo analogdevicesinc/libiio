@@ -1,0 +1,39 @@
+name: MCU Builds
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  mcu:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: ubuntu:22.04
+          - image: ubuntu:26.04
+    container:
+      image: ${{ matrix.image }}
+    steps:
+      - name: Install dependencies
+        run: |
+          set -e
+          export DEBIAN_FRONTEND=noninteractive
+          apt-get update
+          apt-get install -y build-essential git cmake gcc-arm-none-eabi
+
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+
+      - name: Build
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -DCMAKE_SYSTEM_PROCESSOR=cortex-m4 -DCMAKE_TOOLCHAIN_FILE=../cmake/arm-cross-compile.cmake -DWITH_LIBTINYIIOD=ON
+          make
