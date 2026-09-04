@@ -41,6 +41,13 @@ BUILD_DIR=/path/to/build examples/tinyiiod-linux/tests/run_tests.sh
   - Dynamic value changes
   - Value range validation
 
+- **`test_events.sh`** - IIO event simulation tests
+  - Event stream can be opened and read via `iio_event`
+  - Simulated event type, direction, channel and timestamp
+  - Events keep arriving over time
+  - Errors on an unknown device, and other clients stay responsive
+    while an event stream is open
+
 ## Adding New Tests
 
 Create a new file `test_<name>.sh` in this directory:

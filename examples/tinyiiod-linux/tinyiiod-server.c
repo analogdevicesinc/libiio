@@ -42,22 +42,28 @@ static void signal_handler(int signum)
 
 #define ADC_NUM_CHANNELS 4
 #define ADC_RESOLUTION_BITS 12
-#define ADC_MAX_VALUE ((1 << ADC_RESOLUTION_BITS) - 1)  /* 4095 for 12-bit */
-#define ADC_VREF_MV 3300  /* 3.3V reference in millivolts */
+#define ADC_MAX_VALUE ((1 << ADC_RESOLUTION_BITS) - 1) /* 4095 for 12-bit */
+#define ADC_VREF_MV 3300			       /* 3.3V reference in millivolts */
 
 /* ADC channel state */
 struct adc_channel {
 	int channel_num;
 	uint16_t raw_value;
-	uint32_t read_count;  /* Increments on each read for simulation */
+	uint32_t read_count; /* Increments on each read for simulation */
 };
 
 /* ADC device state */
 struct adc_device {
 	char name[64];
-	uint32_t sampling_frequency;  /* Hz */
+	uint32_t sampling_frequency; /* Hz */
 	struct adc_channel channels[ADC_NUM_CHANNELS];
 	time_t start_time;
+};
+
+/* Event stream state - tracks fake event generation */
+struct adc_event_stream {
+	const struct iio_device *dev;
+	unsigned int nonblock_count;
 };
 
 /* Buffer state - tracks active streaming configuration */
@@ -66,14 +72,14 @@ struct adc_buffer {
 	bool enabled;
 	bool cyclic;
 	size_t nb_samples;
-	uint64_t sample_count;  /* Total samples generated */
+	uint64_t sample_count; /* Total samples generated */
 	bool channel_enabled[ADC_NUM_CHANNELS];
 	int num_enabled_channels;
 };
 
 static struct adc_device g_adc = {
 	.name = "ADC Simulator",
-	.sampling_frequency = 1000,  /* 1 kHz default */
+	.sampling_frequency = 1000, /* 1 kHz default */
 };
 
 /* Protects g_adc, accessed concurrently by per-client threads */
@@ -170,8 +176,8 @@ static ssize_t adc_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 		int channel_num;
 
 		/* Extract channel number from id (e.g., "voltage0" -> 0) */
-		if (sscanf(chn_id, "voltage%d", &channel_num) != 1 ||
-		    channel_num < 0 || channel_num >= ADC_NUM_CHANNELS) {
+		if (sscanf(chn_id, "voltage%d", &channel_num) != 1 || channel_num < 0 ||
+				channel_num >= ADC_NUM_CHANNELS) {
 			return -EINVAL;
 		}
 
@@ -203,7 +209,7 @@ static ssize_t adc_write_attr(const struct iio_attr *attr, const char *src, size
 
 	/* Only device attributes are writable - check if this is a channel attribute */
 	if (attr->type == IIO_ATTR_TYPE_CHANNEL) {
-		return -EPERM;  /* Channel attributes are read-only */
+		return -EPERM; /* Channel attributes are read-only */
 	}
 
 	if (strcmp(attr_name, "sampling_frequency") == 0) {
@@ -227,13 +233,13 @@ static ssize_t adc_write_attr(const struct iio_attr *attr, const char *src, size
 /* Buffer operations for streaming data */
 
 /* Open a buffer for streaming */
-static struct iio_buffer_pdata *adc_open_buffer(const struct iio_device *dev, unsigned int idx,
-		struct iio_channels_mask *mask)
+static struct iio_buffer_pdata *adc_open_buffer(
+		const struct iio_device *dev, unsigned int idx, struct iio_channels_mask *mask)
 {
 	struct adc_buffer *buf;
 	int i;
 
-	(void)idx;  /* We only support one buffer per device */
+	(void)idx; /* We only support one buffer per device */
 
 	buf = calloc(1, sizeof(*buf));
 	if (!buf) {
@@ -271,8 +277,8 @@ static void adc_close_buffer(struct iio_buffer_pdata *pdata)
 }
 
 /* Enable or disable the buffer */
-static int adc_enable_buffer(struct iio_buffer_pdata *pdata, size_t nb_samples, bool enable,
-		bool cyclic)
+static int adc_enable_buffer(
+		struct iio_buffer_pdata *pdata, size_t nb_samples, bool enable, bool cyclic)
 {
 	struct adc_buffer *buf = (struct adc_buffer *)pdata;
 
@@ -349,8 +355,8 @@ static struct iio_context *adc_create_context(
 	/* Initialize ADC simulation */
 	adc_init_channels();
 
-	ctx = iio_context_create_from_backend(
-			params, &iio_external_backend, "Linux tinyIIOD reference", 1, 0, 0, "v1.0.0");
+	ctx = iio_context_create_from_backend(params, &iio_external_backend,
+			"Linux tinyIIOD reference", 1, 0, 0, "v1.0.0");
 	if (iio_err(ctx)) {
 		return ctx;
 	}
@@ -377,8 +383,8 @@ static struct iio_context *adc_create_context(
 	/* Add voltage input channels */
 	for (i = 0; i < ADC_NUM_CHANNELS; i++) {
 		struct iio_data_format fmt = {
-			.length = 16,  /* 16-bit storage */
-			.bits = ADC_RESOLUTION_BITS,  /* 12 bits of data */
+			.length = 16,		     /* 16-bit storage */
+			.bits = ADC_RESOLUTION_BITS, /* 12 bits of data */
 			.shift = 0,
 			.is_signed = false,
 			.is_fully_defined = true,
@@ -386,8 +392,7 @@ static struct iio_context *adc_create_context(
 
 		snprintf(channel_id, sizeof(channel_id), "voltage%d", i);
 
-		chn = iio_device_add_channel(dev, i, channel_id, NULL, NULL,
-					     false, true, &fmt);
+		chn = iio_device_add_channel(dev, i, channel_id, NULL, NULL, false, true, &fmt);
 		if (iio_err(chn)) {
 			iio_context_destroy(ctx);
 			return iio_err_cast(chn);
@@ -426,6 +431,63 @@ static struct iio_context *adc_create_context(
 
 	return ctx;
 }
+/* Open an event stream for the device */
+static struct iio_event_stream_pdata *adc_open_ev(const struct iio_device *dev)
+{
+	struct adc_event_stream *ev;
+	struct iio_event_stream_pdata *ret;
+
+	ev = calloc(1, sizeof(*ev));
+	if (!ev) {
+		ret = iio_ptr(-ENOMEM);
+		return ret;
+	}
+
+	ev->dev = dev;
+
+	ret = (struct iio_event_stream_pdata *)ev;
+
+	return ret;
+}
+
+/* Close event stream and free resources */
+static void adc_close_ev(struct iio_event_stream_pdata *pdata)
+{
+	struct adc_event_stream *ev = (struct adc_event_stream *)pdata;
+
+	free(ev);
+}
+
+/* Fake a rising threshold event on channel voltage0 */
+static void adc_fill_fake_event(struct iio_event *out_event)
+{
+	out_event->id = ((uint64_t)IIO_EV_TYPE_THRESH << 56) | ((uint64_t)IIO_EV_DIR_RISING << 48) |
+			((uint64_t)IIO_NO_MOD << 40) | ((uint64_t)IIO_VOLTAGE << 32);
+	out_event->timestamp = (int64_t)time(NULL) * 1000000000LL;
+}
+
+/* Read an event - simulate one every 3 nonblocking calls, or every second when blocking */
+static int adc_read_ev(
+		struct iio_event_stream_pdata *pdata, struct iio_event *out_event, bool nonblock)
+{
+	struct adc_event_stream *ev = (struct adc_event_stream *)pdata;
+
+	if (nonblock) {
+		ev->nonblock_count++;
+		if (ev->nonblock_count < 3) {
+			return -EAGAIN;
+		}
+
+		ev->nonblock_count = 0;
+	} else {
+		sleep(1);
+	}
+
+	adc_fill_fake_event(out_event);
+
+	return 0;
+}
+
 /* Backend operations */
 static const struct iio_backend_ops adc_ops = {
 	.create = adc_create_context,
@@ -436,6 +498,9 @@ static const struct iio_backend_ops adc_ops = {
 	.enable_buffer = adc_enable_buffer,
 	.cancel_buffer = adc_cancel_buffer,
 	.readbuf = adc_readbuf,
+	.open_ev = adc_open_ev,
+	.close_ev = adc_close_ev,
+	.read_ev = adc_read_ev,
 };
 
 /* Backend definition */
@@ -563,12 +628,14 @@ static void *client_thread(void *arg)
 	char client_ip[INET_ADDRSTRLEN];
 
 	inet_ntop(AF_INET, &thread_data->client_addr.sin_addr, client_ip, sizeof(client_ip));
-	printf("Client connected from %s:%d\n", client_ip, ntohs(thread_data->client_addr.sin_port));
+	printf("Client connected from %s:%d\n", client_ip,
+			ntohs(thread_data->client_addr.sin_port));
 
-	iiod_interpreter(thread_data->ctx, (struct iiod_pdata *)&client, network_read, network_write,
-			thread_data->xml, thread_data->xml_len);
+	iiod_interpreter(thread_data->ctx, (struct iiod_pdata *)&client, network_read,
+			network_write, thread_data->xml, thread_data->xml_len);
 
-	printf("Client disconnected from %s:%d\n", client_ip, ntohs(thread_data->client_addr.sin_port));
+	printf("Client disconnected from %s:%d\n", client_ip,
+			ntohs(thread_data->client_addr.sin_port));
 
 	close(thread_data->client_fd);
 	free(thread_data);
