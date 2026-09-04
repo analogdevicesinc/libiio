@@ -13,7 +13,6 @@ if(CONFIG_LIBIIO)
     ${ZEPHYR_LIBIIO_MODULE_DIR}/channel.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/attr.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/utilities.c
-    ${ZEPHYR_LIBIIO_MODULE_DIR}/lock-dummy.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/scan.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/buffer.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/stream.c
@@ -30,6 +29,16 @@ if(CONFIG_LIBIIO)
     ${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/libiio_log.c
   )
 
+  # The lock backend and NO_THREADS must change together: the NO_THREADS paths
+  # in task.c release a mutex they do not hold, which only works with no-ops.
+  if(CONFIG_LIBIIO_MULTITHREADING)
+    zephyr_library_sources(${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/lock.c)
+    set(LIBIIO_NO_THREADS 0)
+  else()
+    zephyr_library_sources(${ZEPHYR_LIBIIO_MODULE_DIR}/lock-dummy.c)
+    set(LIBIIO_NO_THREADS 1)
+  endif()
+
   zephyr_include_directories(
     ${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/include
     ${ZEPHYR_LIBIIO_MODULE_DIR}/include
@@ -41,7 +50,7 @@ if(CONFIG_LIBIIO)
 
   zephyr_library_compile_definitions(
     LIBIIO_STATIC=1
-    NO_THREADS=1
+    NO_THREADS=${LIBIIO_NO_THREADS}
     WITH_ZSTD=0
     WITH_LIBTINYIIOD=1
     WITH_EXTERNAL_BACKEND=1
