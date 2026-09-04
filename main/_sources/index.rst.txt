@@ -179,6 +179,7 @@ Project Pages
    bindings
    tools/index
    iiod
+   zephyr
    tls_userguide
    training
    related

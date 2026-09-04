@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta content="libiio can run natively on Zephyr RTOS as a west module, providing an iiod server and a zephyr: context backend for embedded targets. This is different from the plain tiny-iiod/WITH_LIBTINYIIOD cross-compile flow described in Building from Source for bare-metal microcontroller configurations: the Zephyr port integrates with Zephyr’s device model, devicetree, Kconfig, and threading, so IIO devices are declared the same way any other Zephyr driver instance is." name="description" />
+
+    <title>Zephyr Port &#8212; libiio v1.0 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8e8a900e" />
+    <link rel="stylesheet" type="text/css" href="../_static/app.min.css?v=fb8972a4" />
+    <link rel="stylesheet" type="text/css" href="../_static/tabs.css?v=4c969af8" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=748bb8f3" />
+    <script src="../_static/tabs.js?v=3ee01567"></script>
+    <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
+    <link rel="index" title="Index" href="../genindex/" />
+    <link rel="search" title="Search" href="../search/" />
+    <link rel="next" title="Encrypting Connections to iiod with stunnel" href="../tls_userguide/" />
+    <link rel="prev" title="IIOD: libiio Server Daemon" href="../iiod/" />
+   
+  
+  
+  
+  <meta name="repository" content="libiio">
+  <meta name="version" content="main">
+  
+    <meta name="page_source_suffix" content=".md">
+  
+  
+  
+
+
+<style>
+  body {
+    
+  }
+
+  body.dark {
+    
+  }
+
+  @media (prefers-color-scheme: dark) {
+    body:not(.light) {
+      
+    }
+  }
+</style>
+  </head>
+  
+    <body>
+  
+  <input type="checkbox" id="input-show-toc">
+  <input type="checkbox" id="input-show-localtoc">
+  <input type="checkbox" id="input-show-repotoc">
+
+  
+  <div class="search-area">
+    <form action="" method="get">
+      <input type="text" name="q" aria-labelledby="search-documentation" value="" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" role="search" placeholder="Search"/>
+      <button class="icon"></button>
+    </form>
+  </div>
+  
+
+  <header>
+    <div id="left">
+      <label id="show-sidebar" class="icon" for="input-show-toc" title="Show/hide index"></label>
+    </div>
+    <div id="right">
+      <span>
+        <a id="logo-org" href="https://developer.analog.com/" aria-label="Analog Devices Inc. landing page"></a>
+        <div class="vertical-divider"></div>
+        
+        <label id="show-repotoc" for="input-show-repotoc" title="Show/hide docs">Documentation</label>
+        
+        <a id="logo" href="../">
+          <div>libiio</div>
+        </a>
+      </span>
+      <span class="reverse">
+        <label id="show-localtoc" class="icon" for="input-show-localtoc" title="Show/hide contents"></label>
+      </span>
+    </div>
+  </header>
+
+
+  <div class="repotoc-tree overlay">
+    <root>
+  <a href="../index.html" class="current">libiio</a>
+</root>
+
+  </div>
+    <div class="localtoc">
+      <div class="tocwrapper">
+        <div class="header localtoc-header">
+          <a id="scroll-up" href="#top-anchor" title="Back to top"></a>
+        </div>
+        <nav>
+          <ul>
+<li><a class="reference internal" href="#">Zephyr Port</a><ul>
+<li><a class="reference internal" href="#how-it-works">How it works</a><ul>
+<li><a class="reference internal" href="#device-registration">Device registration</a></li>
+<li><a class="reference internal" href="#drivers">Drivers</a></li>
+<li><a class="reference internal" href="#iiod-transports">IIOD transports</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#current-limitations">Current limitations</a></li>
+<li><a class="reference internal" href="#building-and-installing">Building and installing</a><ul>
+<li><a class="reference internal" href="#adding-the-module">Adding the module</a></li>
+<li><a class="reference internal" href="#building-the-sample">Building the sample</a></li>
+<li><a class="reference internal" href="#kconfig-reference">Kconfig reference</a></li>
+<li><a class="reference internal" href="#snippets">Snippets</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#python-bindings">Python bindings</a></li>
+<li><a class="reference internal" href="#testing">Testing</a></li>
+</ul>
+</li>
+</ul>
+
+        </nav>
+      </div>
+    </div>
+
+  
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+    <a id="no-logo" href="../">
+      libiio
+    </a><input id="input-switch-toc" type="checkbox">
+<label id="show-repotoc" for="input-switch-toc">
+All content
+</label>
+<label id="show-toc" for="input-switch-toc">
+Content on this topic
+</label>
+<div class="repotoc-tree">
+  <root>
+  <a href="../index.html" class="current">libiio</a>
+</root>
+
+</div>
+<div class="toc-tree">
+  <ul class="current">
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-1" id="toctree-collapse-1"/><div class="collapse"><a class="reference internal" href="../install/">Installation</a><label for="toctree-collapse-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../install/source/">Building from Source</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../migration/">Libiio 0.x to 1.x API update guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../theory/">Theory of Operation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../usage/">Usage Model</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a></li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-2" id="toctree-collapse-2"/><div class="collapse"><a class="reference internal" href="../api/">Library API</a><label for="toctree-collapse-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/top/">Top-Level Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/scan/">Scanning Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/attributes/">Attribute Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/context/">Context Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/device/">Device Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/channel/">Channel Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/buffer/">Buffer Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/event/">Event Handling Functions</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/hwmon/">Hardware Monitoring Devices</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../api/c/debug/">Debug and Low-Level Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../bindings/">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../api/python/">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/context/">Contexts</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/buffer/">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/channel/">Channels</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/python/trigger/">Trigger</a></li>
+<li class="toctree-l3"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1-1" id="toctree-collapse-3-1-1"/><div class="collapse"><a class="reference internal" href="../api/python/examples/">Examples</a><label for="toctree-collapse-3-1-1"><div class="icon"></div></label></div><ul>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_readdev/">iio_readdev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_writedev/">iio_writedev</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_attr/">iio_attr</a></li>
+<li class="toctree-l4"><a class="reference internal" href="../api/python/iio_info/">iio_info</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../api/csharp/">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/context/">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/channel/">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/buffer/">IOBuffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/block/">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/trigger/">Trigger</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/scan/">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/eventstream/">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/event/">IIOEvent</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/stream/">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iioobject/">IIOObject</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/attr/">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/channelsmask/">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/bufferstream/">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/version/">Version</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iiocontextparams/">IioContextParams</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/iiologlevel/">IioLogLevel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/examples/">Examples</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-3" id="toctree-collapse-3-3"/><div class="collapse"><a class="reference internal" href="../api/cpp/">C++ Bindings</a><label for="toctree-collapse-3-3"><div class="icon"></div></label></div><ul>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/context/">Context</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/channel/">Channel</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/buffer/">Buffer</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/block/">Block</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/stream/">Stream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/bufferstream/">BufferStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/channelsmask/">ChannelsMask</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/scan/">Scan</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/eventstream/">EventStream</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/event/">Event</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/attr/">Attr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/ptr/">Ptr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/cstr/">cstr</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/error/">error</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/cpp/examples/">Examples</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-4" id="toctree-collapse-4"/><div class="collapse"><a class="reference internal" href="../tools/">Command Line Tools</a><label for="toctree-collapse-4"><div class="icon"></div></label></div><ul>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_attr/">iio_attr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_info/">iio_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_genxml/">iio_genxml</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_rwdev/">iio_rwdev</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_reg/">iio_reg</a></li>
+<li class="toctree-l2"><a class="reference internal" href="../tools/iio_stresstest/">iio_stresstest</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="../iiod/">IIOD: libiio Server Daemon</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Zephyr Port</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tls_userguide/">Encrypting Connections to iiod with stunnel</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training/">Training Material</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../related/">Related Projects</a></li>
+</ul>
+
+
+</div>
+        </div>
+      </div>
+
+  <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper" id="top-anchor">
+          <div class="body-header">
+  <nav class="breadcrumb empty"><ol></ol></nav>
+</div>
+          <div class="body" role="main">
+            
+  <section id="zephyr-port">
+<h1>Zephyr Port<a class="headerlink" href="#zephyr-port" title="Link to this heading"></a></h1>
+<p>libiio can run natively on <a class="icon link reference external" href="https://www.zephyrproject.org/" target="_blank">Zephyr RTOS</a> as a
+<a class="icon link reference external" href="https://docs.zephyrproject.org/latest/develop/west/index.html" target="_blank">west</a> module,
+providing an <code class="docutils literal notranslate"><span class="pre">iiod</span></code> server and a <code class="docutils literal notranslate"><span class="pre">zephyr:</span></code> context backend for embedded
+targets. This is different from the plain <code class="docutils literal notranslate"><span class="pre">tiny-iiod</span></code>/<code class="docutils literal notranslate"><span class="pre">WITH_LIBTINYIIOD</span></code>
+cross-compile flow described in <a class="reference internal" href="../install/source/"><span class="std std-doc">Building from
+Source</span></a> for bare-metal microcontroller configurations:
+the Zephyr port integrates with Zephyr’s device model, devicetree, Kconfig,
+and threading, so IIO devices are declared the same way any other Zephyr
+driver instance is.</p>
+<p>The module lives under
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/libiio/tree/main/zephyr" target="_blank"><code class="docutils literal notranslate"><span class="pre">zephyr/</span></code></a> in
+the libiio repository.</p>
+<section id="how-it-works">
+<h2>How it works<a class="headerlink" href="#how-it-works" title="Link to this heading"></a></h2>
+<section id="device-registration">
+<h3>Device registration<a class="headerlink" href="#device-registration" title="Link to this heading"></a></h3>
+<p>libiio introduces its own Zephyr driver class, <code class="docutils literal notranslate"><span class="pre">iio_device</span></code>
+(<code class="docutils literal notranslate"><span class="pre">zephyr/include/iio_device.h</span></code>), alongside existing classes like <code class="docutils literal notranslate"><span class="pre">sensor</span></code>
+or <code class="docutils literal notranslate"><span class="pre">adc</span></code>. Like any <a class="icon link reference external" href="https://docs.zephyrproject.org/latest/kernel/drivers/index.html" target="_blank">Zephyr driver
+class</a>,
+it defines its own subsystem API, <code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">iio_device_driver_api</span></code>
+(<code class="docutils literal notranslate"><span class="pre">add_channels</span></code>, <code class="docutils literal notranslate"><span class="pre">read_attr</span></code>, <code class="docutils literal notranslate"><span class="pre">write_attr</span></code>), which a driver implements
+and exposes through the standard <code class="docutils literal notranslate"><span class="pre">DEVICE_API_GET()</span></code> mechanism;
+<code class="docutils literal notranslate"><span class="pre">sensor.c</span></code> and <code class="docutils literal notranslate"><span class="pre">io_channels.c</span></code> (below) are its only two implementations
+today.</p>
+<p>Zephyr devices are exposed as IIO devices by wrapping their instantiation in
+<code class="docutils literal notranslate"><span class="pre">IIO_DEVICE_DT_DEFINE()</span></code> or <code class="docutils literal notranslate"><span class="pre">IIO_DEVICE_DT_INST_DEFINE()</span></code>, also declared in
+that header. These are drop-in replacements for Zephyr’s own
+<code class="docutils literal notranslate"><span class="pre">DEVICE_DT_DEFINE()</span></code>/<code class="docutils literal notranslate"><span class="pre">DEVICE_DT_INST_DEFINE()</span></code>: they
+instantiate the driver exactly as before, and additionally emit a
+<code class="docutils literal notranslate"><span class="pre">struct</span> <span class="pre">iio_device_info</span></code> record into a dedicated linker section (Zephyr’s
+<a class="icon link reference external" href="https://docs.zephyrproject.org/latest/kernel/iterable_sections/index.html" target="_blank">iterable sections</a>
+mechanism, the same idiom used for <code class="docutils literal notranslate"><span class="pre">DEVICE_DT_DEFINE</span></code> itself).</p>
+<p>At context-creation time, the <code class="docutils literal notranslate"><span class="pre">zephyr:</span></code> backend (<code class="docutils literal notranslate"><span class="pre">zephyr/backend.c</span></code>) walks
+that section with <code class="docutils literal notranslate"><span class="pre">STRUCT_SECTION_FOREACH()</span></code>, adds each entry to the
+<code class="docutils literal notranslate"><span class="pre">iio_context</span></code> as a device, and calls into the driver to populate its
+channels. No central registry or list has to be maintained by hand — any
+driver in the build that uses the macro shows up automatically.</p>
+<p>Each IIO device is declared as its own devicetree node, normally grouped
+under an <code class="docutils literal notranslate"><span class="pre">iio-context</span></code> node, with <code class="docutils literal notranslate"><span class="pre">compatible</span></code> set to whichever IIO
+device driver should bind to it (<code class="docutils literal notranslate"><span class="pre">iio,sensor</span></code> or <code class="docutils literal notranslate"><span class="pre">iio,io-channels</span></code>,
+described below). Every IIO device node shares the base properties from
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/libiio/blob/main/zephyr/dts/bindings/iio/iio,iio-device.yaml" target="_blank"><code class="docutils literal notranslate"><span class="pre">iio,iio-device.yaml</span></code></a>:
+an optional <code class="docutils literal notranslate"><span class="pre">io-name</span></code> string, which becomes the device’s name in IIOD
+(falling back to the devicetree node name if unset). For example, the
+sample’s emulated sensor is declared as:</p>
+<div class="highlight-dts notranslate"><div class="highlight"><pre><span></span><span class="nf">iio-context</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nf">iio-sensors</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nf">ltc2990</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"iio,sensor"</span><span class="p">;</span>
+<span class="w">            </span><span class="n">sensor-device</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">adltc2990_emul</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">sensor-channels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;</span><span class="na">IIO_SENSOR_CHAN_VOLTAGE</span><span class="w"> </span><span class="p">...</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">buffer-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"buffer0"</span><span class="p">;</span>
+<span class="w">            </span><span class="n">io-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"ltc2990"</span><span class="p">;</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Neither binding backs the IIO device with its own hardware description —
+instead, each points at an existing Zephyr device node via a <code class="docutils literal notranslate"><span class="pre">phandle</span></code>,
+and the IIO driver wraps whatever real driver is already bound there.
+<code class="docutils literal notranslate"><span class="pre">iio,sensor</span></code> does this with the required <code class="docutils literal notranslate"><span class="pre">sensor-device</span></code> phandle property
+(<code class="docutils literal notranslate"><span class="pre">&amp;adltc2990_emul</span></code> above, any device implementing the <a class="icon link reference external" href="https://docs.zephyrproject.org/latest/hardware/peripherals/sensor/index.html" target="_blank">Sensor
+API</a>).
+<code class="docutils literal notranslate"><span class="pre">iio,io-channels</span></code> does the same with its <code class="docutils literal notranslate"><span class="pre">io-channels</span></code> phandle-array
+property (the standard Zephyr <code class="docutils literal notranslate"><span class="pre">io-channels</span></code>/<code class="docutils literal notranslate"><span class="pre">#io-channel-cells</span></code>
+convention), pointing at ADC or DAC channels, e.g.:</p>
+<div class="highlight-dts notranslate"><div class="highlight"><pre><span></span><span class="nf">iio-context</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nf">iio-adcs</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">        </span><span class="nf">adc-emul</span><span class="cm"> </span><span class="p">{</span>
+<span class="w">            </span><span class="kr">compatible</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"iio,io-channels"</span><span class="p">;</span>
+<span class="w">            </span><span class="n">io-channels</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">adc_emul</span><span class="w"> </span><span class="mi">0</span><span class="o">&gt;</span><span class="p">,</span><span class="w"> </span><span class="o">&lt;&amp;</span><span class="na">adc_emul</span><span class="w"> </span><span class="mi">1</span><span class="o">&gt;</span><span class="p">;</span>
+<span class="w">            </span><span class="n">io-channel-names</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"voltage0"</span><span class="p">,</span><span class="w"> </span><span class="s">"voltage1"</span><span class="p">;</span>
+<span class="w">            </span><span class="n">io-name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">"adc-emul"</span><span class="p">;</span>
+<span class="w">        </span><span class="p">};</span>
+<span class="w">    </span><span class="p">};</span>
+<span class="p">};</span>
+</pre></div>
+</div>
+<p>Both bindings drive <code class="docutils literal notranslate"><span class="pre">DT_DRV_COMPAT</span></code>/<code class="docutils literal notranslate"><span class="pre">IIO_DEVICE_DT_INST_DEFINE()</span></code> in
+their respective driver (<code class="docutils literal notranslate"><span class="pre">compatible</span> <span class="pre">=</span> <span class="pre">&quot;iio,sensor&quot;</span></code> in <code class="docutils literal notranslate"><span class="pre">sensor.c</span></code>,
+<code class="docutils literal notranslate"><span class="pre">compatible</span> <span class="pre">=</span> <span class="pre">&quot;iio,io-channels&quot;</span></code> in <code class="docutils literal notranslate"><span class="pre">io_channels.c</span></code>), so one
+<code class="docutils literal notranslate"><span class="pre">DT_INST_FOREACH_STATUS_OKAY()</span></code> in each driver instantiates every
+matching node in the build automatically — nothing else needs to be
+wired up by hand.</p>
+</section>
+<section id="drivers">
+<h3>Drivers<a class="headerlink" href="#drivers" title="Link to this heading"></a></h3>
+<p>Two IIO device drivers ship with the module, under
+<code class="docutils literal notranslate"><span class="pre">zephyr/drivers/iio_device/</span></code>:</p>
+<ul class="simple">
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">sensor.c</span></code></strong> adapts any Zephyr <a class="icon link reference external" href="https://docs.zephyrproject.org/latest/hardware/peripherals/sensor/index.html" target="_blank">Sensor
+API</a>
+driver to IIO channels, mapping <code class="docutils literal notranslate"><span class="pre">enum</span> <span class="pre">sensor_channel</span></code> values (voltage,
+current, power, temperature, accelerometer, gyroscope, magnetometer,
+pressure, humidity, light, …) to the corresponding IIO channel
+type/modifier.</p></li>
+<li><p><strong><code class="docutils literal notranslate"><span class="pre">io_channels.c</span></code></strong> adapts any Zephyr <a class="icon link reference external" href="https://docs.zephyrproject.org/latest/hardware/peripherals/adc.html" target="_blank">ADC
+API</a>
+or <a class="icon link reference external" href="https://docs.zephyrproject.org/latest/hardware/peripherals/dac.html" target="_blank">DAC
+API</a>
+driver to IIO channels, declared through a devicetree <code class="docutils literal notranslate"><span class="pre">io-channels</span></code>
+property. Each channel becomes an IIO input (ADC) or output (DAC)
+channel with a <code class="docutils literal notranslate"><span class="pre">raw</span></code> attribute, plus <code class="docutils literal notranslate"><span class="pre">scale</span></code>, <code class="docutils literal notranslate"><span class="pre">gain</span></code>, <code class="docutils literal notranslate"><span class="pre">reference</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">differential</span></code> attributes on ADC channels backed by the corresponding
+<code class="docutils literal notranslate"><span class="pre">adc_dt_spec</span></code>/<code class="docutils literal notranslate"><span class="pre">adc_channel_cfg</span></code> fields.</p></li>
+</ul>
+<p>These two are not the only drivers the <code class="docutils literal notranslate"><span class="pre">iio_device</span></code> class can ever have.
+Since it’s a regular Zephyr driver class, additional implementations can
+be added the same way — a new devicetree binding, a <code class="docutils literal notranslate"><span class="pre">compatible</span></code> string,
+and an <code class="docutils literal notranslate"><span class="pre">iio_device_driver_api</span></code> implementation — to adapt other Zephyr
+APIs (e.g. GPIO, PWM, or a vendor-specific bus) to IIO channels, without
+touching the backend or IIOD.</p>
+<p><code class="docutils literal notranslate"><span class="pre">zephyr/drivers/adc/adc_emul_generator.c</span></code> is a synthetic waveform generator
+for Zephyr’s <code class="docutils literal notranslate"><span class="pre">ADC_EMUL</span></code> driver, used by the sample application to produce
+ADC data without real hardware.</p>
+</section>
+<section id="iiod-transports">
+<h3>IIOD transports<a class="headerlink" href="#iiod-transports" title="Link to this heading"></a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">zephyr/iiod/</span></code> directory implements four transports on top of the same
+<code class="docutils literal notranslate"><span class="pre">tinyiiod</span></code> interpreter used by <code class="docutils literal notranslate"><span class="pre">tiny-iiod</span></code>. Each snippet under
+<code class="docutils literal notranslate"><span class="pre">zephyr/snippets/</span></code> selects one:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Transport</p></th>
+<th class="head"><p>Kconfig</p></th>
+<th class="head"><p>Snippet</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Network (TCP)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_NETWORK</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">iiod-network</span></code></p></td>
+<td><p>One Zephyr thread per client, up to <code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_NETWORK_CLIENT_MAX</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>UART console</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_UART</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">iiod-console</span></code></p></td>
+<td><p>Single interpreter thread on a dedicated UART</p></td>
+</tr>
+<tr class="row-even"><td><p>USB CDC-ACM</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_UART</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">iiod-cdc-acm</span></code></p></td>
+<td><p>Same UART transport, carried over a virtual COM port</p></td>
+</tr>
+<tr class="row-odd"><td><p>Native USB (vendor class)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_USB</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">iiod-usb</span></code></p></td>
+<td><p>Multiple bulk pipes; one interpreter thread per pipe</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">iiod-console</span></code> and <code class="docutils literal notranslate"><span class="pre">iiod-cdc-acm</span></code> both use the UART transport code — the
+difference is only which UART node is set as the devicetree
+<code class="docutils literal notranslate"><span class="pre">iio,iiod-uart</span></code> chosen node (a physical UART vs. a <code class="docutils literal notranslate"><span class="pre">zephyr,cdc-acm-uart</span></code>).</p>
+</div>
+</section>
+</section>
+<section id="current-limitations">
+<h2>Current limitations<a class="headerlink" href="#current-limitations" title="Link to this heading"></a></h2>
+<p>The Zephyr backend (<code class="docutils literal notranslate"><span class="pre">zephyr_ops</span></code> in <code class="docutils literal notranslate"><span class="pre">zephyr/backend.c</span></code>) only implements
+<code class="docutils literal notranslate"><span class="pre">create</span></code>, <code class="docutils literal notranslate"><span class="pre">read_attr</span></code>, <code class="docutils literal notranslate"><span class="pre">write_attr</span></code>, and <code class="docutils literal notranslate"><span class="pre">get_trigger</span></code> — and <code class="docutils literal notranslate"><span class="pre">get_trigger</span></code>
+always returns <code class="docutils literal notranslate"><span class="pre">NULL</span></code>. Everything else in
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/libiio/blob/main/include/iio/iio-backend.h" target="_blank"><code class="docutils literal notranslate"><span class="pre">include/iio/iio-backend.h</span></code></a>
+is left unset. Concretely, as of this writing:</p>
+<ul class="simple">
+<li><p><strong>Triggers are not implemented.</strong> There is no <code class="docutils literal notranslate"><span class="pre">set_trigger</span></code> op, no
+trigger Kconfig, and no trigger-related code anywhere in the module.</p></li>
+<li><p><strong>Buffers and streaming are not implemented.</strong> None of <code class="docutils literal notranslate"><span class="pre">open_buffer</span></code>,
+<code class="docutils literal notranslate"><span class="pre">enable_buffer</span></code>, <code class="docutils literal notranslate"><span class="pre">readbuf</span></code>, <code class="docutils literal notranslate"><span class="pre">writebuf</span></code>, <code class="docutils literal notranslate"><span class="pre">create_block</span></code>, <code class="docutils literal notranslate"><span class="pre">enqueue_block</span></code>,
+<code class="docutils literal notranslate"><span class="pre">dequeue_block</span></code>, etc. are wired up, even though libiio’s core
+buffer/stream/block sources are compiled into the Zephyr build. All
+device I/O today goes through the synchronous, single-sample
+<code class="docutils literal notranslate"><span class="pre">read_attr</span></code>/<code class="docutils literal notranslate"><span class="pre">write_attr</span></code> path (e.g. reading a channel’s <code class="docutils literal notranslate"><span class="pre">raw</span></code> and
+<code class="docutils literal notranslate"><span class="pre">scale</span></code> attributes one at a time) — there is no scan-element
+DMA/streaming capture path.</p></li>
+<li><p><strong>Multithreading is confined to the transport layer.</strong> The build sets
+<code class="docutils literal notranslate"><span class="pre">NO_THREADS=1</span></code>, so libiio’s core uses a no-op lock and is effectively
+single-threaded. The concurrency that does exist — one thread per
+network client, per USB pipe, per UART instance — lives entirely in
+<code class="docutils literal notranslate"><span class="pre">zephyr/iiod/</span></code>, not inside the IIO core or the device drivers.</p></li>
+</ul>
+<p>In short: the Zephyr port today is an attribute-access-only IIO device
+server. Triggered/buffered acquisition is planned for a future release —
+this will require implementing the buffer backend ops and a trigger
+mechanism, neither of which currently exist.</p>
+</section>
+<section id="building-and-installing">
+<h2>Building and installing<a class="headerlink" href="#building-and-installing" title="Link to this heading"></a></h2>
+<section id="adding-the-module">
+<h3>Adding the module<a class="headerlink" href="#adding-the-module" title="Link to this heading"></a></h3>
+<p>Add libiio as a project in your Zephyr <a class="icon link reference external" href="https://docs.zephyrproject.org/latest/develop/west/manifest.html" target="_blank">west
+manifest</a>:</p>
+<div class="highlight-yaml notranslate"><div class="highlight"><pre><span></span><span class="nt">manifest</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">projects</span><span class="p">:</span>
+<span class="w">    </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">libiio</span>
+<span class="w">      </span><span class="nt">url</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">https://github.com/analogdevicesinc/libiio</span>
+<span class="w">      </span><span class="nt">revision</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+</pre></div>
+</div>
+<p>West picks up <code class="docutils literal notranslate"><span class="pre">zephyr/module.yml</span></code>, which points at the module’s CMake
+(<code class="docutils literal notranslate"><span class="pre">zephyr/CMakeLists.txt</span></code>), Kconfig (<code class="docutils literal notranslate"><span class="pre">zephyr/Kconfig</span></code>), devicetree root,
+snippet root, and samples automatically — no extra manifest configuration
+is needed.</p>
+</section>
+<section id="building-the-sample">
+<h3>Building the sample<a class="headerlink" href="#building-the-sample" title="Link to this heading"></a></h3>
+<p>The
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/libiio/tree/main/zephyr/samples/iiod" target="_blank"><code class="docutils literal notranslate"><span class="pre">zephyr/samples/iiod</span></code></a>
+sample builds an <code class="docutils literal notranslate"><span class="pre">iiod</span></code> server exposing whichever devices are enabled in
+Kconfig. For example, to build and run it on <code class="docutils literal notranslate"><span class="pre">native_sim</span></code> with emulated
+ADC and sensor devices over the network transport:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>west<span class="w"> </span>build<span class="w"> </span>-p<span class="w"> </span>-b<span class="w"> </span>native_sim<span class="w"> </span>zephyr/samples/iiod/<span class="w"> </span>-S<span class="w"> </span>iiod-network<span class="w"> </span><span class="se">\</span>
+<span class="w">  </span>--<span class="w"> </span>-DCONFIG_LIBIIO_IIOD_ADC_EMUL<span class="o">=</span>y<span class="w"> </span>-DCONFIG_LIBIIO_IIOD_SENSOR_EMUL<span class="o">=</span>y
+./build/zephyr/zephyr.exe
+</pre></div>
+</div>
+<p>Then, from another terminal, connect with <code class="docutils literal notranslate"><span class="pre">iio_info</span></code> and list the devices
+it exposes. The <code class="docutils literal notranslate"><span class="pre">iio-utils</span></code> package your distribution ships is still
+v0.x-based, so <code class="docutils literal notranslate"><span class="pre">iio_info</span></code> needs to be built from source — from the same
+west-managed checkout as the module itself, following <a class="reference internal" href="../install/source/"><span class="std std-doc">Building from
+Source</span></a>; <code class="docutils literal notranslate"><span class="pre">WITH_UTILS</span></code> defaults to <code class="docutils literal notranslate"><span class="pre">ON</span></code>, so it’s
+produced alongside the library:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>&lt;west-workspace&gt;/modules/lib/libiio
+mkdir<span class="w"> </span>build<span class="w"> </span><span class="o">&amp;&amp;</span><span class="w"> </span><span class="nb">cd</span><span class="w"> </span>build
+cmake<span class="w"> </span>-DWITH_TESTS<span class="o">=</span>ON<span class="w"> </span>-DHAVE_DNS_SD<span class="o">=</span>OFF<span class="w"> </span>-DWITH_AIO<span class="o">=</span>OFF<span class="w"> </span>..
+make<span class="w"> </span>-j<span class="k">$(</span>nproc<span class="k">)</span>
+./utils/iio_info<span class="w"> </span>-u<span class="w"> </span>ip:127.0.0.1
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For build instructions covering real hardware (boards, shields, USB, and
+UART/CDC-ACM), plus Scopy and pyadi-iio usage and captured sample output,
+see the sample’s own guide:
+<a class="icon link reference external" href="https://github.com/analogdevicesinc/libiio/blob/main/zephyr/samples/iiod/README.rst" target="_blank"><code class="docutils literal notranslate"><span class="pre">zephyr/samples/iiod/README.rst</span></code></a>.
+This page focuses on the module’s architecture and getting a build
+running; it does not duplicate that per-board walkthrough.</p>
+</div>
+</section>
+<section id="kconfig-reference">
+<h3>Kconfig reference<a class="headerlink" href="#kconfig-reference" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Option</p></th>
+<th class="head"><p>Description</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO</span></code></p></td>
+<td><p>Root option enabling the module</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_NETWORK</span></code></p></td>
+<td><p>Enable the network transport</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_UART</span></code></p></td>
+<td><p>Enable the UART transport (console or CDC-ACM, depending on devicetree)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_USB</span></code></p></td>
+<td><p>Enable the native USB vendor-class transport</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_USB_INIT</span></code></p></td>
+<td><p>Define and initialize a standalone USB device for the IIO class; disable when embedding it in an application-provided composite USB device</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_ADC_EMUL</span></code></p></td>
+<td><p>Sample-only: enable the emulated ADC device</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_SENSOR_EMUL</span></code></p></td>
+<td><p>Sample-only: enable an emulated ADLTC2990 sensor</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<section id="snippets">
+<h3>Snippets<a class="headerlink" href="#snippets" title="Link to this heading"></a></h3>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Snippet</p></th>
+<th class="head"><p>Selects</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">iiod-network</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_NETWORK</span></code>, plus native networking config on <code class="docutils literal notranslate"><span class="pre">native_sim</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">iiod-console</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_UART</span></code> over the board’s console UART</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">iiod-cdc-acm</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_UART</span></code> over a USB CDC-ACM virtual serial port</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">iiod-usb</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">CONFIG_LIBIIO_IIOD_USB</span></code>, the native USB vendor class</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+</section>
+<section id="python-bindings">
+<h2>Python bindings<a class="headerlink" href="#python-bindings" title="Link to this heading"></a></h2>
+<p>The Python bindings work the same way against a Zephyr <code class="docutils literal notranslate"><span class="pre">iiod</span></code> as against
+a Linux one. Like <code class="docutils literal notranslate"><span class="pre">iio_info</span></code> above, the <code class="docutils literal notranslate"><span class="pre">pylibiio</span></code> package on PyPI is
+still built against the v0.x API, so for now the bindings need to be
+installed from source. If libiio was added to your project via the west
+manifest, its source is already checked out under <code class="docutils literal notranslate"><span class="pre">modules/lib/libiio</span></code> in
+your west workspace, so there’s no need to clone it again:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>&lt;west-workspace&gt;/modules/lib/libiio/bindings/python
+pip<span class="w"> </span>install<span class="w"> </span>.
+</pre></div>
+</div>
+<p>Then connect to a running Zephyr <code class="docutils literal notranslate"><span class="pre">iiod</span></code>, e.g. over the network transport
+used above:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">iio</span>
+
+<span class="n">ctx</span> <span class="o">=</span> <span class="n">iio</span><span class="o">.</span><span class="n">Context</span><span class="p">(</span><span class="s2">"ip:127.0.0.1"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">dev</span> <span class="ow">in</span> <span class="n">ctx</span><span class="o">.</span><span class="n">devices</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dev</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>For the USB transport, use a <code class="docutils literal notranslate"><span class="pre">usb:</span></code> URI instead (see <code class="docutils literal notranslate"><span class="pre">iio_info</span> <span class="pre">-s</span></code> to
+find the device’s bus/address). See <a class="reference internal" href="../bindings/"><span class="std std-doc">Python Bindings</span></a> for
+the full API reference.</p>
+</section>
+<section id="testing">
+<h2>Testing<a class="headerlink" href="#testing" title="Link to this heading"></a></h2>
+<p>libiio’s own test suite runs against the Zephyr backend the same way it
+runs against a Linux <code class="docutils literal notranslate"><span class="pre">iiod</span></code>, just pointed at the <code class="docutils literal notranslate"><span class="pre">native_sim</span></code> build:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nv">TESTS_API_URI</span><span class="o">=</span>ip:127.0.0.1<span class="w"> </span>ctest<span class="w"> </span>-L<span class="w"> </span>api<span class="w"> </span>--output-on-failure<span class="w"> </span>-j1
+</pre></div>
+</div>
+<p>Zephyr integration tests use
+<a class="icon link reference external" href="https://docs.zephyrproject.org/latest/develop/test/twister.html" target="_blank">twister</a>,
+including pytest-based coverage that exercises each transport
+end-to-end:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>west<span class="w"> </span>twister<span class="w"> </span>-T<span class="w"> </span>zephyr/samples<span class="w"> </span>-v<span class="w"> </span>--inline-logs<span class="w"> </span>--integration
+</pre></div>
+</div>
+<p>CI (<code class="docutils literal notranslate"><span class="pre">.github/workflows/zephyr.yml</span></code>) runs this in three jobs: a
+cross-platform <code class="docutils literal notranslate"><span class="pre">build</span></code> matrix (Linux, macOS, Windows) that runs the
+sample integration suite via twister, a <code class="docutils literal notranslate"><span class="pre">regression-tests</span></code> job that runs
+libiio’s C <code class="docutils literal notranslate"><span class="pre">ctest</span></code> suite against a <code class="docutils literal notranslate"><span class="pre">native_sim</span></code> IIOD instance, and a
+<code class="docutils literal notranslate"><span class="pre">usb-regression-tests</span></code> job that exercises the USB transport over USB/IP
+(native UDC ↔ UHC ↔ USB/IP ↔ <code class="docutils literal notranslate"><span class="pre">vhci_hcd</span></code>) on Linux.</p>
+</section>
+</section>
+
+
+          </div>
+              <div class="related">
+                &nbsp;
+    <a href="../iiod/" title="Previous document (Alt+Shift+LeftArrow)" class="prev">IIOD: libiio Server Daemon</a>
+    <a href="../tls_userguide/" title="Next document (Alt+Shift+RightArrow)" class="next">Encrypting Connections to iiod with stunnel</a>
+              </div>
+          
+        </div>
+      </div>
+  </div>
+
+  <label id="cancel-area-show-toc" for="input-show-toc"></label>
+  <label id="cancel-area-show-localtoc" for="input-show-localtoc"></label>
+    <footer>
+      &#169;2015-2026, Analog Devices, Inc.
+      
+      |
+      Made with <a href="https://www.sphinx-doc.org/">Sphinx</a>
+      &amp; <a href="https://github.com/analogdevicesinc/doctools">Doctools</a>
+      
+    </footer>
+  </body>
+</html>
