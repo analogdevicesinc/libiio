@@ -33,6 +33,7 @@ config LIBIIO_IIO_DEVICE_SENSOR
 	bool "Sensor driver"
 	default y
 	depends on DT_HAS_IIO_SENSOR_ENABLED && SENSOR
+	select SENSOR_ASYNC_API
 	help
 	  Enable the Zephyr Sensor iio device driver class.
 

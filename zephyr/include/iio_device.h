@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -9,6 +9,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/dsp/types.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <iio/iio.h>
 
@@ -51,6 +52,37 @@ struct iio_device_info {
 
 #define IIO_DEVICE_DT_INST_DEFINE(inst, ...)					\
 	IIO_DEVICE_DT_DEFINE(DT_DRV_INST(inst), __VA_ARGS__)
+
+/**
+ * @brief Convert a q31 value and shift to milli-units, saturating.
+ *
+ * @param value Decoded fixed-point value
+ * @param shift Exponent reported by the decoder
+ * @return Value in milli-units of its SI unit
+ */
+static inline int32_t iio_q31_to_milli(q31_t value, int8_t shift)
+{
+	int64_t scaled = (int64_t)value * 1000;
+	int right_shift = 31 - shift;
+
+	if (right_shift >= 63) {
+		return 0;
+	} else if (right_shift > 0) {
+		int64_t half = INT64_C(1) << (right_shift - 1);
+
+		scaled = scaled < 0 ? -((half - scaled) >> right_shift)
+				    : (scaled + half) >> right_shift;
+	} else if (scaled != 0) {
+		/* |scaled| < 2^41 */
+		if (-right_shift > 22) {
+			return scaled < 0 ? INT32_MIN : INT32_MAX;
+		}
+
+		scaled *= INT64_C(1) << -right_shift;
+	}
+
+	return (int32_t)CLAMP(scaled, INT32_MIN, INT32_MAX);
+}
 
 typedef int (*iio_device_add_channels_t)(const struct device *dev,
 		struct iio_device *iio_device);
