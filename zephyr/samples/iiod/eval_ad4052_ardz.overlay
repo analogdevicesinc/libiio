@@ -8,7 +8,7 @@
 	iio-context {
 		iio-adcs {
 			ad4052 {
-				compatible = "iio,adc";
+				compatible = "iio,io-channels";
 				io-channels = <&adc4052_eval_ad4052_ardz 0>;
 				io-channel-names = "adc_in_ch0";
 				io-name = "ad4052";
