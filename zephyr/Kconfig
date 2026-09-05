@@ -4,6 +4,7 @@
 menuconfig LIBIIO
 	bool "libiio support"
 	depends on POSIX_API
+	select REQUIRES_FLOAT_PRINTF
 	help
 	  This option enables the libiio library.
 
