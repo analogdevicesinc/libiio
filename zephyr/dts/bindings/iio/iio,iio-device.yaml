@@ -9,3 +9,35 @@ properties:
     description: |
       The device name for use within IIOD. If not set, the device's node will be used
       as a fallback.
+
+  buffer-block-count:
+    type: int
+    default: 4
+    description: |
+      Number of buffer blocks this device can have allocated at once when
+      CONFIG_LIBIIO_STREAMING is enabled. Clients such as iio_readdev need
+      at least 4.
+
+  buffer-block-size-max:
+    type: int
+    default: 1024
+    description: |
+      Largest block, in bytes, this device accepts when
+      CONFIG_LIBIIO_STREAMING is enabled. Larger requests fail with -ENOMEM.
+
+  rtio-block-count:
+    type: int
+    default: 8
+    description: |
+      Number of blocks in this device's RTIO mempool, which buffers
+      captured frames between the driver and the backend, when
+      CONFIG_LIBIIO_STREAMING is enabled.
+
+  rtio-block-size:
+    type: int
+    default: 256
+    description: |
+      Size in bytes of one block in this device's RTIO mempool when
+      CONFIG_LIBIIO_STREAMING is enabled. A capture takes as many
+      contiguous blocks as it needs, so the whole pool must fit a FIFO
+      drain.

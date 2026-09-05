@@ -12,6 +12,9 @@
 #include <errno.h>
 #include <string.h>
 #include <iio_device.h>
+#ifdef CONFIG_LIBIIO_STREAMING
+#include <iio_stream.h>
+#endif
 
 LOG_MODULE_REGISTER(libiio_backend, CONFIG_LIBIIO_LOG_LEVEL);
 
@@ -161,6 +164,17 @@ static const struct iio_backend_ops zephyr_ops = {
 	.read_attr = zephyr_read_attr,
 	.write_attr = zephyr_write_attr,
 	.get_trigger = zephyr_get_trigger,
+#ifdef CONFIG_LIBIIO_STREAMING
+	.open_buffer = iio_stream_buffer_open,
+	.close_buffer = iio_stream_buffer_close,
+	.create_block = iio_stream_block_alloc,
+	.free_block = iio_stream_block_free,
+	.enable_buffer = iio_stream_buffer_enable,
+	.cancel_buffer = iio_stream_buffer_cancel,
+	.enqueue_block = iio_stream_block_enqueue,
+	.dequeue_block = iio_stream_block_dequeue,
+	/* No readbuf: it would bypass the block ops */
+#endif
 };
 
 const struct iio_backend iio_external_backend = {

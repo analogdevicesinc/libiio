@@ -25,6 +25,9 @@ LOG_MODULE_REGISTER(iio_device_sensor, CONFIG_LIBIIO_LOG_LEVEL);
  * We present:
  *   raw     – milli-units integer  (SI_value * 1000)
  *   scale   – "0.001"
+ *
+ * Buffered samples carry the same milli-units, so channels are 32 bits wide
+ * to hold the full measuring range.
  */
 
 #define SENSOR_RAW_LEN		12
@@ -41,32 +44,32 @@ struct sensor_channel_map {
 
 static const struct sensor_channel_map channel_map[] = {
 
-	{SENSOR_CHAN_VOLTAGE,       "voltage",          NULL,      16, true},
-	{SENSOR_CHAN_VSHUNT,        "voltage",          "shunt",   16, true},
+	{SENSOR_CHAN_VOLTAGE,       "voltage",          NULL,      32, true},
+	{SENSOR_CHAN_VSHUNT,        "voltage",          "shunt",   32, true},
 
-	{SENSOR_CHAN_CURRENT,       "current",          NULL,      16, true},
-	{SENSOR_CHAN_POWER,         "power",            NULL,      16, true},
-	{SENSOR_CHAN_RESISTANCE,    "resistance",       NULL,      16, false},
+	{SENSOR_CHAN_CURRENT,       "current",          NULL,      32, true},
+	{SENSOR_CHAN_POWER,         "power",            NULL,      32, true},
+	{SENSOR_CHAN_RESISTANCE,    "resistance",       NULL,      32, false},
 
-	{SENSOR_CHAN_DIE_TEMP,      "temp",             "die",     16, true},
-	{SENSOR_CHAN_AMBIENT_TEMP,  "temp",             "ambient", 16, true},
+	{SENSOR_CHAN_DIE_TEMP,      "temp",             "die",     32, true},
+	{SENSOR_CHAN_AMBIENT_TEMP,  "temp",             "ambient", 32, true},
 
-	{SENSOR_CHAN_ACCEL_X,       "accel",            "x",       16, true},
-	{SENSOR_CHAN_ACCEL_Y,       "accel",            "y",       16, true},
-	{SENSOR_CHAN_ACCEL_Z,       "accel",            "z",       16, true},
+	{SENSOR_CHAN_ACCEL_X,       "accel",            "x",       32, true},
+	{SENSOR_CHAN_ACCEL_Y,       "accel",            "y",       32, true},
+	{SENSOR_CHAN_ACCEL_Z,       "accel",            "z",       32, true},
 
-	{SENSOR_CHAN_GYRO_X,        "anglvel",          "x",       16, true},
-	{SENSOR_CHAN_GYRO_Y,        "anglvel",          "y",       16, true},
-	{SENSOR_CHAN_GYRO_Z,        "anglvel",          "z",       16, true},
+	{SENSOR_CHAN_GYRO_X,        "anglvel",          "x",       32, true},
+	{SENSOR_CHAN_GYRO_Y,        "anglvel",          "y",       32, true},
+	{SENSOR_CHAN_GYRO_Z,        "anglvel",          "z",       32, true},
 
-	{SENSOR_CHAN_MAGN_X,        "magn",             "x",       16, true},
-	{SENSOR_CHAN_MAGN_Y,        "magn",             "y",       16, true},
-	{SENSOR_CHAN_MAGN_Z,        "magn",             "z",       16, true},
+	{SENSOR_CHAN_MAGN_X,        "magn",             "x",       32, true},
+	{SENSOR_CHAN_MAGN_Y,        "magn",             "y",       32, true},
+	{SENSOR_CHAN_MAGN_Z,        "magn",             "z",       32, true},
 
-	{SENSOR_CHAN_PRESS,         "pressure",         NULL,      16, false},
-	{SENSOR_CHAN_HUMIDITY,      "humidityrelative", NULL,      16, false},
-	{SENSOR_CHAN_LIGHT,         "illuminance",      NULL,      16, false},
-	{SENSOR_CHAN_AMBIENT_LIGHT, "illuminance",      NULL,      16, false},
+	{SENSOR_CHAN_PRESS,         "pressure",         NULL,      32, false},
+	{SENSOR_CHAN_HUMIDITY,      "humidityrelative", NULL,      32, false},
+	{SENSOR_CHAN_LIGHT,         "illuminance",      NULL,      32, false},
+	{SENSOR_CHAN_AMBIENT_LIGHT, "illuminance",      NULL,      32, false},
 };
 
 struct iio_device_sensor_attr {
@@ -88,7 +91,11 @@ struct iio_device_sensor_config {
 	const struct iio_device_sensor_attr *attrs;
 	size_t num_attrs;
 	const struct rtio_iodev *iodev;
+	/* For attribute reads; sensor_read() takes whatever completes first */
 	struct rtio *rtio_ctx;
+#ifdef CONFIG_LIBIIO_STREAMING
+	struct iio_device_stream *stream;
+#endif
 };
 
 /* bulk read — one sensor_read() per round, then decode each channel.
@@ -564,10 +571,83 @@ static int iio_device_sensor_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef CONFIG_LIBIIO_STREAMING
+
+static int iio_device_sensor_decoder(const struct device *dev,
+		const struct sensor_decoder_api **decoder)
+{
+	const struct iio_device_sensor_config *config = dev->config;
+
+	return sensor_get_decoder(config->sensor_dev, decoder);
+}
+
+static struct iio_device_stream *iio_device_sensor_get_stream(const struct device *dev)
+{
+	const struct iio_device_sensor_config *config = dev->config;
+
+	return config->stream;
+}
+
+static int iio_device_sensor_submit_read(const struct device *dev)
+{
+	const struct iio_device_sensor_config *config = dev->config;
+
+	/* Sensors without a submit op use the RTIO workqueue fallback */
+	return sensor_read_async_mempool(config->iodev, config->stream->rtio, NULL);
+}
+
+static int iio_device_sensor_frame_count(const struct device *dev, const uint8_t *buf,
+		const struct iio_channel *chn, uint16_t *count)
+{
+	const struct sensor_decoder_api *decoder;
+	struct sensor_chan_spec spec = *chan_spec_of(chn);
+	struct sensor_chan_spec xyz_spec;
+	int ret;
+
+	ret = iio_device_sensor_decoder(dev, &decoder);
+	if (ret) {
+		return ret;
+	}
+
+	ret = decoder->get_frame_count(buf, spec, count);
+	if (ret == 0) {
+		return 0;
+	}
+
+	/* Same XYZ fallback as decode_channel_q31() */
+	if (axis_fallback(spec, &xyz_spec) >= 0) {
+		return decoder->get_frame_count(buf, xyz_spec, count);
+	}
+
+	return ret;
+}
+
+static int iio_device_sensor_decode(const struct device *dev, const uint8_t *buf,
+		const struct iio_channel *chn, uint32_t *fit, q31_t *value, int8_t *shift)
+{
+	const struct sensor_decoder_api *decoder;
+	int ret;
+
+	ret = iio_device_sensor_decoder(dev, &decoder);
+	if (ret) {
+		return ret;
+	}
+
+	return decode_channel_q31(decoder, buf, *chan_spec_of(chn), fit, value, shift);
+}
+
+#endif /* CONFIG_LIBIIO_STREAMING */
+
 static DEVICE_API(iio_device, iio_device_sensor_driver_api) = {
 	.add_channels   = iio_device_sensor_add_channels,
 	.read_attr      = iio_device_sensor_read_attr,
 	.write_attr     = iio_device_sensor_write_attr,
+#ifdef CONFIG_LIBIIO_STREAMING
+	.get_stream     = iio_device_sensor_get_stream,
+	.submit_read    = iio_device_sensor_submit_read,
+	.frame_count    = iio_device_sensor_frame_count,
+	.decode         = iio_device_sensor_decode,
+#endif
 };
 
 #define DT_DRV_COMPAT iio_sensor
@@ -601,6 +681,22 @@ static DEVICE_API(iio_device, iio_device_sensor_driver_api) = {
 /* The executor posts the completion before it frees the SQE */
 #define IIO_DEVICE_SENSOR_RTIO_DEFINE(inst)					\
 	RTIO_DEFINE(iio_device_sensor_rtio_##inst, 2, 1)
+
+#ifdef CONFIG_LIBIIO_STREAMING
+#define IIO_DEVICE_SENSOR_STREAM_RTIO_DEFINE(inst)				\
+	RTIO_DEFINE_WITH_MEMPOOL(iio_device_sensor_stream_rtio_##inst, 3,	\
+		DT_INST_PROP(inst, rtio_block_count) + 1,			\
+		DT_INST_PROP(inst, rtio_block_count),				\
+		DT_INST_PROP(inst, rtio_block_size), sizeof(void *));		\
+	IIO_DEVICE_STREAM_DT_DEFINE(DT_DRV_INST(inst),				\
+		&iio_device_sensor_stream_rtio_##inst);
+
+#define IIO_DEVICE_SENSOR_STREAM_INITIALIZER(inst)				\
+	.stream = IIO_DEVICE_STREAM_DT_GET(DT_DRV_INST(inst)),
+#else
+#define IIO_DEVICE_SENSOR_STREAM_RTIO_DEFINE(inst)
+#define IIO_DEVICE_SENSOR_STREAM_INITIALIZER(inst)
+#endif
 
 #define IIO_DEVICE_SENSOR_INIT(inst)						\
 										\
@@ -649,6 +745,8 @@ RTIO_IODEV_DEFINE(iio_device_sensor_iodev_##inst,				\
 										\
 IIO_DEVICE_SENSOR_RTIO_DEFINE(inst);						\
 										\
+IIO_DEVICE_SENSOR_STREAM_RTIO_DEFINE(inst)					\
+										\
 static int32_t									\
 	iio_device_sensor_cache_##inst[ARRAY_SIZE(				\
 		iio_device_sensor_chan_specs_##inst)];				\
@@ -668,6 +766,7 @@ static const struct iio_device_sensor_config					\
 	.num_attrs    = ARRAY_SIZE(iio_device_sensor_attrs_##inst),		\
 	.iodev        = &iio_device_sensor_iodev_##inst,			\
 	.rtio_ctx     = &iio_device_sensor_rtio_##inst,				\
+	IIO_DEVICE_SENSOR_STREAM_INITIALIZER(inst)				\
 };										\
 										\
 IIO_DEVICE_DT_INST_DEFINE(inst,							\

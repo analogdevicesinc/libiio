@@ -102,7 +102,7 @@ ZTEST(libiio_sensor, test_channels_are_milli_unit_scan_elements)
 		find_channel("sensor0", "pressure0"));
 
 	zassert_true(iio_channel_is_scan_element(find_channel("sensor0", "accel_x")));
-	zassert_equal(accel->bits, 16);
+	zassert_equal(accel->bits, 32);
 	zassert_true(accel->is_signed);
 	zassert_true(accel->with_scale);
 	zassert_within(accel->scale, 0.001, 1e-9);

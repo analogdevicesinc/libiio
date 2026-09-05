@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
 if(CONFIG_LIBIIO)
@@ -37,6 +37,10 @@ if(CONFIG_LIBIIO)
   else()
     zephyr_library_sources(${ZEPHYR_LIBIIO_MODULE_DIR}/lock-dummy.c)
     set(LIBIIO_NO_THREADS 1)
+  endif()
+
+  if(CONFIG_LIBIIO_STREAMING)
+    zephyr_library_sources(${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/stream.c)
   endif()
 
   zephyr_include_directories(
