@@ -35,7 +35,7 @@ config LIBIIO_IIOD_NETWORK_CLIENT_THREAD_PRIORITY
 
 config LIBIIO_IIOD_NETWORK_CLIENT_THREAD_STACK_SIZE
 	int "Client thread stack size"
-	default 8192
+	default 4096
 	help
 	  Stack size of the thread running the network client.
 
