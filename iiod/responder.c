@@ -1352,7 +1352,7 @@ int binary_parse(struct parser_pdata *pdata)
 	struct iiod_responder *responder;
 	int ret;
 
-	responder = iiod_responder_create(&iiod_responder_ops, pdata);
+	responder = iiod_responder_create_sync(&iiod_responder_ops, pdata);
 	ret = iio_err(responder);
 	if (ret)
 		return ret;

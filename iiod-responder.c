@@ -643,7 +643,8 @@ void iiod_io_set_timeout(struct iiod_io *io, int timeout_ms)
 	io->timeout_ms = timeout_ms;
 }
 
-struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
+static struct iiod_responder *iiod_responder_do_create(
+		const struct iiod_responder_ops *ops, void *d, bool sync_reader)
 {
 	struct iiod_responder *priv;
 	int err;
@@ -671,7 +672,7 @@ struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *op
 	if (err)
 		goto err_free_io;
 
-	if (!NO_THREADS) {
+	if (!NO_THREADS && !sync_reader) {
 		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv, "reader-thd");
 		err = iio_err(priv->read_thrd);
 		if (err)
@@ -691,6 +692,16 @@ err_free_lock:
 err_free_priv:
 	free(priv);
 	return iio_ptr(err);
+}
+
+struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
+{
+	return iiod_responder_do_create(ops, d, false);
+}
+
+struct iiod_responder *iiod_responder_create_sync(const struct iiod_responder_ops *ops, void *d)
+{
+	return iiod_responder_do_create(ops, d, true);
 }
 
 void iiod_responder_stop(struct iiod_responder *priv)
