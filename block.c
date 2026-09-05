@@ -143,6 +143,8 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 	struct iio_buffer_stream *buf_stream = block->buf_stream;
 	const struct iio_device *dev = buf_stream->buf->dev;
 	const struct iio_backend_ops *ops = dev->ctx->ops;
+	struct iio_task_token *token;
+	int err;
 
 	if (bytes_used > block->size)
 		return -EINVAL;
@@ -160,9 +162,15 @@ int iio_block_enqueue(struct iio_block *block, size_t bytes_used, bool cyclic)
 
 	block->bytes_used = bytes_used;
 	buf_stream->cyclic = cyclic;
-	block->token = iio_task_enqueue(buf_stream->worker, block);
 
-	return iio_err(block->token);
+	token = iio_task_enqueue(buf_stream->worker, block);
+	err = iio_err(token);
+	if (err)
+		return err;
+
+	block->token = token;
+
+	return 0;
 }
 
 int iio_block_dequeue(struct iio_block *block, bool nonblock)
