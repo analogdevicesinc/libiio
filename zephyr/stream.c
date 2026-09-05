@@ -29,6 +29,8 @@ struct iio_buffer_pdata {
 	struct k_mutex lock;
 	/** Enabled channels and their place in a sample. */
 	struct iio_scan_plan plan;
+	/** Paced submission, or RTIO_SQE_HANDLE_INVALID when not armed. */
+	rtio_sqe_handle_t stream_handle;
 	/** Partly decoded capture, still in the RTIO mempool. */
 	uint8_t *held;
 	/** Mempool length of @ref held. */
@@ -37,6 +39,8 @@ struct iio_buffer_pdata {
 	uint16_t held_frames;
 	/** Per-channel frame iterators into @ref held. */
 	uint32_t fit[CONFIG_LIBIIO_MAX_SCAN_ELEMENTS];
+	/** Stream ended on a full mempool and has not captured since. */
+	bool overflowed;
 	/** Set on cancel or disable, cleared on enable. */
 	bool cancelled;
 	/** A dequeue owns the CQ and @ref held; a stop waits on @ref idle. */
@@ -63,6 +67,7 @@ static inline uint8_t *iio_block_payload(struct iio_block_pdata *block)
 }
 
 static unsigned int iio_stream_drain_cq(struct iio_buffer_pdata *buf);
+static void iio_stream_disarm(struct iio_buffer_pdata *buf);
 
 /* Open buffers across all devices */
 K_MEM_SLAB_DEFINE_STATIC(iio_buffer_slab, ROUND_UP(sizeof(struct iio_buffer_pdata),
@@ -106,6 +111,7 @@ struct iio_buffer_pdata *iio_stream_buffer_open(const struct iio_device *iio_dev
 	buf->dev = dev;
 	buf->stream = stream;
 	buf->rtio = stream->rtio;
+	buf->stream_handle = RTIO_SQE_HANDLE_INVALID;
 	k_mutex_init(&buf->lock);
 	k_condvar_init(&buf->idle);
 
@@ -133,6 +139,7 @@ void iio_stream_buffer_close(struct iio_buffer_pdata *buf)
 	k_mutex_lock(&buf->lock, K_FOREVER);
 	buf->cancelled = true;
 	iio_stream_wait_idle(buf);
+	iio_stream_disarm(buf);
 	iio_stream_drain_cq(buf);
 	k_mutex_unlock(&buf->lock);
 
@@ -370,9 +377,70 @@ static void iio_stream_wake_dequeue(struct iio_buffer_pdata *buf)
 #endif
 }
 
+#define IIO_STREAM_DISARM_POLL_MS 5
+
+/*
+ * Cancel a paced capture and wait for its terminal completion, which comes at
+ * the device's next trigger. Caller holds buf->lock with no dequeue running.
+ * A timeout only warns, since iio_buffer_stream_stop() treats errors as fatal.
+ */
+static void iio_stream_disarm(struct iio_buffer_pdata *buf)
+{
+	unsigned int waited;
+
+	if (buf->stream_handle == RTIO_SQE_HANDLE_INVALID) {
+		return;
+	}
+
+	/* Drop stale completions first; the next one is terminal. */
+	iio_stream_drain_cq(buf);
+
+	rtio_sqe_cancel(buf->rtio, buf->stream_handle);
+
+	/* The executor frees the submission; never cancel it twice. */
+	buf->stream_handle = RTIO_SQE_HANDLE_INVALID;
+
+	for (waited = 0; waited < CONFIG_LIBIIO_STREAM_DISARM_TIMEOUT_MS;
+	     waited += IIO_STREAM_DISARM_POLL_MS) {
+		if (iio_stream_drain_cq(buf) > 0) {
+			return;
+		}
+
+		k_msleep(IIO_STREAM_DISARM_POLL_MS);
+	}
+
+	LOG_WRN("%s did not release its stream within %u ms", buf->dev->name,
+		CONFIG_LIBIIO_STREAM_DISARM_TIMEOUT_MS);
+}
+
+/* Arm a capture if not already armed. Caller holds buf->lock. */
+static int iio_stream_arm(struct iio_buffer_pdata *buf)
+{
+	int ret;
+
+	if (buf->stream_handle != RTIO_SQE_HANDLE_INVALID) {
+		return 0;
+	}
+
+	/* -ENOSYS: no trigger, so blocks are filled by on-demand reads. */
+	ret = iio_device_arm_stream(buf->dev, &buf->stream_handle);
+	if (ret == -ENOSYS) {
+		LOG_DBG("%s paces no capture of its own; reading on demand", buf->dev->name);
+		buf->stream_handle = RTIO_SQE_HANDLE_INVALID;
+		return 0;
+	} else if (ret) {
+		LOG_ERR("Could not arm a capture on %s: %d", buf->dev->name, ret);
+		buf->stream_handle = RTIO_SQE_HANDLE_INVALID;
+	}
+
+	return ret;
+}
+
 int iio_stream_buffer_enable(struct iio_buffer_pdata *buf, size_t nb_samples, bool enable,
 			     bool cyclic)
 {
+	int ret = 0;
+
 	ARG_UNUSED(nb_samples);
 
 	if (cyclic) {
@@ -388,16 +456,18 @@ int iio_stream_buffer_enable(struct iio_buffer_pdata *buf, size_t nb_samples, bo
 			iio_stream_drain_cq(buf);
 		}
 		buf->cancelled = false;
+		ret = iio_stream_arm(buf);
 	} else {
 		/* iio_buffer_stream_stop() disables without cancelling. */
 		buf->cancelled = true;
 		iio_stream_wake_dequeue(buf);
 		iio_stream_wait_idle(buf);
+		iio_stream_disarm(buf);
 	}
 
 	k_mutex_unlock(&buf->lock);
 
-	return 0;
+	return ret;
 }
 
 void iio_stream_buffer_cancel(struct iio_buffer_pdata *buf)
@@ -406,6 +476,7 @@ void iio_stream_buffer_cancel(struct iio_buffer_pdata *buf)
 	buf->cancelled = true;
 	iio_stream_wake_dequeue(buf);
 	iio_stream_wait_idle(buf);
+	iio_stream_disarm(buf);
 	k_mutex_unlock(&buf->lock);
 }
 
@@ -564,7 +635,20 @@ static int iio_stream_take_capture(struct iio_buffer_pdata *buf)
 
 	ret = cqe->result;
 	if (ret < 0) {
+		bool streaming = buf->stream_handle != RTIO_SQE_HANDLE_INVALID;
+
+		/* Terminal for a multishot; the executor freed the SQE. */
+		buf->stream_handle = RTIO_SQE_HANDLE_INVALID;
 		rtio_cqe_release(buf->rtio, cqe);
+
+		/* Mempool full: re-arm once; twice in a row means it cannot fit. */
+		if (ret == -ENOMEM && streaming && !buf->overflowed) {
+			LOG_WRN("%s: RTIO mempool full, samples dropped; re-arming",
+				buf->dev->name);
+			buf->overflowed = true;
+			return -EAGAIN;
+		}
+
 		LOG_ERR("Capture on %s failed: %d", buf->dev->name, ret);
 		return ret;
 	}
@@ -592,6 +676,7 @@ static int iio_stream_take_capture(struct iio_buffer_pdata *buf)
 	}
 
 	buf->held_frames = frames;
+	buf->overflowed = false;
 
 	return 0;
 }
@@ -660,17 +745,34 @@ int iio_stream_block_dequeue(struct iio_block_pdata *block, bool nonblock)
 		}
 
 		if (buf->held_frames == 0) {
-			k_mutex_lock(&buf->lock, K_FOREVER);
-			ret = iio_device_submit_read(buf->dev);
-			k_mutex_unlock(&buf->lock);
+			/* Arm here, not at open: unread captures fill the mempool */
+			if (buf->stream_handle == RTIO_SQE_HANDLE_INVALID && !buf->cancelled) {
+				k_mutex_lock(&buf->lock, K_FOREVER);
+				(void)iio_stream_arm(buf);
+				k_mutex_unlock(&buf->lock);
+			}
 
-			if (ret) {
-				LOG_ERR("Could not submit a read to %s: %d", buf->dev->name, ret);
-				goto out;
+			if (buf->stream_handle == RTIO_SQE_HANDLE_INVALID) {
+				if (filled == 0) {
+					LOG_DBG("%s: filling this block by reading on demand",
+						buf->dev->name);
+				}
+
+				k_mutex_lock(&buf->lock, K_FOREVER);
+				ret = iio_device_submit_read(buf->dev);
+				k_mutex_unlock(&buf->lock);
+
+				if (ret) {
+					LOG_ERR("Could not submit a read to %s: %d",
+						buf->dev->name, ret);
+					goto out;
+				}
 			}
 
 			ret = iio_stream_take_capture(buf);
-			if (ret) {
+			if (ret == -EAGAIN) {
+				continue;
+			} else if (ret) {
 				goto out;
 			}
 		}

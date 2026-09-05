@@ -150,6 +150,14 @@ typedef struct iio_device_stream *(*iio_device_get_stream_t)(const struct device
 /** @brief Submit one non-blocking capture into the device's RTIO context. */
 typedef int (*iio_device_submit_read_t)(const struct device *dev);
 
+/**
+ * @brief Arm a multishot capture paced by the device's own trigger.
+ *
+ * @param handle Set to the submission; cancel it with rtio_sqe_cancel()
+ * @return 0 on success, -ENOSYS if the device has no trigger
+ */
+typedef int (*iio_device_arm_stream_t)(const struct device *dev, rtio_sqe_handle_t *handle);
+
 /** @brief Get the number of frames for @p chn in a completed RTIO buffer. */
 typedef int (*iio_device_frame_count_t)(const struct device *dev, const uint8_t *buf,
 		const struct iio_channel *chn, uint16_t *count);
@@ -172,6 +180,7 @@ __subsystem struct iio_device_driver_api {
 #ifdef CONFIG_LIBIIO_STREAMING
 	iio_device_get_stream_t get_stream;
 	iio_device_submit_read_t submit_read;
+	iio_device_arm_stream_t arm_stream;
 	iio_device_frame_count_t frame_count;
 	iio_device_decode_t decode;
 #endif
@@ -234,6 +243,13 @@ static inline struct iio_device_stream *iio_device_get_stream(const struct devic
 static inline int iio_device_submit_read(const struct device *dev)
 {
 	return DEVICE_API_GET(iio_device, dev)->submit_read(dev);
+}
+
+static inline int iio_device_arm_stream(const struct device *dev, rtio_sqe_handle_t *handle)
+{
+	const struct iio_device_driver_api *api = DEVICE_API_GET(iio_device, dev);
+
+	return api->arm_stream ? api->arm_stream(dev, handle) : -ENOSYS;
 }
 
 static inline int iio_device_frame_count(const struct device *dev, const uint8_t *buf,

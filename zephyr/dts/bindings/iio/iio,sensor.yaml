@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
 include: iio,iio-device.yaml
@@ -29,6 +29,13 @@ properties:
     default: []
     description: |
       TODO
+
+  stream-triggers:
+    type: array
+    description: |
+      Sensor triggers, from dt-bindings/iio/sensor-triggers.h, that
+      complete one streaming read. If absent, the backend reads once per
+      block. Each trigger is armed with SENSOR_STREAM_DATA_INCLUDE.
 
 # Detailed sensor channel setup.
 child-binding:

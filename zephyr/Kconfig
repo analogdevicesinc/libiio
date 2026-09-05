@@ -44,6 +44,14 @@ config LIBIIO_BUFFER_COUNT
 	  Buffers that can be open at once, across all devices and clients.
 	  Each device allows one.
 
+config LIBIIO_STREAM_DISARM_TIMEOUT_MS
+	int "How long a stop waits for the device to release its stream, in ms"
+	default 5000
+	help
+	  A cancelled stream is released no earlier than the device's next
+	  trigger, so this must cover one trigger period (watermark/ODR for a
+	  watermark-paced capture). Exceeding it logs a warning.
+
 config LIBIIO_STREAM_CAPTURE_TIMEOUT_MS
 	int "How long a dequeue waits for one capture, in milliseconds"
 	default 30000

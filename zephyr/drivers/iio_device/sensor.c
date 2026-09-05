@@ -13,6 +13,15 @@
 #include <zephyr/logging/log.h>
 #include <iio/iio-backend.h>
 #include <iio_device.h>
+#ifdef CONFIG_LIBIIO_STREAMING
+#include <dt-bindings/iio/sensor-triggers.h>
+
+BUILD_ASSERT(IIO_SENSOR_TRIG_TIMER == SENSOR_TRIG_TIMER);
+BUILD_ASSERT(IIO_SENSOR_TRIG_DATA_READY == SENSOR_TRIG_DATA_READY);
+BUILD_ASSERT(IIO_SENSOR_TRIG_FIFO_WATERMARK == SENSOR_TRIG_FIFO_WATERMARK);
+BUILD_ASSERT(IIO_SENSOR_TRIG_FIFO_FULL == SENSOR_TRIG_FIFO_FULL);
+BUILD_ASSERT(IIO_SENSOR_TRIG_OVERFLOW == SENSOR_TRIG_OVERFLOW);
+#endif
 
 LOG_MODULE_REGISTER(iio_device_sensor, CONFIG_LIBIIO_LOG_LEVEL);
 
@@ -94,6 +103,7 @@ struct iio_device_sensor_config {
 	/* For attribute reads; sensor_read() takes whatever completes first */
 	struct rtio *rtio_ctx;
 #ifdef CONFIG_LIBIIO_STREAMING
+	const struct rtio_iodev *stream_iodev;
 	struct iio_device_stream *stream;
 #endif
 };
@@ -596,6 +606,23 @@ static int iio_device_sensor_submit_read(const struct device *dev)
 	return sensor_read_async_mempool(config->iodev, config->stream->rtio, NULL);
 }
 
+static int iio_device_sensor_arm_stream(const struct device *dev, rtio_sqe_handle_t *handle)
+{
+	const struct iio_device_sensor_config *config = dev->config;
+	int ret;
+
+	if (!config->stream_iodev) {
+		return -ENOSYS;
+	}
+
+	ret = sensor_stream(config->stream_iodev, config->stream->rtio, NULL, handle);
+	if (ret) {
+		LOG_ERR("Could not stream %s: %d", dev->name, ret);
+	}
+
+	return ret;
+}
+
 static int iio_device_sensor_frame_count(const struct device *dev, const uint8_t *buf,
 		const struct iio_channel *chn, uint16_t *count)
 {
@@ -645,6 +672,7 @@ static DEVICE_API(iio_device, iio_device_sensor_driver_api) = {
 #ifdef CONFIG_LIBIIO_STREAMING
 	.get_stream     = iio_device_sensor_get_stream,
 	.submit_read    = iio_device_sensor_submit_read,
+	.arm_stream     = iio_device_sensor_arm_stream,
 	.frame_count    = iio_device_sensor_frame_count,
 	.decode         = iio_device_sensor_decode,
 #endif
@@ -691,10 +719,41 @@ static DEVICE_API(iio_device, iio_device_sensor_driver_api) = {
 	IIO_DEVICE_STREAM_DT_DEFINE(DT_DRV_INST(inst),				\
 		&iio_device_sensor_stream_rtio_##inst);
 
+#define IIO_SENSOR_STREAM_TRIGGER(node_id, prop, idx)				\
+	{									\
+		.trigger = (enum sensor_trigger_type)				\
+			DT_PROP_BY_IDX(node_id, prop, idx),			\
+		.opt = SENSOR_STREAM_DATA_INCLUDE,				\
+	}
+
+#define IIO_DEVICE_SENSOR_STREAM_IODEV_DEFINE(inst)				\
+	static struct sensor_stream_trigger					\
+		iio_device_sensor_triggers_##inst[] = {				\
+		DT_INST_FOREACH_PROP_ELEM_SEP(inst, stream_triggers,		\
+			IIO_SENSOR_STREAM_TRIGGER, (,))				\
+	};									\
+	static struct sensor_read_config					\
+			iio_device_sensor_stream_cfg_##inst = {			\
+		.sensor = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor_device)),	\
+		.is_streaming = true,						\
+		.triggers = iio_device_sensor_triggers_##inst,			\
+		.count = ARRAY_SIZE(iio_device_sensor_triggers_##inst),		\
+		.max = ARRAY_SIZE(iio_device_sensor_triggers_##inst),		\
+	};									\
+	RTIO_IODEV_DEFINE(iio_device_sensor_stream_iodev_##inst,		\
+		&__sensor_iodev_api, &iio_device_sensor_stream_cfg_##inst)
+
+#define IIO_DEVICE_SENSOR_STREAM_IODEV(inst)					\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, stream_triggers),		\
+		(IIO_DEVICE_SENSOR_STREAM_IODEV_DEFINE(inst);), ())
+
 #define IIO_DEVICE_SENSOR_STREAM_INITIALIZER(inst)				\
-	.stream = IIO_DEVICE_STREAM_DT_GET(DT_DRV_INST(inst)),
+	.stream = IIO_DEVICE_STREAM_DT_GET(DT_DRV_INST(inst)),			\
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, stream_triggers),		\
+		(.stream_iodev = &iio_device_sensor_stream_iodev_##inst,), ())
 #else
 #define IIO_DEVICE_SENSOR_STREAM_RTIO_DEFINE(inst)
+#define IIO_DEVICE_SENSOR_STREAM_IODEV(inst)
 #define IIO_DEVICE_SENSOR_STREAM_INITIALIZER(inst)
 #endif
 
@@ -746,6 +805,8 @@ RTIO_IODEV_DEFINE(iio_device_sensor_iodev_##inst,				\
 IIO_DEVICE_SENSOR_RTIO_DEFINE(inst);						\
 										\
 IIO_DEVICE_SENSOR_STREAM_RTIO_DEFINE(inst)					\
+										\
+IIO_DEVICE_SENSOR_STREAM_IODEV(inst)						\
 										\
 static int32_t									\
 	iio_device_sensor_cache_##inst[ARRAY_SIZE(				\
