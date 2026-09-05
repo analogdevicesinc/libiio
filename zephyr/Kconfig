@@ -40,21 +40,21 @@ if LIBIIO_MULTITHREADING
 
 config LIBIIO_THREAD_POOL_SIZE
 	int "Maximum number of libiio internal threads"
-	default 12 if LIBIIO_IIOD_NETWORK
-	default 6
+	default 6 if LIBIIO_IIOD_NETWORK
+	default 3
 	help
 	  Slots in the static libiio thread pool. Each costs
 	  LIBIIO_THREAD_STACK_SIZE bytes whether used or not.
 
-	  Demand is 2 per connection (responder reader and writer), plus 2 per
-	  iiod buffer and 1 per buffer or event stream.
+	  Demand is 1 per concurrent interpreter - the responder's writer task,
+	  since its read loop runs on the transport's own thread - plus 2 per
+	  iiod buffer, plus 1 per buffer stream and per event stream.
 
 config LIBIIO_THREAD_STACK_SIZE
 	int "Stack size for libiio internal threads"
 	default 4096
 	help
-	  Stack size for each pool slot. The deepest user is the responder
-	  reader thread running the iiod command dispatch.
+	  Stack size for each pool slot.
 
 config LIBIIO_THREAD_PRIORITY
 	int "Priority for libiio internal threads"
