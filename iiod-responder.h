@@ -90,6 +90,11 @@ struct iiod_responder_ops {
 
 /* Create / Destroy IIOD Responder. */
 struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d);
+
+/* Create an IIOD Responder whose read loop runs on the thread that calls
+ * iiod_responder_wait_done(), instead of on a reader thread of its own. */
+struct iiod_responder *iiod_responder_create_sync(const struct iiod_responder_ops *ops, void *d);
+
 void iiod_responder_destroy(struct iiod_responder *responder);
 
 /* Set the timeout for I/O operations (default is -1 == infinite) */
