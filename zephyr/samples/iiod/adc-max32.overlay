@@ -8,7 +8,7 @@
 	iio-context {
 		iio-adcs {
 			max32-adc {
-				compatible = "iio,adc";
+				compatible = "iio,io-channels";
 				io-channels = <&adc 0>;
 				io-channel-names = "adc_in_ch0";
 				io-name = "max32-adc";
