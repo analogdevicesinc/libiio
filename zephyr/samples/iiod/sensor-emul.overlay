@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -14,10 +14,7 @@
 				compatible = "iio,sensor";
 				sensor-device = <&adltc2990_emul>;
 				sensor-channels = <
-					IIO_SENSOR_CHAN_VOLTAGE
-					IIO_SENSOR_CHAN_VOLTAGE
-					IIO_SENSOR_CHAN_VOLTAGE
-					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_CURRENT
 					IIO_SENSOR_CHAN_CURRENT
 					IIO_SENSOR_CHAN_DIE_TEMP
 					IIO_SENSOR_CHAN_AMBIENT_TEMP
@@ -41,9 +38,9 @@
 			compatible = "adi,adltc2990";
 			reg = <0x4c>;
 			status = "okay";
-			measurement-mode = <0 0>;
-			pins-v1-v2-current-resistor = <0>;
-			pins-v3-v4-current-resistor = <0>;
+			measurement-mode = <1 3>;
+			pins-v1-v2-current-resistor = <1000>;
+			pins-v3-v4-current-resistor = <1000>;
 			pin-v1-voltage-divider-resistors = <500 1000>;
 			pin-v2-voltage-divider-resistors = <110000 100000>;
 			pin-v3-voltage-divider-resistors = <7000 1000>;
