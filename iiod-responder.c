@@ -365,6 +365,8 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op, uint8_t dev,
 		const struct iiod_buf *buf, size_t nb)
 {
 	struct iiod_responder *priv = writer->responder;
+	struct iio_task_token *token;
+	int err;
 
 	if (nb > NB_BUFS_MAX)
 		return -EINVAL;
@@ -389,10 +391,13 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op, uint8_t dev,
 		return priv->thrd_err_code;
 	}
 
-	writer->write_token = iio_task_enqueue(priv->write_task, writer);
+	token = iio_task_enqueue(priv->write_task, writer);
+	err = iio_err(token);
+	if (!err)
+		writer->write_token = token;
 	iio_mutex_unlock(priv->lock);
 
-	return iio_err(writer->write_token);
+	return err;
 }
 
 bool iiod_io_command_is_done(struct iiod_io *io)
