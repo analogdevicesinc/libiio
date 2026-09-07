@@ -1,8 +1,12 @@
 cmake_minimum_required(VERSION 3.13)
 project(tinyiiod C)
 
-add_library(tinyiiod STATIC tinyiiod.c ${CMAKE_SOURCE_DIR}/iiod/responder.c
-                            ${CMAKE_SOURCE_DIR}/iiod/rw.c)
+add_library(
+    tinyiiod STATIC tinyiiod.c ops-stubs.c ${CMAKE_SOURCE_DIR}/iiod/responder.c
+                    ${CMAKE_SOURCE_DIR}/iiod/rw.c)
+if (MSVC)
+    target_compile_definitions(tinyiiod PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif ()
 target_include_directories(tinyiiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                             ${CMAKE_CURRENT_SOURCE_DIR})
 set_target_properties(
