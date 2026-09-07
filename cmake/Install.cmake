@@ -59,6 +59,10 @@ configure_file(libiio.iss.cmakein ${CMAKE_CURRENT_BINARY_DIR}/libiio.iss @ONLY)
 set(LIBIIO_PC ${CMAKE_CURRENT_BINARY_DIR}/libiio.pc)
 configure_file(libiio.pc.cmakein ${LIBIIO_PC} @ONLY)
 
+if (WITH_IIOD_EMU)
+    list(APPEND IIO_UTILS_TARGETS iiod-emu)
+endif ()
+
 if (NOT SKIP_INSTALL_ALL)
     install(FILES ${LIBIIO_PC} DESTINATION "${INSTALL_PKGCONFIG_DIR}")
 
@@ -70,7 +74,7 @@ if (NOT SKIP_INSTALL_ALL)
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/iio
         FRAMEWORK DESTINATION ${OSX_INSTALL_FRAMEWORKSDIR})
 
-    if (WITH_UTILS)
+    if (IIO_UTILS_TARGETS)
         #install(TARGETS ${IIO_UTILS_TARGETS}
         #	RUNTIME DESTINATION ${IIO_TESTS_INSTALL_DIR})
 
