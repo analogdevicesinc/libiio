@@ -895,6 +895,7 @@ endmacro ()
 
 if (WITH_UTILS)
     add_subdirectory(utils)
+    add_subdirectory(iiod-emu)
 endif ()
 if (WITH_EXAMPLES)
     add_subdirectory(examples)
