@@ -210,6 +210,7 @@ endif ()
 
 iio_option(WITH_EXAMPLES "Build examples" OFF "POSIX")
 iio_option(WITH_UTILS "Build the Libiio utility programs" ON "POSIX")
+iio_option(WITH_IIOD_EMU "Build the IIO device emulator" OFF "POSIX")
 
 if (NOT LOG_LEVEL)
     set(LOG_LEVEL
@@ -431,6 +432,11 @@ if (WITH_LIBTINYIIOD)
     set(WITH_EXTERNAL_BACKEND 1)
 else ()
     set(WITH_EXTERNAL_BACKEND 0)
+endif ()
+
+if (WITH_IIOD_EMU AND NOT WITH_EMU_BACKEND)
+    message(STATUS "iiod-emu enabled, but the emulation backend is not: "
+                   "set WITH_EMU_BACKEND=ON to be able to run it")
 endif ()
 
 if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
@@ -846,7 +852,8 @@ endif ()
 
 if (IIOD_CLIENT
     OR WITH_IIOD
-    OR WITH_LIBTINYIIOD)
+    OR WITH_LIBTINYIIOD
+    OR WITH_IIOD_EMU)
     add_library(iiod-responder STATIC iiod-responder.c)
     target_include_directories(iiod-responder PRIVATE include
                                                       ${CMAKE_BINARY_DIR})
@@ -895,6 +902,8 @@ endmacro ()
 
 if (WITH_UTILS)
     add_subdirectory(utils)
+endif ()
+if (WITH_IIOD_EMU)
     add_subdirectory(iiod-emu)
 endif ()
 if (WITH_EXAMPLES)
@@ -909,12 +918,12 @@ if (WITH_IIOD)
     add_subdirectory(iiod)
 endif ()
 
-if (WITH_LIBTINYIIOD)
+if (WITH_LIBTINYIIOD OR WITH_IIOD_EMU)
     add_subdirectory(tinyiiod)
+endif ()
 
-    if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-        add_subdirectory(examples/tinyiiod-linux)
-    endif ()
+if (WITH_LIBTINYIIOD AND ${CMAKE_SYSTEM_NAME} MATCHES "Linux")
+    add_subdirectory(examples/tinyiiod-linux)
 endif ()
 
 if (((WITH_IIOD AND WITH_AIO) OR IIOD_CLIENT) AND NOT WITH_ZSTD)
@@ -1005,6 +1014,7 @@ toggle_iio_feature("${WITH_LOCAL_MMAP_API}" local-mmap)
 toggle_iio_feature("${WITH_HWMON}" hwmon)
 toggle_iio_feature("${WITH_USB_BACKEND}" usb)
 toggle_iio_feature("${WITH_UTILS}" utils)
+toggle_iio_feature("${WITH_IIOD_EMU}" iiod-emu)
 toggle_iio_feature("${WITH_EXAMPLES}" examples)
 toggle_iio_feature("${WITH_LIBTINYIIOD}" libtinyiiod)
 toggle_iio_feature("${WITH_IIOD}" iiod)

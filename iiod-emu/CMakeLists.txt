@@ -1,17 +1,32 @@
 cmake_minimum_required(VERSION 3.13)
 project(iiod-emu C)
 
-add_executable(iiod-emu iiod-emu.c)
+add_executable(iiod-emu iiod-emu.c network.c)
 set_target_properties(
     iiod-emu
     PROPERTIES C_STANDARD 99
                C_STANDARD_REQUIRED ON
                C_EXTENSIONS OFF)
-target_link_libraries(iiod-emu LINK_PRIVATE iio iio_common_config
-                      ${PTHREAD_LIBRARIES})
+
+target_link_libraries(iiod-emu LINK_PRIVATE iio iio_common_config tinyiiod)
 target_include_directories(iiod-emu PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                             ${CMAKE_CURRENT_SOURCE_DIR})
-target_compile_definitions(iiod-emu PRIVATE _GNU_SOURCE)
+
+if (WIN32)
+    # Keep <Windows.h> from dragging in the legacy winsock.h, which is mutually
+    # exclusive with winsock2.h. Set on the target so that include order, which
+    # clang-format is free to change, cannot defeat it.
+    target_compile_definitions(iiod-emu PRIVATE WIN32_LEAN_AND_MEAN)
+    target_link_libraries(iiod-emu LINK_PRIVATE ws2_32)
+else ()
+    target_compile_definitions(iiod-emu PRIVATE _GNU_SOURCE)
+endif ()
+
+if (MSVC)
+    target_sources(iiod-emu PRIVATE ../deps/wingetopt/src/getopt.c)
+    target_include_directories(iiod-emu PRIVATE ../deps/wingetopt/src)
+    target_compile_definitions(iiod-emu PRIVATE _CRT_SECURE_NO_WARNINGS)
+endif ()
 
 if (WITH_GCOV)
     enable_coverage(iiod-emu)
