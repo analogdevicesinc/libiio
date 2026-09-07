@@ -182,7 +182,17 @@ jobs:
             fi
             for file in "${dir}"*; do
               [[ -f "${file}" ]] || continue
+              filename=$(basename "${file}")
+              # Strip git hash (.g<hex>) so the name is stable across commits
+              stable=$(echo "${filename}" | sed 's/\.g[0-9a-f]\+//')
+              ext="${stable##*.}"
+              stable="${stable%.${ext}}"
+              # macOS .pkg files don't include arch in the name; add tag
+              if [[ "${filename}" != *"${tag}"* ]]; then
+                stable="${stable}-${tag}"
+              fi
               cloudsmith push raw --republish \
+                --name "${stable}.${ext}" \
                 --tags "${tag}" \
                 --version "${VERSION}" \
                 adi/external "${file}"
