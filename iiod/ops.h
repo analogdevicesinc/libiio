@@ -176,7 +176,7 @@ ssize_t read_line(struct parser_pdata *pdata, char *buf, size_t len);
 ssize_t read_all(struct parser_pdata *pdata, void *dst, size_t len);
 ssize_t write_all(struct parser_pdata *pdata, const void *src, size_t len);
 
-static __inline__ void output(struct parser_pdata *pdata, const char *text)
+static inline void output(struct parser_pdata *pdata, const char *text)
 {
 	if (write_all(pdata, text, strlen(text)) <= 0)
 		pdata->stop = true;
