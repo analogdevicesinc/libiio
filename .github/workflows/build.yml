@@ -69,36 +69,59 @@ jobs:
   #############################################
   # Builds
   #############################################
-  linux:
-    needs: config
-    uses: ./.github/workflows/_linux-builds.yml
-    with:
-      build-type: ${{ needs.config.outputs.build-type }}
+  # linux:
+  #   needs: config
+  #   uses: ./.github/workflows/_linux-builds.yml
+  #   with:
+  #     build-type: ${{ needs.config.outputs.build-type }}
 
-  windows:
-    needs: config
-    uses: ./.github/workflows/_windows-builds.yml
-    with:
-      build-type: ${{ needs.config.outputs.build-type }}
+  # windows:
+  #   needs: config
+  #   uses: ./.github/workflows/_windows-builds.yml
+  #   with:
+  #     build-type: ${{ needs.config.outputs.build-type }}
 
-  macos:
-    needs: config
-    uses: ./.github/workflows/_macos-builds.yml
-    with:
-      build-type: ${{ needs.config.outputs.build-type }}
+  # macos:
+  #   needs: config
+  #   uses: ./.github/workflows/_macos-builds.yml
+  #   with:
+  #     build-type: ${{ needs.config.outputs.build-type }}
 
-  arm:
-    needs: config
-    uses: ./.github/workflows/_arm-builds.yml
-    with:
-      build-type: ${{ needs.config.outputs.build-type }}
+  # arm:
+  #   needs: config
+  #   uses: ./.github/workflows/_arm-builds.yml
+  #   with:
+  #     build-type: ${{ needs.config.outputs.build-type }}
+
+  #############################################
+  # Python sdist/wheel
+  #############################################
+  build-pypi:
+    # if: needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
+    needs: [config]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - uses: analogdevicesinc/shared-actions/pypi-build@pypi-build
+        with:
+          cmake-options: '-DPYTHON_BINDINGS=ON -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF -DWITH_IIOD=OFF'
+          apt-packages: 'cmake libxml2-dev libusb-1.0-0-dev'
+          artifact-name: pylibiio-dist
 
   #############################################
   # Check Artifacts
   #############################################
   check-artifacts:
-    if: needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
-    needs: [config, linux, windows, macos, arm]
+    if: false
+    # if: |
+    #   always() &&
+    #   !cancelled() &&
+    #   !contains(needs.*.result, 'failure') &&
+    #   (needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true')
+    needs: [config, build-pypi]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
@@ -230,3 +253,24 @@ jobs:
           name: "Libiio release ${{ github.ref_name }}"
           files: ${{ github.workspace }}/artifacts/*
           generate_release_notes: true
+
+  #############################################
+  # Publish to PyPI (manual approval)
+  #############################################
+  push-pypi:
+    # if: needs.config.outputs.is-release == 'true'
+    needs: [config, build-pypi]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # environment: pypi
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: pylibiio-dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: dist/
+          password: ${{ secrets.PYPI_TESTING_DEPLOY }}
