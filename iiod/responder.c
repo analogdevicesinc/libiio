@@ -92,7 +92,7 @@ static void handle_print(struct parser_pdata *pdata, const struct iiod_command *
 		buf.ptr = (void *)pdata->xml_zstd;
 		buf.size = pdata->xml_zstd_len;
 
-		iiod_io_send_response(io, pdata->xml_zstd_len, &buf, 1);
+		iiod_io_send_response(io, (int32_t)pdata->xml_zstd_len, &buf, 1);
 	} else {
 		iiod_io_send_response_code(io, -EINVAL);
 	}
@@ -141,7 +141,8 @@ static const struct iio_attr *get_attr(struct parser_pdata *pdata, const struct 
 	const struct iio_buffer *buf;
 	const struct iio_device *dev;
 	const struct iio_channel *chn;
-	uint16_t arg1 = (uint32_t)cmd->code >> 16, arg2 = cmd->code & 0xffff;
+	uint16_t arg1 = (uint16_t)((uint32_t)cmd->code >> 16),
+		 arg2 = (uint16_t)(cmd->code & 0xffff);
 
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
 	if (!dev)
@@ -199,13 +200,13 @@ static void handle_read_attr(struct parser_pdata *pdata, const struct iiod_comma
 		ret = iio_attr_read_raw(attr, buf, sizeof(buf));
 
 	if (ret < 0) {
-		iiod_io_send_response_code(io, ret);
+		iiod_io_send_response_code(io, (int32_t)ret);
 	} else {
 		iiod_buf.ptr = buf;
 		iiod_buf.size = ret;
 
 		/* TODO: async? */
-		iiod_io_send_response(io, ret, &iiod_buf, 1);
+		iiod_io_send_response(io, (int32_t)ret, &iiod_buf, 1);
 	}
 }
 
@@ -246,7 +247,7 @@ static void handle_write_attr(struct parser_pdata *pdata, const struct iiod_comm
 out_free_buf:
 	free(buf.ptr);
 out_send_response:
-	iiod_io_send_response_code(io, ret);
+	iiod_io_send_response_code(io, (int32_t)ret);
 }
 
 static void handle_gettrig(struct parser_pdata *pdata, const struct iiod_command *cmd,
@@ -311,7 +312,7 @@ static void handle_refresh_format(struct parser_pdata *pdata, const struct iiod_
 	struct iio_channel *chn;
 	struct iiod_buf iiod_buf;
 	char format_str[256];
-	uint16_t chn_idx = cmd->code & 0xffff;
+	uint16_t chn_idx = (uint16_t)(cmd->code & 0xffff);
 	ssize_t ret;
 
 	dev = iio_context_get_device(pdata->ctx, cmd->dev);
@@ -348,11 +349,11 @@ static void handle_refresh_format(struct parser_pdata *pdata, const struct iiod_
 
 	iiod_buf.ptr = format_str;
 	iiod_buf.size = ret;
-	iiod_io_send_response(io, ret, &iiod_buf, 1);
+	iiod_io_send_response(io, (int32_t)ret, &iiod_buf, 1);
 	return;
 
 out_send_error:
-	iiod_io_send_response_code(io, ret);
+	iiod_io_send_response_code(io, (int32_t)ret);
 }
 
 static int buffer_enqueue_block(void *priv, void *d)
@@ -379,7 +380,7 @@ static int buffer_enqueue_block(void *priv, void *d)
 	return 0;
 
 out_send_response:
-	iiod_io_send_response_code(entry->io, ret);
+	iiod_io_send_response_code(entry->io, (int32_t)ret);
 	return 0;
 }
 
@@ -399,7 +400,7 @@ static int buffer_dequeue_block(void *priv, void *d)
 		if (WITH_IIOD_USB_DMABUF && entry->dmabuf_fd > 0) {
 			/* We need to send the error code before the data.
 			 * If usb_transfer_dmabuf() fails, we're screwed... */
-			iiod_io_send_response_code(entry->io, entry->bytes_used);
+			iiod_io_send_response_code(entry->io, (int32_t)entry->bytes_used);
 
 			return usb_transfer_dmabuf(
 					buffer->pdata->fd_out, entry->dmabuf_fd, entry->bytes_used);
@@ -413,7 +414,7 @@ static int buffer_dequeue_block(void *priv, void *d)
 	}
 
 out_send_response:
-	iiod_io_send_response(entry->io, ret, &data, nb_data);
+	iiod_io_send_response(entry->io, (int32_t)ret, &data, nb_data);
 	return 0;
 }
 
@@ -555,7 +556,7 @@ static void handle_open_buffer(struct parser_pdata *pdata, const struct iiod_com
 	}
 
 	/* Send the success code + updated mask back */
-	iiod_io_send_response(io, data.size, &data, 1);
+	iiod_io_send_response(io, (int32_t)data.size, &data, 1);
 	return;
 
 err_destroy_lock:
@@ -741,7 +742,7 @@ static void handle_create_block(struct parser_pdata *pdata, const struct iiod_co
 
 	entry->block = block;
 	entry->io = io;
-	entry->idx = cmd->code >> 16;
+	entry->idx = (uint16_t)((uint32_t)cmd->code >> 16);
 
 	entry->enqueue_token = iio_task_token_create(buf_entry->enqueue_task, entry);
 	ret = iio_err(entry->enqueue_token);
@@ -1107,7 +1108,7 @@ static void handle_free_evstream(struct parser_pdata *pdata, const struct iiod_c
 	struct iiod_io *io = iiod_command_get_default_io(cmd_data);
 	int ret = 0;
 
-	entry = get_evstream(pdata, cmd, cmd->code, true);
+	entry = get_evstream(pdata, cmd, (uint16_t)cmd->code, true);
 	if (!entry) {
 		ret = -EBADF;
 		goto out_send_response;
