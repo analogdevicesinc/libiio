@@ -40,6 +40,7 @@ Name: "ukrainian"; MessagesFile: "compiler:Languages\Ukrainian.isl"
 
 [Files]
 Source: "D:\a\1\a\Windows-VS-2022-x64\BUILD_TYPE\libiio1.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
+Source: "D:\a\1\a\Windows-VS-2022-x64\BUILD_TYPE\libiio.dll"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
 Source: "D:\a\1\a\Windows-VS-2022-x64\BUILD_TYPE\*.exe"; DestDir: "{sys}"; Check: Is64BitInstallMode; Flags: replacesameversion
 Source: "D:\a\1\a\Windows-VS-2022-x64\BUILD_TYPE\libiio1.lib"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\lib\amd64"; Check: Is64BitInstallMode
 Source: "D:\a\1\a\Windows-VS-2022-x64\iio\*.h"; DestDir: "{commonpf32}\Microsoft Visual Studio 12.0\VC\include\iio"
