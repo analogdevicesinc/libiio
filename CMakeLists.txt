@@ -158,6 +158,11 @@ if (WIN32)
     set_target_properties(
         iio PROPERTIES OUTPUT_NAME
                        ${LIBIIO_WIN32_PREFIX}iio${PROJECT_VERSION_MAJOR})
+
+    if (IIO_COMPAT_LIB)
+        set_target_properties(
+            ${IIO_COMPAT_LIB} PROPERTIES OUTPUT_NAME libiio PREFIX "")
+    endif ()
 endif ()
 
 target_include_directories(iio PUBLIC include ${CMAKE_SOURCE_DIR}
