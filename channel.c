@@ -458,8 +458,8 @@ int iio_parse_format_string(const char *fmt_str, struct iio_data_format *fmt)
 	if (strchr(fmt_str, 'X')) {
 		err = iio_sscanf(fmt_str, "%ce:%c%u/%uX%u>>%u",
 #ifdef _MSC_BUILD
-				&endian, (unsigned int)sizeof(endian),
-				&sign, (unsigned int)sizeof(sign),
+				&endian, (unsigned int)sizeof(endian), &sign,
+				(unsigned int)sizeof(sign),
 #else
 				&endian, &sign,
 #endif
@@ -471,8 +471,8 @@ int iio_parse_format_string(const char *fmt_str, struct iio_data_format *fmt)
 		fmt->repeat = 1;
 		err = iio_sscanf(fmt_str, "%ce:%c%u/%u>>%u",
 #ifdef _MSC_BUILD
-				&endian, (unsigned int)sizeof(endian),
-				&sign, (unsigned int)sizeof(sign),
+				&endian, (unsigned int)sizeof(endian), &sign,
+				(unsigned int)sizeof(sign),
 #else
 				&endian, &sign,
 #endif

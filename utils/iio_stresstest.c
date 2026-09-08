@@ -273,7 +273,6 @@ static void *client_thread(void *data)
 		/* started another context */
 		info->starts[id]++;
 
-
 		dev = get_device(ctx, info->argv[info->arg_index + 1]);
 		if (!dev) {
 			iio_context_destroy(ctx);

@@ -719,8 +719,8 @@ static int local_refresh_format(const struct iio_channel *chn)
 		return -ENOENT;
 	}
 
-	ret = local_do_read_dev_attr(dev_id, 0, pdata->type_attr_path,
-				      buf, sizeof(buf) - 1, IIO_ATTR_TYPE_DEVICE);
+	ret = local_do_read_dev_attr(dev_id, 0, pdata->type_attr_path, buf, sizeof(buf) - 1,
+			IIO_ATTR_TYPE_DEVICE);
 	if (ret < 0) {
 		chn_dbg(chn, "local_refresh_format: failed to read sysfs: %zd\n", ret);
 		return (int)ret;

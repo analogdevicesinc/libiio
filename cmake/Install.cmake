@@ -31,7 +31,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
     # used by pkgbuild when OSX_PACKAGE=ON.
     if (NOT OSX_PACKAGE AND IS_ABSOLUTE "${OSX_INSTALL_FRAMEWORKSDIR}")
         set(OSX_INSTALL_FRAMEWORKSDIR "Library/Frameworks")
-    endif()
+    endif ()
 
     set(CMAKE_MACOSX_RPATH ON)
     set(SKIP_INSTALL_ALL ${OSX_PACKAGE})
