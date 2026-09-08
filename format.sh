@@ -61,4 +61,6 @@ format_all() {
     done
 }
 
-format_all
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+    format_all
+fi
