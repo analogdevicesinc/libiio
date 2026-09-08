@@ -365,6 +365,8 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op, uint8_t dev,
 		const struct iiod_buf *buf, size_t nb)
 {
 	struct iiod_responder *priv = writer->responder;
+	struct iio_task_token *token;
+	int err;
 
 	if (nb > NB_BUFS_MAX)
 		return -EINVAL;
@@ -389,10 +391,13 @@ static int iiod_enqueue_command(struct iiod_io *writer, uint8_t op, uint8_t dev,
 		return priv->thrd_err_code;
 	}
 
-	writer->write_token = iio_task_enqueue(priv->write_task, writer);
+	token = iio_task_enqueue(priv->write_task, writer);
+	err = iio_err(token);
+	if (!err)
+		writer->write_token = token;
 	iio_mutex_unlock(priv->lock);
 
-	return iio_err(writer->write_token);
+	return err;
 }
 
 bool iiod_io_command_is_done(struct iiod_io *io)
@@ -638,7 +643,8 @@ void iiod_io_set_timeout(struct iiod_io *io, int timeout_ms)
 	io->timeout_ms = timeout_ms;
 }
 
-struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
+static struct iiod_responder *iiod_responder_do_create(
+		const struct iiod_responder_ops *ops, void *d, bool sync_reader)
 {
 	struct iiod_responder *priv;
 	int err;
@@ -666,7 +672,7 @@ struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *op
 	if (err)
 		goto err_free_io;
 
-	if (!NO_THREADS) {
+	if (!NO_THREADS && !sync_reader) {
 		priv->read_thrd = iio_thrd_create(iiod_responder_reader_thrd, priv, "reader-thd");
 		err = iio_err(priv->read_thrd);
 		if (err)
@@ -688,6 +694,16 @@ err_free_priv:
 	return iio_ptr(err);
 }
 
+struct iiod_responder *iiod_responder_create(const struct iiod_responder_ops *ops, void *d)
+{
+	return iiod_responder_do_create(ops, d, false);
+}
+
+struct iiod_responder *iiod_responder_create_sync(const struct iiod_responder_ops *ops, void *d)
+{
+	return iiod_responder_do_create(ops, d, true);
+}
+
 void iiod_responder_stop(struct iiod_responder *priv)
 {
 	priv->thrd_stop = true;
@@ -707,9 +723,8 @@ void iiod_responder_destroy(struct iiod_responder *priv)
 
 void iiod_responder_wait_done(struct iiod_responder *priv)
 {
-	if (!NO_THREADS) {
-		if (priv->read_thrd)
-			iio_thrd_join_and_destroy(priv->read_thrd);
+	if (priv->read_thrd) {
+		iio_thrd_join_and_destroy(priv->read_thrd);
 		priv->read_thrd = NULL;
 	} else if (!priv->thrd_stop) {
 		iiod_responder_reader_worker(priv);
