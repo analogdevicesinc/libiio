@@ -14,6 +14,9 @@
 
 #include "network.h"
 
+/* How long to wait before retrying an accept() that ran out of resources. */
+#define EMU_ACCEPT_BACKOFF_MS 100
+
 #ifdef _WIN32
 
 typedef int emu_socklen;
@@ -31,6 +34,26 @@ static bool emu_should_retry(int err)
 {
 	return err == WSAEWOULDBLOCK || err == WSAETIMEDOUT || err == WSAEINTR;
 }
+
+static int emu_accept_retry_ms(int err)
+{
+	switch (err) {
+	/* A signal arrived, or the pending connection went away. */
+	case WSAEINTR:
+	case WSAECONNRESET:
+	case WSAENETDOWN:
+		return 0;
+	/* Out of sockets or buffers; back off and let things drain. */
+	case WSAEMFILE:
+	case WSAENOBUFS:
+	case WSAEWOULDBLOCK:
+		return EMU_ACCEPT_BACKOFF_MS;
+	default:
+		return -1;
+	}
+}
+
+#define emu_msleep(ms) Sleep(ms)
 
 int emu_network_init(void)
 {
@@ -55,6 +78,7 @@ void emu_network_deinit(void)
 #include <netinet/tcp.h>
 #include <signal.h>
 #include <sys/socket.h>
+#include <time.h>
 #include <unistd.h>
 
 typedef socklen_t emu_socklen;
@@ -76,6 +100,49 @@ static int emu_errno(void)
 static bool emu_should_retry(int err)
 {
 	return err == EAGAIN || err == EWOULDBLOCK || err == EINTR;
+}
+
+static int emu_accept_retry_ms(int err)
+{
+	switch (err) {
+	/*
+	 * A signal arrived, or the pending connection went away before we
+	 * picked it up. Linux also reports already-queued network errors here,
+	 * and accept(2) says to retry those like EAGAIN.
+	 */
+	case EINTR:
+	case ECONNABORTED:
+	case EPROTO:
+	case ENOPROTOOPT:
+	case EHOSTDOWN:
+	case EHOSTUNREACH:
+	case ENETDOWN:
+	case ENETUNREACH:
+	case EOPNOTSUPP:
+#ifdef ENONET
+	case ENONET:
+#endif
+		return 0;
+	/* Out of descriptors or memory; back off and let things drain. */
+	case EMFILE:
+	case ENFILE:
+	case ENOBUFS:
+	case ENOMEM:
+	case EAGAIN:
+#if EWOULDBLOCK != EAGAIN
+	case EWOULDBLOCK:
+#endif
+		return EMU_ACCEPT_BACKOFF_MS;
+	default:
+		return -1;
+	}
+}
+
+static void emu_msleep(unsigned int ms)
+{
+	struct timespec ts = { .tv_sec = ms / 1000, .tv_nsec = (ms % 1000) * 1000000L };
+
+	nanosleep(&ts, NULL);
 }
 
 int emu_network_init(void)
@@ -135,14 +202,34 @@ err_close:
 emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len)
 {
 	struct sockaddr_in addr;
-	emu_socklen addr_len = sizeof(addr);
+	emu_socklen addr_len;
 	emu_socket sock;
-	int yes = 1;
+	int delay, yes = 1;
 
-	sock = accept(srv, (struct sockaddr *)&addr, &addr_len);
-	if (sock == EMU_INVALID_SOCKET) {
-		fprintf(stderr, "Unable to accept connection: %d\n", emu_errno());
-		return EMU_INVALID_SOCKET;
+	for (;;) {
+		int err;
+
+		/* accept() writes to addr_len, so reset it on every attempt. */
+		addr_len = sizeof(addr);
+
+		sock = accept(srv, (struct sockaddr *)&addr, &addr_len);
+		if (sock != EMU_INVALID_SOCKET)
+			break;
+
+		err = emu_errno();
+		delay = emu_accept_retry_ms(err);
+		if (delay < 0) {
+			fprintf(stderr, "Unable to accept connection: %d\n", err);
+			return EMU_INVALID_SOCKET;
+		}
+
+		/*
+		 * A client that vanished mid-handshake, or a resource shortage.
+		 * Neither should take the server down, and neither is worth a
+		 * log line.
+		 */
+		if (delay)
+			emu_msleep((unsigned int)delay);
 	}
 
 	/*
