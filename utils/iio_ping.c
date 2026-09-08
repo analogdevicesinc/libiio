@@ -19,8 +19,7 @@
 #include <time.h>
 static void msleep(unsigned int ms)
 {
-	struct timespec ts = { .tv_sec = ms / 1000,
-			       .tv_nsec = (ms % 1000) * 1000000L };
+	struct timespec ts = { .tv_sec = ms / 1000, .tv_nsec = (ms % 1000) * 1000000L };
 	nanosleep(&ts, NULL);
 }
 #endif
@@ -55,8 +54,8 @@ int main(int argc, char **argv)
 
 	argw = dup_argv(MY_NAME, argc, argv);
 
-	ctx = handle_common_opts(MY_NAME, argc, argw, MY_OPTS,
-				 options, options_descriptions, NULL, &ret);
+	ctx = handle_common_opts(
+			MY_NAME, argc, argw, MY_OPTS, options, options_descriptions, NULL, &ret);
 	opts = add_common_options(options);
 	if (!opts) {
 		fprintf(stderr, "Failed to add common options\n");
@@ -110,17 +109,15 @@ int main(int argc, char **argv)
 		sent++;
 
 		if (ret == 0) {
-			printf("Reply from %s: seq=%u time=%llu.%03llu ms\n",
-			       name, i,
-			       (unsigned long long)(elapsed_us / 1000),
-			       (unsigned long long)(elapsed_us % 1000));
+			printf("Reply from %s: seq=%u time=%llu.%03llu ms\n", name, i,
+					(unsigned long long)(elapsed_us / 1000),
+					(unsigned long long)(elapsed_us % 1000));
 			received++;
 		} else {
 			char err_str[256];
 
 			iio_strerror(-ret, err_str, sizeof(err_str));
-			printf("No reply from %s: seq=%u error=%d (%s)\n",
-			       name, i, ret, err_str);
+			printf("No reply from %s: seq=%u error=%d (%s)\n", name, i, ret, err_str);
 		}
 
 		if (i < count - 1)
@@ -128,9 +125,8 @@ int main(int argc, char **argv)
 	}
 
 	printf("\n--- %s ping statistics ---\n", name);
-	printf("%u requests sent, %u received, %.1f%% loss\n",
-	       sent, received,
-	       sent ? ((sent - received) * 100.0) / sent : 0.0);
+	printf("%u requests sent, %u received, %.1f%% loss\n", sent, received,
+			sent ? ((sent - received) * 100.0) / sent : 0.0);
 
 	iio_context_destroy(ctx);
 	free_argw(argc, argw);

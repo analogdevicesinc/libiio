@@ -140,10 +140,10 @@ struct compat {
 	void (*iio_channel_convert)(const struct iio_channel *, void *, const void *);
 	void (*iio_channel_convert_inverse)(const struct iio_channel *, void *, const void *);
 
-	size_t (*iio_channel_read)(const struct iio_channel *, const struct iio_block *,
-			void *, size_t, bool);
-	size_t (*iio_channel_write)(const struct iio_channel *, struct iio_block *,
-			const void *, size_t, bool);
+	size_t (*iio_channel_read)(
+			const struct iio_channel *, const struct iio_block *, void *, size_t, bool);
+	size_t (*iio_channel_write)(
+			const struct iio_channel *, struct iio_block *, const void *, size_t, bool);
 
 	void (*iio_channel_enable)(const struct iio_channel *, struct iio_channels_mask *);
 	void (*iio_channel_disable)(const struct iio_channel *, struct iio_channels_mask *);
@@ -2165,40 +2165,36 @@ void *iio_buffer_end(const struct iio_buffer *buf)
 	return IIO_CALL(iio_block_end)(block);
 }
 
-size_t iio_channel_read_raw(const struct iio_channel *chn,
-		struct iio_buffer *buf, void *dst, size_t len)
+size_t iio_channel_read_raw(
+		const struct iio_channel *chn, struct iio_buffer *buf, void *dst, size_t len)
 {
 	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
 
-	return IIO_CALL(iio_channel_read)(chn, compat->blocks[compat->curr],
-					  dst, len, true);
+	return IIO_CALL(iio_channel_read)(chn, compat->blocks[compat->curr], dst, len, true);
 }
 
-size_t iio_channel_read(const struct iio_channel *chn,
-		struct iio_buffer *buf, void *dst, size_t len)
+size_t iio_channel_read(
+		const struct iio_channel *chn, struct iio_buffer *buf, void *dst, size_t len)
 {
 	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
 
-	return IIO_CALL(iio_channel_read)(chn, compat->blocks[compat->curr],
-					  dst, len, false);
+	return IIO_CALL(iio_channel_read)(chn, compat->blocks[compat->curr], dst, len, false);
 }
 
-size_t iio_channel_write_raw(const struct iio_channel *chn,
-		struct iio_buffer *buf, const void *src, size_t len)
+size_t iio_channel_write_raw(
+		const struct iio_channel *chn, struct iio_buffer *buf, const void *src, size_t len)
 {
 	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
 
-	return IIO_CALL(iio_channel_write)(chn, compat->blocks[compat->curr],
-					   src, len, true);
+	return IIO_CALL(iio_channel_write)(chn, compat->blocks[compat->curr], src, len, true);
 }
 
-size_t iio_channel_write(const struct iio_channel *chn,
-		struct iio_buffer *buf, const void *src, size_t len)
+size_t iio_channel_write(
+		const struct iio_channel *chn, struct iio_buffer *buf, const void *src, size_t len)
 {
 	struct iio_buffer_compat *compat = IIO_CALL(iio_buffer_get_data)(buf);
 
-	return IIO_CALL(iio_channel_write)(chn, compat->blocks[compat->curr],
-					   src, len, false);
+	return IIO_CALL(iio_channel_write)(chn, compat->blocks[compat->curr], src, len, false);
 }
 
 ssize_t iio_buffer_foreach_sample(struct iio_buffer *buf,

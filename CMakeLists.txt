@@ -531,8 +531,10 @@ if (WITH_SERIAL_BACKEND)
     find_library(LIBSERIALPORT_LIBRARIES serialport)
     find_path(LIBSERIALPORT_INCLUDE_DIR libserialport.h)
     if (NOT LIBSERIALPORT_LIBRARIES OR NOT LIBSERIALPORT_INCLUDE_DIR)
-        message(WARNING "libserialport not found, serial backend will be disabled.")
-        message(STATUS "To enable serial backend support, install libserialport:")
+        message(
+            WARNING "libserialport not found, serial backend will be disabled.")
+        message(
+            STATUS "To enable serial backend support, install libserialport:")
         if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
             # Detect Linux distribution
             if (EXISTS "/etc/os-release")
@@ -541,32 +543,55 @@ if (WITH_SERIAL_BACKEND)
                 if (DISTRO_ID)
                     string(REGEX REPLACE "ID=" "" DISTRO "${DISTRO_ID}")
                     if (DISTRO MATCHES "ubuntu|debian")
-                        message(STATUS "  Ubuntu/Debian: sudo apt-get install libserialport-dev")
+                        message(
+                            STATUS
+                                "  Ubuntu/Debian: sudo apt-get install libserialport-dev"
+                        )
                     elseif (DISTRO MATCHES "fedora|rhel|centos")
-                        message(STATUS "  Fedora/RHEL/CentOS: sudo dnf install libserialport-devel")
+                        message(
+                            STATUS
+                                "  Fedora/RHEL/CentOS: sudo dnf install libserialport-devel"
+                        )
                     elseif (DISTRO MATCHES "arch|manjaro")
-                        message(STATUS "  Arch Linux: sudo pacman -S libserialport")
+                        message(
+                            STATUS "  Arch Linux: sudo pacman -S libserialport")
                     elseif (DISTRO MATCHES "opensuse|suse")
-                        message(STATUS "  openSUSE: sudo zypper install libserialport-devel")
+                        message(
+                            STATUS
+                                "  openSUSE: sudo zypper install libserialport-devel"
+                        )
                     elseif (DISTRO MATCHES "alpine")
                         message(STATUS "  Alpine: apk add libserialport-dev")
                     else ()
-                        message(STATUS "  Package name varies by distribution (typically libserialport-dev or libserialport-devel)")
+                        message(
+                            STATUS
+                                "  Package name varies by distribution (typically libserialport-dev or libserialport-devel)"
+                        )
                     endif ()
                 else ()
-                    message(STATUS "  Package name varies by distribution (typically libserialport-dev or libserialport-devel)")
+                    message(
+                        STATUS
+                            "  Package name varies by distribution (typically libserialport-dev or libserialport-devel)"
+                    )
                 endif ()
             else ()
-                message(STATUS "  Package name varies by distribution (typically libserialport-dev or libserialport-devel)")
+                message(
+                    STATUS
+                        "  Package name varies by distribution (typically libserialport-dev or libserialport-devel)"
+                )
             endif ()
         elseif (${CMAKE_SYSTEM_NAME} MATCHES "Darwin")
             message(STATUS "  macOS: brew install libserialport")
         elseif (${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
             message(STATUS "  FreeBSD: pkg install libserialport")
         elseif (WIN32)
-            message(STATUS "  Windows: See README_BUILD.md for dependency build instructions")
+            message(
+                STATUS
+                    "  Windows: See README_BUILD.md for dependency build instructions"
+            )
         else ()
-            message(STATUS "  See README_BUILD.md for installation instructions")
+            message(
+                STATUS "  See README_BUILD.md for installation instructions")
         endif ()
         set(WITH_SERIAL_BACKEND OFF)
     else ()

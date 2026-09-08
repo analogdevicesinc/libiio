@@ -533,8 +533,8 @@ static int network_refresh_format(const struct iio_channel *chn)
 	if (!iiod_client_uses_binary_interface(pdata->iiod_client))
 		return -ENOTSUP;
 
-	ret = iiod_client_refresh_format(pdata->iiod_client, dev, chn,
-	                                   format_str, sizeof(format_str));
+	ret = iiod_client_refresh_format(
+			pdata->iiod_client, dev, chn, format_str, sizeof(format_str));
 	if (ret < 0)
 		return (int)ret;
 
