@@ -65,7 +65,7 @@ Windows-VS-2022-x64/iio_rwdev.exe
 Windows-VS-2022-x64/iio_reg.exe
 Windows-VS-2022-x64/iiod_responder.lib
 Windows-VS-2022-x64/libiio-py39-amd64.tar.gz
-Windows-VS-2022-x64/iio.dll
+Windows-VS-2022-x64/libiio.dll
 Windows-VS-2022-x64/libiio-sharp.dll
 Windows-VS-2022-x64/libiio1.dll
 Windows-VS-2022-x64/libiio1.exp
