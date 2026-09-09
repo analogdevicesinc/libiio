@@ -9,6 +9,7 @@
 #include <getopt.h>
 #include <iio/iio-lock.h>
 #include <iio/iio.h>
+#include <iiod/xml-zstd.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +32,7 @@ struct client {
 
 struct iiod_emu {
 	struct iio_context *ctx;
-	const char *xml;
+	void *xml;
 	size_t xml_len;
 	struct iio_mutex *lock;
 	struct client *clients;
@@ -235,16 +236,20 @@ int main(int argc, char **argv)
 		goto out_mutex_destroy;
 	}
 
-	emu.xml = iio_context_get_xml(emu.ctx);
+	emu.xml = iiod_get_xml_zstd(emu.ctx, &emu.xml_len);
 	if (!emu.xml) {
 		fprintf(stderr, "Unable to serialize the context\n");
 		goto out_ctx_destroy;
 	}
-	emu.xml_len = strlen(emu.xml) + 1;
+
+	if (emu.xml_len > IIOD_MAX_XML_PAYLOAD) {
+		fprintf(stderr, "Warning: the context description is %zu bytes, more than the %u a client will read; clients will fail to parse it.\n",
+				emu.xml_len, (unsigned int)IIOD_MAX_XML_PAYLOAD);
+	}
 
 	srv = emu_socket_listen(port, BACKLOG);
 	if (srv == EMU_INVALID_SOCKET)
-		goto out_ctx_destroy;
+		goto out_free_xml;
 
 	printf("Emulating %u device(s) from %s\n", iio_context_get_devices_count(emu.ctx),
 			argv[optind]);
@@ -275,6 +280,8 @@ int main(int argc, char **argv)
 	 */
 	emu_socket_close(srv);
 	reap_clients(&emu, true);
+out_free_xml:
+	free(emu.xml);
 out_ctx_destroy:
 	iio_context_destroy(emu.ctx);
 out_mutex_destroy:
