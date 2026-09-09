@@ -16,9 +16,7 @@
 #include "debug.h"
 #include "ops.h"
 #include "thread-pool.h"
-#if WITH_ZSTD
-#include <zstd.h>
-#endif
+#include "xml-zstd.h"
 
 #define MY_NAME "iiod"
 
@@ -94,48 +92,6 @@ static void sig_handler_usr1(int sig)
 {
 	restart_usr1 = true;
 	thread_pool_stop(main_thread_pool);
-}
-
-static void *get_xml_zstd_data(const struct iio_context *ctx, size_t *out_len)
-{
-	char *xml = iio_context_get_xml(ctx);
-	size_t len, xml_len = strlen(xml);
-	void *buf;
-#if WITH_ZSTD
-	size_t ret;
-	char *bytes;
-	size_t i;
-
-	len = ZSTD_compressBound(xml_len);
-	buf = malloc(len);
-	if (!buf) {
-		free(xml);
-		return NULL;
-	}
-
-	ret = ZSTD_compress(buf, len, xml, xml_len, 3);
-	free(xml);
-
-	if (ZSTD_isError(ret)) {
-		IIO_WARNING("Unable to compress XML string: %s\n", ZSTD_getErrorName(ret));
-		fprintf(stderr, "Showing data (buf) from failed compression: \n");
-		bytes = (char *)buf;
-		for (i = 0; i < len; i++) {
-			fprintf(stderr, "%02X", bytes[i]);
-		}
-		fprintf(stderr, "\n");
-
-		free(buf);
-		return NULL;
-	}
-
-	*out_len = ret;
-#else
-	buf = xml;
-	*out_len = xml_len;
-#endif
-
-	return buf;
 }
 
 static void free_device_pdata(struct iio_context *ctx)
@@ -314,7 +270,7 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint, const char *u
 		goto out_destroy_context;
 	}
 
-	xml_zstd = get_xml_zstd_data(ctx, &xml_zstd_len);
+	xml_zstd = iiod_get_xml_zstd(ctx, &xml_zstd_len);
 
 	buflist_lock = iio_mutex_create();
 	if (iio_err(buflist_lock)) {
