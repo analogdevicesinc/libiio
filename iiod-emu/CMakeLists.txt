@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.13)
 project(iiod-emu C)
 
-add_executable(iiod-emu iiod-emu.c network.c)
+add_executable(iiod-emu iiod-emu.c network.c
+                        ${CMAKE_SOURCE_DIR}/iiod/xml-zstd.c)
 set_target_properties(
     iiod-emu
     PROPERTIES C_STANDARD 99
@@ -11,6 +12,11 @@ set_target_properties(
 target_link_libraries(iiod-emu LINK_PRIVATE iio iio_common_config tinyiiod)
 target_include_directories(iiod-emu PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                             ${CMAKE_CURRENT_SOURCE_DIR})
+
+if (WITH_ZSTD)
+    target_include_directories(iiod-emu PRIVATE ${LIBZSTD_INCLUDE_DIR})
+    target_link_libraries(iiod-emu LINK_PRIVATE ${LIBZSTD_LIBRARIES})
+endif ()
 
 if (WIN32)
     # Keep <Windows.h> from dragging in the legacy winsock.h, which is mutually

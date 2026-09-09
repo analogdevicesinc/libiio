@@ -4,7 +4,8 @@ project(iiod C)
 include(${CMAKE_SOURCE_DIR}/cmake/Utilities.cmake)
 check_pthread_set_name(HAS_PTHREAD_SETNAME_NP)
 
-add_executable(iiod iiod.c interpreter.c responder.c rw.c thread-pool.c)
+add_executable(iiod iiod.c interpreter.c responder.c rw.c thread-pool.c
+                    xml-zstd.c)
 set_target_properties(
     iiod
     PROPERTIES C_STANDARD 99
