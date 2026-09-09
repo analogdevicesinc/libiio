@@ -18,8 +18,14 @@
 
 #include "network.h"
 
+#ifdef _WIN32
+#define strncasecmp _strnicmp
+#endif
+
 #define DEFAULT_PORT 30431
 #define BACKLOG 16
+
+#define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 struct client {
 	struct client *next;
@@ -44,13 +50,63 @@ static const struct option options[] = {
 	{ NULL, 0, NULL, 0 },
 };
 
+/*
+ * Backends that talk to real hardware. iiod-emu serves emulated hardware; wiring
+ * it to a physical device would turn it into an unauthenticated proxy for that
+ * device, and "local" would re-export the host's own IIO devices.
+ *
+ * The test has to be the scheme name, not whether the backend is built in:
+ * WITH_NETWORK_BACKEND_DYNAMIC and friends move these very backends out of the
+ * built-in table and onto the dynamic-module path, so "not built in" would let
+ * "ip:" straight through in exactly that configuration.
+ */
+static const char *const denied_schemes[] = { "local", "ip", "serial", "usb" };
+
 static void usage(void)
 {
-	printf("Usage: iiod-emu [OPTIONS] <device.xml>\n"
+	printf("Usage: iiod-emu [OPTIONS] <uri>\n"
+	       "Serve an emulated Libiio context over TCP.\n"
+	       "\n"
+	       "<uri> is a Libiio context URI:\n"
+	       "\temu:<device.xml>\tEmulate the hardware described by an XML file\n"
+	       "\t<module>:<args>\t\tLoad a hardware model from a dynamic backend\n"
+	       "Backends that reach real hardware are refused:");
+	for (size_t i = 0; i < ARRAY_SIZE(denied_schemes); i++)
+		printf(" %s", denied_schemes[i]);
+	printf("\n"
+	       "\n"
 	       "Options:\n"
 	       "\t-h, --help\t\tDisplay this help message\n"
-	       "\t-p, --port <port>\tPort to listen on (default: %u)\n",
+	       "\t-p, --port <port>\tPort to listen on (default: %d)\n",
 			DEFAULT_PORT);
+}
+
+static bool uri_is_allowed(const char *uri)
+{
+	const char *colon = strchr(uri, ':');
+	size_t i, len;
+
+	len = colon ? (size_t)(colon - uri) : 0;
+
+	/*
+	 * A one-character scheme is a Windows drive letter, not a backend, so
+	 * treat "C:\\dev.xml" the same as a path with no scheme at all rather
+	 * than letting it fail later as an unknown backend named "C".
+	 */
+	if (len < 2) {
+		fprintf(stderr, "\"%s\" is not a context URI. Did you mean emu:%s ?\n\n", uri, uri);
+		return false;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(denied_schemes); i++) {
+		if (len == strlen(denied_schemes[i]) && !strncasecmp(uri, denied_schemes[i], len)) {
+			fprintf(stderr, "Refusing the \"%s\" backend: iiod-emu serves emulated hardware, not real devices.\n\n",
+					denied_schemes[i]);
+			return false;
+		}
+	}
+
+	return true;
 }
 
 static bool parse_port(const char *str, uint16_t *port)
@@ -168,8 +224,7 @@ int main(int argc, char **argv)
 	uint16_t port = DEFAULT_PORT;
 	int ret = EXIT_FAILURE;
 	char err_str[256];
-	char *uri = NULL;
-	size_t uri_len;
+	const char *uri;
 	int c, err;
 
 	/*
@@ -198,21 +253,20 @@ int main(int argc, char **argv)
 	}
 
 	if (optind + 1 != argc) {
-		fprintf(stderr, "Expected exactly one XML description file.\n\n");
+		fprintf(stderr, "Expected exactly one context URI.\n\n");
 		usage();
 		return EXIT_FAILURE;
 	}
 
-	/* No PATH_MAX on MSVC, and this also lifts the length limit. */
-	uri_len = sizeof("emu:") + strlen(argv[optind]);
-	uri = malloc(uri_len);
-	if (!uri)
-		return EXIT_FAILURE;
+	uri = argv[optind];
 
-	snprintf(uri, uri_len, "emu:%s", argv[optind]);
+	if (!uri_is_allowed(uri)) {
+		usage();
+		return EXIT_FAILURE;
+	}
 
 	if (emu_network_init())
-		goto out_free_uri;
+		return EXIT_FAILURE;
 
 	err = iiod_init();
 	if (err) {
@@ -251,8 +305,7 @@ int main(int argc, char **argv)
 	if (srv == EMU_INVALID_SOCKET)
 		goto out_free_xml;
 
-	printf("Emulating %u device(s) from %s\n", iio_context_get_devices_count(emu.ctx),
-			argv[optind]);
+	printf("Emulating %u device(s) from %s\n", iio_context_get_devices_count(emu.ctx), uri);
 	printf("Listening on port %u; connect with: iio_info -u ip:127.0.0.1:%u\n", port, port);
 
 	for (;;) {
@@ -290,8 +343,6 @@ out_iiod_cleanup:
 	iiod_cleanup();
 out_network_deinit:
 	emu_network_deinit();
-out_free_uri:
-	free(uri);
 
 	return ret;
 }
