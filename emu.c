@@ -30,6 +30,12 @@
 struct iio_context_pdata {
 	xmlDoc *doc;
 	char *xml_path;
+	/*
+	 * One context can be shared by several threads, for instance by every
+	 * client of iiod-emu. Guards <doc>, which attribute writes mutate in
+	 * place, and the per-device register files.
+	 */
+	struct iio_mutex *lock;
 };
 
 struct iio_buffer_pdata {
@@ -923,6 +929,15 @@ static struct iio_context *emu_create_context(
 		return iio_ptr(-ENOMEM);
 	}
 
+	pdata->lock = iio_mutex_create();
+	ret = iio_err(pdata->lock);
+	if (ret) {
+		free(pdata);
+		iio_context_destroy(ctx);
+		xmlFreeDoc(doc);
+		return iio_ptr(ret);
+	}
+
 	pdata->doc = doc;
 	pdata->xml_path = iio_strdup(args);
 
@@ -933,23 +948,10 @@ static struct iio_context *emu_create_context(
 	return ctx;
 }
 
-static ssize_t emu_read_attr(const struct iio_attr *attr, char *dst, size_t len)
+/* Caller must hold pdata->lock. */
+static ssize_t emu_read_attr_locked(struct iio_context_pdata *pdata, const struct iio_attr *attr,
+		const char *device_id, const char *attr_name, char *dst, size_t len)
 {
-	const struct iio_device *dev;
-	const struct iio_context *ctx;
-	struct iio_context_pdata *pdata;
-	const char *device_id, *attr_name;
-
-	dev = iio_attr_get_device(attr);
-	if (!dev)
-		return -EINVAL;
-	ctx = dev->ctx;
-	pdata = iio_context_get_pdata(ctx);
-	if (!pdata)
-		return -EINVAL;
-	device_id = iio_device_get_id(dev);
-	attr_name = iio_attr_get_name(attr);
-
 	if (attr->type == IIO_ATTR_TYPE_BUFFER) {
 		return read_buffer_attr(
 				pdata->doc, device_id, attr->iio.buf->idx, attr_name, dst, len);
@@ -975,47 +977,84 @@ static ssize_t emu_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 	return read_device_attr(pdata->doc, device_id, attr->type, attr_name, dst, len);
 }
 
-static int validate_against_available(const struct iio_attr *attr, const char *src)
+static ssize_t emu_read_attr(const struct iio_attr *attr, char *dst, size_t len)
 {
-	double min = 0, step = 0, max = 0;
-	char **list = NULL;
-	size_t count = 0;
-	bool found;
-	int ret;
+	const struct iio_device *dev;
+	const struct iio_context *ctx;
+	struct iio_context_pdata *pdata;
+	const char *device_id, *attr_name;
+	ssize_t ret;
 
-	ret = iio_attr_get_range(attr, &min, &step, &max);
-	if (ret == 0) {
-		double value, steps_from_min;
-		if (step == 0 || iio_sscanf(src, "%lf", &value) != 1 || value < min || value > max)
-			return -EINVAL;
-		steps_from_min = (value - min) / step;
-		if (fabs(steps_from_min - round(steps_from_min)) > 1e-9)
-			return -EINVAL;
-		return 0;
-	}
+	dev = iio_attr_get_device(attr);
+	if (!dev)
+		return -EINVAL;
+	ctx = dev->ctx;
+	pdata = iio_context_get_pdata(ctx);
+	if (!pdata)
+		return -EINVAL;
+	device_id = iio_device_get_id(dev);
+	attr_name = iio_attr_get_name(attr);
 
-	if (ret == -EOPNOTSUPP) {
-		ret = iio_attr_get_available(attr, &list, &count);
-		if (ret < 0)
-			return ret;
-		found = false;
-		for (size_t i = 0; i < count; i++) {
-			if (strcmp(src, list[i]) == 0) {
-				found = true;
-				break;
-			}
-		}
-		iio_available_list_free(list, count);
-		return found ? 0 : -EINVAL;
-	}
+	iio_mutex_lock(pdata->lock);
+	ret = emu_read_attr_locked(pdata, attr, device_id, attr_name, dst, len);
+	iio_mutex_unlock(pdata->lock);
 
-	return 0;
+	return ret;
 }
 
-static int check_available(const struct iio_attr *attr, const char *src)
+/*
+ * Parse the "[min step max]" form of an *_available attribute. <min>, <step>
+ * and <max> are only meaningful when this returns true.
+ */
+static bool parse_range(const char *buf, double *min, double *step, double *max)
+{
+	char extra;
+	int n;
+
+#if defined(_MSC_VER)
+	n = iio_sscanf(buf, " [ %lf %lf %lf %c", min, step, max, &extra,
+			(unsigned int)sizeof(extra));
+#else
+	n = iio_sscanf(buf, " [ %lf %lf %lf %c", min, step, max, &extra);
+#endif
+
+	return n == 4 && extra == ']';
+}
+
+/* Is <value> one of the space- or newline-separated tokens of <list>? */
+static bool value_in_list(const char *list, const char *value)
+{
+	size_t vlen = strlen(value), n;
+	const char *p = list;
+
+	for (;;) {
+		p += strspn(p, " \n");
+		if (!*p)
+			return false;
+
+		n = strcspn(p, " \n");
+		if (n == vlen && !memcmp(p, value, n))
+			return true;
+
+		p += n;
+	}
+}
+
+/*
+ * Reject <src> if the attribute has a sibling *_available attribute that does
+ * not allow it. The list is read straight from the document, so that a write
+ * and its validation happen inside one critical section.
+ *
+ * Caller must hold pdata->lock.
+ */
+static int check_available_locked(struct iio_context_pdata *pdata, const struct iio_attr *attr,
+		const char *device_id, const char *src)
 {
 	char avail_name[MAX_ATTR_NAME + sizeof("_available")];
+	double min, step, max, value, steps_from_min;
 	const struct iio_attr *avail_attr;
+	char *buf;
+	int err = 0;
 
 	snprintf(avail_name, sizeof(avail_name), "%s_available", iio_attr_get_name(attr));
 
@@ -1042,32 +1081,39 @@ static int check_available(const struct iio_attr *attr, const char *src)
 	if (!avail_attr)
 		return 0;
 
-	return validate_against_available(avail_attr, src);
+	buf = malloc(MAX_ATTR_VALUE);
+	if (!buf)
+		return -ENOMEM;
+
+	/* An unreadable list is as good as no list: there is nothing to check against. */
+	if (emu_read_attr_locked(pdata, avail_attr, device_id, avail_name, buf, MAX_ATTR_VALUE) <
+			0) {
+		free(buf);
+		return 0;
+	}
+
+	if (parse_range(buf, &min, &step, &max)) {
+		if (step == 0 || iio_sscanf(src, "%lf", &value) != 1 || value < min ||
+				value > max) {
+			err = -EINVAL;
+		} else {
+			steps_from_min = (value - min) / step;
+			if (fabs(steps_from_min - round(steps_from_min)) > 1e-9)
+				err = -EINVAL;
+		}
+	} else if (!value_in_list(buf, src)) {
+		err = -EINVAL;
+	}
+
+	free(buf);
+
+	return err;
 }
 
-static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size_t len)
+/* Caller must hold pdata->lock. */
+static ssize_t emu_write_attr_locked(struct iio_context_pdata *pdata, const struct iio_attr *attr,
+		const char *device_id, const char *attr_name, const char *src, size_t len)
 {
-	const struct iio_device *dev;
-	const struct iio_context *ctx;
-	struct iio_context_pdata *pdata;
-	const char *device_id, *attr_name;
-
-	dev = iio_attr_get_device(attr);
-	if (!dev)
-		return -EINVAL;
-	ctx = dev->ctx;
-	pdata = iio_context_get_pdata(ctx);
-	if (!pdata)
-		return -EINVAL;
-	device_id = iio_device_get_id(dev);
-	attr_name = iio_attr_get_name(attr);
-
-	if (string_ends_with(attr_name, "_available"))
-		return -EACCES;
-
-	if (check_available(attr, src) < 0)
-		return -EINVAL;
-
 	if (attr->type == IIO_ATTR_TYPE_BUFFER) {
 		return write_buffer_attr(
 				pdata->doc, device_id, attr->iio.buf->idx, attr_name, src, len);
@@ -1093,6 +1139,36 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 	return write_device_attr(pdata->doc, device_id, attr_name, src, len, attr->type);
 }
 
+static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size_t len)
+{
+	const struct iio_device *dev;
+	const struct iio_context *ctx;
+	struct iio_context_pdata *pdata;
+	const char *device_id, *attr_name;
+	ssize_t ret;
+
+	dev = iio_attr_get_device(attr);
+	if (!dev)
+		return -EINVAL;
+	ctx = dev->ctx;
+	pdata = iio_context_get_pdata(ctx);
+	if (!pdata)
+		return -EINVAL;
+	device_id = iio_device_get_id(dev);
+	attr_name = iio_attr_get_name(attr);
+
+	if (string_ends_with(attr_name, "_available"))
+		return -EACCES;
+
+	iio_mutex_lock(pdata->lock);
+	ret = check_available_locked(pdata, attr, device_id, src);
+	if (!ret)
+		ret = emu_write_attr_locked(pdata, attr, device_id, attr_name, src, len);
+	iio_mutex_unlock(pdata->lock);
+
+	return ret;
+}
+
 static struct iio_register_entry *emu_find_registers(
 		const struct iio_device_pdata *pdata, uint32_t addr)
 {
@@ -1107,27 +1183,37 @@ static struct iio_register_entry *emu_find_registers(
 static int emu_reg_read(const struct iio_device *dev, uint32_t addr, uint32_t *val)
 {
 	const struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(dev->ctx);
 	struct iio_register_entry *regs;
+	int ret = 0;
 
-	if (!pdata)
+	if (!pdata || !ctx_pdata)
 		return -ENOENT;
+
+	iio_mutex_lock(ctx_pdata->lock);
 
 	regs = emu_find_registers(pdata, addr);
 	if (!regs)
-		return -ENOENT;
+		ret = -ENOENT;
+	else
+		*val = regs->val;
 
-	*val = regs->val;
+	iio_mutex_unlock(ctx_pdata->lock);
 
-	return 0;
+	return ret;
 }
 
 static int emu_reg_write(const struct iio_device *dev, uint32_t addr, uint32_t val)
 {
 	struct iio_device_pdata *pdata = iio_device_get_pdata(dev);
+	struct iio_context_pdata *ctx_pdata = iio_context_get_pdata(dev->ctx);
 	struct iio_register_entry *regs, *new_regs;
+	int ret = 0;
 
-	if (!pdata)
+	if (!pdata || !ctx_pdata)
 		return -ENOENT;
+
+	iio_mutex_lock(ctx_pdata->lock);
 
 	regs = emu_find_registers(pdata, addr);
 	if (regs) {
@@ -1135,15 +1221,19 @@ static int emu_reg_write(const struct iio_device *dev, uint32_t addr, uint32_t v
 	} else {
 		new_regs = realloc(pdata->registers,
 				(pdata->nb_registers + 1) * sizeof(struct iio_register_entry));
-		if (!new_regs)
-			return -ENOMEM;
-		pdata->registers = new_regs;
-		pdata->registers[pdata->nb_registers].addr = addr;
-		pdata->registers[pdata->nb_registers].val = val;
-		pdata->nb_registers++;
+		if (!new_regs) {
+			ret = -ENOMEM;
+		} else {
+			pdata->registers = new_regs;
+			pdata->registers[pdata->nb_registers].addr = addr;
+			pdata->registers[pdata->nb_registers].val = val;
+			pdata->nb_registers++;
+		}
 	}
 
-	return 0;
+	iio_mutex_unlock(ctx_pdata->lock);
+
+	return ret;
 }
 
 static void emu_shutdown(struct iio_context *ctx)
@@ -1173,6 +1263,9 @@ static void emu_shutdown(struct iio_context *ctx)
 		free(pdata->xml_path);
 		pdata->xml_path = NULL;
 	}
+
+	iio_mutex_destroy(pdata->lock);
+	pdata->lock = NULL;
 }
 
 /* Returns a heap-allocated path string; caller must free().
