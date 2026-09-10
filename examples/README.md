@@ -17,6 +17,30 @@ When adding a new example, please update this list.
 This example libiio program is meant to exercise the features of IIO functionality on the AD9361 found on the AD-FMCOMMS2-EBZ, AD-FMCOMMS3-EBZ, and the ADRV9361-Z7035 RF SOM.
 It takes the uri as the only argument. for example : `./ad9361-iiostream usb:3.32.5`
 
+## ad9361-iioblock
+  * Language : C
+
+This example libiio program targets the same hardware as `ad9361-iiostream` and does the
+same trivial work with the samples, but streams with the low level block API
+(`iio_buffer_open()` / `iio_buffer_stream_create_block()` / `iio_block_enqueue()` /
+`iio_block_dequeue()`) instead of the higher level `iio_stream` helper. The two are meant
+to be read side by side: what differs is that the blocks are created, handed to the
+hardware and taken back explicitly.
+
+A block belongs to exactly one side at a time. `iio_block_enqueue()` gives it to the
+hardware and `iio_block_dequeue()` waits until the hardware is done with it. Four blocks of
+1 MiB are kept in flight per direction, so the DMA always has somewhere to write, or
+something ready to send, while the program is still busy with the previous block.
+
+Received samples get their I and Q swapped in place and transmitted samples are zeroed.
+The two directions also show the two ways of walking a block: `iio_block_first()` with
+`iio_block_end()` on RX, and `iio_block_foreach_sample()` on TX, which visits every sample
+of every channel in the mask and so needs no assumption about sample width or channel
+layout.
+
+It takes an optional uri as its last argument. For example : `./ad9361-iioblock ip:192.168.2.1`
+Run `./ad9361-iioblock -h` for the full usage.
+
 ## ad9371-iiostream
   * Language : C
 

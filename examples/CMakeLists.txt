@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 3.13)
 
 project(ad9361-iiostream C)
+project(ad9361-iioblock C)
 project(ad9371-iiostream C)
 project(adrv9009-iiostream C)
 project(dummy-iiostream C)
@@ -35,19 +36,23 @@ if (CMAKE_COMPILER_IS_GNUCC)
 endif ()
 
 add_executable(ad9361-iiostream ad9361-iiostream.c ${LIBIIO_RC})
+add_executable(ad9361-iioblock ad9361-iioblock.c ${LIBIIO_RC})
 add_executable(ad9371-iiostream ad9371-iiostream.c ${LIBIIO_RC})
 add_executable(adrv9009-iiostream adrv9009-iiostream.c ${LIBIIO_RC})
 add_executable(adrv9002-iiostream adrv9002-iiostream.c ${LIBIIO_RC})
 add_executable(dummy-iiostream dummy-iiostream.c ${LIBIIO_RC})
 
 target_link_libraries(ad9361-iiostream iiostream_helper ${GETOPT_LIBRARIES})
+target_link_libraries(ad9361-iioblock iio iio_common_config ${GETOPT_LIBRARIES})
+# sigaction()/sigprocmask() are not exposed by a strict -std=c99 compilation
+target_compile_definitions(ad9361-iioblock PRIVATE _POSIX_C_SOURCE=200809L)
 target_link_libraries(ad9371-iiostream iiostream_helper ${GETOPT_LIBRARIES})
 target_link_libraries(adrv9009-iiostream iiostream_helper ${GETOPT_LIBRARIES})
 target_link_libraries(dummy-iiostream iiostream_helper ${GETOPT_LIBRARIES})
 target_link_libraries(adrv9002-iiostream iiostream_helper ${GETOPT_LIBRARIES})
 
-set(IIO_EXAMPLES_TARGETS ad9361-iiostream ad9371-iiostream adrv9009-iiostream
-                         dummy-iiostream adrv9002-iiostream)
+set(IIO_EXAMPLES_TARGETS ad9361-iiostream ad9361-iioblock ad9371-iiostream
+                         adrv9009-iiostream dummy-iiostream adrv9002-iiostream)
 
 find_library(PTHREAD_LIBRARIES pthread)
 find_library(CURSES_LIBRARY curses)
