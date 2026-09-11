@@ -10,6 +10,7 @@
 #include <zephyr/posix/unistd.h>
 #include <zephyr/logging/log.h>
 #include <tinyiiod/tinyiiod.h>
+#include <zephyr/net/dns_sd.h>
 #if defined(CONFIG_NET_CONNECTION_MANAGER)
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
@@ -259,6 +260,13 @@ static void iiod_network_free_client_data(struct client_data *client)
 
 	LOG_DBG("[Client %d] free_client_data completed", client->client_num);
 }
+
+#if IS_ENABLED(CONFIG_DNS_SD)
+
+DNS_SD_REGISTER_TCP_SERVICE(iio, CONFIG_NET_HOSTNAME, "_iio", "local",
+			    dns_sd_empty_txt, CONFIG_LIBIIO_IIOD_NETWORK_PORT);
+
+#endif
 
 static void iiod_network_server_thread(void *p1, void *p2, void *p3)
 {
