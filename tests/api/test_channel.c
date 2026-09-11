@@ -7,6 +7,8 @@
 
 #include <errno.h>
 #include <iio/iio.h>
+#include <stdint.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "test_framework.h"
@@ -307,6 +309,203 @@ TEST_FUNCTION(channel_user_data)
 	TEST_ASSERT_PTR_NULL(retrieved_data, "Channel data should be NULL after clearing");
 }
 
+/*
+ * The float tests below use a dedicated XML fixture rather than the context
+ * under test, because no generic context is guaranteed to expose a channel
+ * using the IIO 'f' scan element format.
+ */
+#ifdef TESTS_XMLS_DIR
+#define FLOAT_FIXTURE_URI "xml:" TESTS_XMLS_DIR "/float_scan_elements.xml"
+
+static struct iio_context *open_float_fixture(void)
+{
+	struct iio_context *ctx = iio_create_context(NULL, FLOAT_FIXTURE_URI);
+	int err = iio_err(ctx);
+
+	/*
+	 * TESTS_XMLS_DIR is only defined when the XML backend is enabled, so a
+	 * build that gets this far and still cannot open the fixture is broken
+	 * rather than unsupported. Fail instead of skipping: the fixture path is
+	 * baked in at compile time,.
+	 */
+	if (err)
+		DEBUG_PRINT("  INFO: iio_create_context(\"%s\") returned %d\n",
+				FLOAT_FIXTURE_URI, err);
+
+	TEST_ASSERT(!err, "Fixture " FLOAT_FIXTURE_URI " can be opened");
+
+	return err ? NULL : ctx;
+}
+
+static const struct iio_channel *float_fixture_channel(const struct iio_context *ctx,
+		const char *id)
+{
+	const struct iio_device *dev = iio_context_find_device(ctx, "iio:device0");
+
+	return dev ? iio_device_find_channel(dev, id, false) : NULL;
+}
+#endif /* TESTS_XMLS_DIR */
+
+TEST_FUNCTION(channel_float_format)
+{
+#ifdef TESTS_XMLS_DIR
+	static const struct {
+		const char *id;
+		bool is_float;
+		bool is_signed;
+		bool is_fully_defined;
+		bool is_be;
+		unsigned int bits;
+		unsigned int length;
+		unsigned int repeat;
+	} expected[] = {
+		/* Not a float: guards against a regression in the s/u paths. */
+		{ "voltage0", false, true, false, false, 12, 16, 1 },
+		/* le:f16/16X3>>0, as exposed by the st_lsm6dsx rotation sensor. */
+		{ "rot_quaternionaxis", true, false, true, false, 16, 16, 3 },
+		/* Uppercase 'F' means fully defined, like 'S' and 'U'. */
+		{ "voltage1", true, false, true, false, 16, 16, 1 },
+		{ "voltage2", true, false, true, false, 32, 32, 1 },
+		{ "voltage3", true, false, true, true, 64, 64, 1 },
+		/* A float narrower than its storage is not fully defined. */
+		{ "voltage4", true, false, false, false, 16, 32, 1 },
+		/*
+		 * An unrecognized format character is treated as unsigned rather
+		 * than rejected, so that one unknown channel cannot make the
+		 * whole device fail to enumerate.
+		 */
+		{ "voltage5", false, false, true, false, 16, 16, 1 },
+	};
+	struct iio_context *ctx = open_float_fixture();
+	unsigned int i;
+
+	if (!ctx)
+		return;
+
+	for (i = 0; i < sizeof(expected) / sizeof(expected[0]); i++) {
+		const struct iio_channel *chn = float_fixture_channel(ctx, expected[i].id);
+		const struct iio_data_format *fmt;
+
+		TEST_ASSERT_PTR_NOT_NULL(chn, expected[i].id);
+		if (!chn)
+			continue;
+
+		fmt = iio_channel_get_data_format(chn);
+		TEST_ASSERT_PTR_NOT_NULL(fmt, "Channel has a data format");
+		if (!fmt)
+			continue;
+
+		TEST_ASSERT(fmt->is_float == expected[i].is_float, "is_float matches");
+		TEST_ASSERT(fmt->is_signed == expected[i].is_signed, "is_signed matches");
+		TEST_ASSERT(fmt->is_fully_defined == expected[i].is_fully_defined,
+				"is_fully_defined matches");
+		TEST_ASSERT(fmt->is_be == expected[i].is_be, "is_be matches");
+		TEST_ASSERT_EQ(fmt->bits, expected[i].bits, "bits matches");
+		TEST_ASSERT_EQ(fmt->length, expected[i].length, "length matches");
+		TEST_ASSERT_EQ(fmt->repeat, expected[i].repeat, "repeat matches");
+	}
+
+	iio_context_destroy(ctx);
+#else
+	DEBUG_PRINT("  SKIP: TESTS_XMLS_DIR not defined\n");
+#endif
+}
+
+TEST_FUNCTION(channel_float_conversion)
+{
+#ifdef TESTS_XMLS_DIR
+	struct iio_context *ctx = open_float_fixture();
+	const struct iio_channel *chn;
+
+	if (!ctx)
+		return;
+
+	/* le:f32/32>>0 -- 1.5f on the wire, little-endian. */
+	chn = float_fixture_channel(ctx, "voltage2");
+	if (chn) {
+		const uint8_t raw[4] = { 0x00, 0x00, 0xc0, 0x3f };
+		float converted = 0.0f;
+
+		iio_channel_convert(chn, &converted, raw);
+		TEST_ASSERT(converted == 1.5f, "le:f32/32 converts to 1.5f");
+	}
+
+	/* be:f64/64>>0 -- -2.25 on the wire, big-endian, so it must be swapped. */
+	chn = float_fixture_channel(ctx, "voltage3");
+	if (chn) {
+		const uint8_t raw[8] = { 0xc0, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+		double converted = 0.0;
+
+		iio_channel_convert(chn, &converted, raw);
+		TEST_ASSERT(converted == -2.25, "be:f64/64 converts to -2.25");
+	}
+
+	/*
+	 * le:f16/32>>0 -- a padded float must have its unused upper bits masked
+	 * off, never sign-extended, even though bit 15 of the sample is set.
+	 */
+	chn = float_fixture_channel(ctx, "voltage4");
+	if (chn) {
+		const uint8_t raw[4] = { 0x00, 0xbc, 0xff, 0xff };
+		uint32_t converted = 0;
+
+		iio_channel_convert(chn, &converted, raw);
+		TEST_ASSERT_EQ(converted, 0x0000bc00, "le:f16/32 is masked, not sign-extended");
+	}
+
+	/* le:s12/16>>4 -- signed integers must still be sign-extended. */
+	chn = float_fixture_channel(ctx, "voltage0");
+	if (chn) {
+		const uint8_t raw[2] = { 0x00, 0xf0 };
+		int16_t converted = 0;
+
+		iio_channel_convert(chn, &converted, raw);
+		TEST_ASSERT_EQ(converted, -256, "le:s12/16>>4 is sign-extended");
+	}
+
+	iio_context_destroy(ctx);
+#else
+	DEBUG_PRINT("  SKIP: TESTS_XMLS_DIR not defined\n");
+#endif
+}
+
+TEST_FUNCTION(channel_float_xml_serialization)
+{
+#ifdef TESTS_XMLS_DIR
+	struct iio_context *ctx = open_float_fixture();
+	char *xml;
+
+	if (!ctx)
+		return;
+
+	xml = iio_context_get_xml(ctx);
+	if (iio_err(xml)) {
+		DEBUG_PRINT("  SKIP: iio_context_get_xml() failed\n");
+		iio_context_destroy(ctx);
+		return;
+	}
+
+	/*
+	 * Float formats must survive a parse/serialize round trip. A fully
+	 * defined format is re-emitted with an uppercase character, exactly as
+	 * an 's' or 'u' format is, so 'f' comes back as 'F' when bits equals
+	 * storagebits.
+	 */
+	TEST_ASSERT(strstr(xml, "le:F16/16X3&gt;&gt;0") != NULL, "le:f16/16X3 round-trips");
+	TEST_ASSERT(strstr(xml, "le:F16/16&gt;&gt;0") != NULL, "le:F16/16 round-trips");
+	TEST_ASSERT(strstr(xml, "le:f16/32&gt;&gt;0") != NULL, "le:f16/32 round-trips");
+	TEST_ASSERT(strstr(xml, "be:F64/64&gt;&gt;0") != NULL, "be:F64/64 round-trips");
+	TEST_ASSERT(strstr(xml, "le:s12/16&gt;&gt;4") != NULL, "le:s12/16 round-trips");
+	/* An unrecognized format character is re-emitted as unsigned. */
+	TEST_ASSERT(strstr(xml, "le:q16/16") == NULL, "Unknown format char is not preserved");
+
+	free(xml);
+	iio_context_destroy(ctx);
+#else
+	DEBUG_PRINT("  SKIP: TESTS_XMLS_DIR not defined\n");
+#endif
+}
+
 int main(void)
 {
 	DEBUG_PRINT("=== libiio Channel Tests ===\n\n");
@@ -319,6 +518,9 @@ int main(void)
 	RUN_TEST(channel_index_and_format);
 	RUN_TEST(channel_conversion);
 	RUN_TEST(channel_user_data);
+	RUN_TEST(channel_float_format);
+	RUN_TEST(channel_float_conversion);
+	RUN_TEST(channel_float_xml_serialization);
 
 	cleanup_test_channel();
 

@@ -227,7 +227,7 @@ static void print_channel(const struct iio_channel *chn)
 
 	if (iio_channel_is_scan_element(chn)) {
 		format = iio_channel_get_data_format(chn);
-		sign = format->is_signed ? 's' : 'u';
+		sign = format->is_float ? 'f' : (format->is_signed ? 's' : 'u');
 
 		repeat[0] = '\0';
 

@@ -368,6 +368,19 @@ What it says, is that the hardware samples are in little-endian order ("le"), th
 
 From this hardware representation, the conversion functions will process the samples so that they become 16-bit unsigned values.
 
+In the kernel ABI, the character preceding the number of bits can be "s" for a signed (two's complement) integer, "u" for an unsigned integer, or "f" for a floating-point number. The "f" character was added by Linux 7.x (`IIO_SCAN_FORMAT_FLOAT`); the kernel ABI requires that the number of bits then be one of the widths defined by IEEE 754 for binary interchange formats, so a half-precision sample appears as:
+
+    ># cat /sys/bus/iio/devices/iio:device0/scan_elements/in_rot_quaternionaxis_type
+    le:f16/16>>0
+
+libiio additionally understands an uppercase form of each of these characters, which is *not* part of the kernel ABI. "S" and "U" were introduced by libiio in 2014 to let a device state that the bits above the MSB are already correct -- set to zero for unsigned data, or to the extended sign bit for signed data -- so that an application can skip the masking or sign-extension step entirely. libiio extends the same convention to "F" for floating-point channels. Since mainline Linux emits only lowercase characters, in practice the uppercase forms reach libiio from vendor kernels that adopted the convention, and from libiio's own XML and IIOD output, which uppercases the character whenever a format is fully defined. An older client that does not recognise "F" falls back to treating it as unsigned, and then either masks or does nothing depending on whether `bits` equals `storagebits`, both of which are harmless for a float.
+
+For a floating-point channel, the conversion functions only apply the endianness and the shift; the sample is never sign-extended, and the remaining bits are copied through unaltered. Applications can tell floating-point channels apart by testing the `is_float` field of the `iio_data_format` structure. A format character that libiio does not recognize is treated as unsigned rather than rejected, so a channel using a format introduced by a newer kernel does not prevent the rest of the device from being enumerated.
+
+It is worth being precise about what this does and does not promise. libiio transports samples; it does not produce or validate them. All it knows about a channel is the format string the source gave it, and all it does with a floating-point sample is swap its bytes and shift it. It never examines the sample as a number, so it cannot and does not guarantee that one is a well-formed IEEE 754 value. That guarantee belongs to whatever wrote the buffer: the kernel ABI obliges a driver declaring "f" to supply IEEE 754 samples of a standard width, but libiio also serves contexts produced by third-party IIOD servers and by backends that build a format description programmatically, and it enforces nothing on any of them. A driver that declares `f24`, or that declares "f" and writes something else entirely, will be reported faithfully as a floating-point channel.
+
+libiio also does not decode the value for you. A 32-bit or 64-bit sample can be read directly as a `float` or a `double` on any host whose FPU uses IEEE 754, which in practice means every platform libiio supports. A 16-bit sample is a binary16 bit pattern, which no common C compiler will interpret for you, so the application has to widen it itself. A float narrower than its storage, such as `le:f16/32`, is left zero-extended in its storage slot after conversion, so only the low `bits` bits are the value.
+
 The conversion process may look like an easy task; however, the implementation is rather complex, for a good reason: it has been designed to handle samples of any possible size. It makes it possible to process 256-bit samples on a 32-bit CPU, for instance, while compilers typically don\'t handle numbers that large.
 
 ### Low-speed interface
