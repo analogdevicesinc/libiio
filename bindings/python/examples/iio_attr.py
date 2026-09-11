@@ -330,17 +330,20 @@ class Information:
         self._channel_attributes_information(dev, channel)
 
     def _scan_channel_information(self, channel):
-        sign = "s" if channel.data_format.is_signed else "u"
+        if channel.data_format.is_float:
+            sign = "f"
+        else:
+            sign = "s" if channel.data_format.is_signed else "u"
         if channel.data_format.is_fully_defined:
             sign = sign.upper()
 
-        if channel.data_format.repeat > 1:
-            print("X" + str(channel.data_format.repeat), end="")
+        repeat = ("X" + str(channel.data_format.repeat)
+                  if channel.data_format.repeat > 1 else "")
 
         print(", index: " + str(channel.index) + ", format: "
-              + "b" if channel.data_format.is_be else "l"
+              + ("b" if channel.data_format.is_be else "l")
               + "e:" + sign + str(channel.data_format.bits)
-              + "/" + str(channel.data_format.length) + str(channel.data_format.repeat)
+              + "/" + str(channel.data_format.length) + repeat
               + ">>" + str(channel.data_format.shift))
 
         print("" if self.arguments.scan_only else ", ", end="")

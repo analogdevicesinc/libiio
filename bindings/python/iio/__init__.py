@@ -156,6 +156,7 @@ class DataFormat(Structure):
         ("scale", c_double),
         ("repeat", c_uint),
         ("offset", c_double),
+        ("is_float", c_bool),
     ]
 
 class EventType(Enum):
