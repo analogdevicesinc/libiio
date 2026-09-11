@@ -29,6 +29,15 @@ foreach (test ${API_TEST_TARGETS})
         ${test}
         PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/../
                 ${CMAKE_SOURCE_DIR}/include ${CMAKE_BINARY_DIR})
+    # Lets tests load a specific fixture instead of the context under test.
+    # Only defined when the XML backend is available to open one, so that a test
+    # finding this defined but the fixture unusable can treat that as a failure
+    # rather than skipping.
+    if (WITH_XML_BACKEND)
+        target_compile_definitions(
+            ${test} PRIVATE
+            TESTS_XMLS_DIR="${CMAKE_SOURCE_DIR}/tests/resources/xmls")
+    endif ()
     set_target_properties(
         ${test}
         PROPERTIES C_STANDARD 99
