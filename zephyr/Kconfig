@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
 menuconfig LIBIIO
@@ -41,7 +41,7 @@ if LIBIIO_MULTITHREADING
 
 config LIBIIO_THREAD_POOL_SIZE
 	int "Maximum number of libiio internal threads"
-	default 6 if LIBIIO_IIOD_NETWORK
+	default 6 if LIBIIO_IIOD_NETWORK || LIBIIO_IIOD_USB
 	default 3
 	help
 	  Slots in the static libiio thread pool. Each costs
@@ -65,7 +65,7 @@ config LIBIIO_THREAD_PRIORITY
 
 config LIBIIO_MUTEX_POOL_SIZE
 	int "Maximum number of libiio mutexes"
-	default 48 if LIBIIO_IIOD_NETWORK
+	default 48 if LIBIIO_IIOD_NETWORK || LIBIIO_IIOD_USB
 	default 24
 	help
 	  Slots in the static iio_mutex pool. Three are held permanently by
@@ -77,7 +77,7 @@ config LIBIIO_MUTEX_POOL_SIZE
 
 config LIBIIO_COND_POOL_SIZE
 	int "Maximum number of libiio condition variables"
-	default 32 if LIBIIO_IIOD_NETWORK
+	default 32 if LIBIIO_IIOD_NETWORK || LIBIIO_IIOD_USB
 	default 16
 	help
 	  Slots in the static iio_cond pool. Condition variables pair with
