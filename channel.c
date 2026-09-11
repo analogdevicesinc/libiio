@@ -263,6 +263,14 @@ static ssize_t iio_snprintf_scan_element_xml(char *str, ssize_t len, const struc
 {
 	char processed = (chn->format.is_fully_defined ? 'A' - 'a' : 0);
 	char repeat[12] = "", scale[48] = "";
+	char sign;
+
+	if (chn->format.is_float)
+		sign = 'f';
+	else if (chn->format.is_signed)
+		sign = 's';
+	else
+		sign = 'u';
 
 	if (chn->format.repeat > 1)
 		iio_snprintf(repeat, sizeof(repeat), "X%u", chn->format.repeat);
@@ -272,9 +280,8 @@ static ssize_t iio_snprintf_scan_element_xml(char *str, ssize_t len, const struc
 
 	return iio_snprintf(str, len,
 			"<scan-element index=\"%li\" format=\"%ce:%c%u/%u%s&gt;&gt;%u\" %s/>",
-			chn->index, chn->format.is_be ? 'b' : 'l',
-			chn->format.is_signed ? 's' + processed : 'u' + processed, chn->format.bits,
-			chn->format.length, repeat, chn->format.shift, scale);
+			chn->index, chn->format.is_be ? 'b' : 'l', sign + processed,
+			chn->format.bits, chn->format.length, repeat, chn->format.shift, scale);
 }
 
 ssize_t iio_snprintf_channel_xml(char *ptr, ssize_t len, const struct iio_channel *chn)
@@ -482,9 +489,12 @@ int iio_parse_format_string(const char *fmt_str, struct iio_data_format *fmt)
 	}
 
 	/* Set format flags */
+
 	fmt->is_be = (endian == 'b');
+	fmt->is_float = (sign == 'f' || sign == 'F');
 	fmt->is_signed = (sign == 's' || sign == 'S');
-	fmt->is_fully_defined = (sign == 'S' || sign == 'U' || fmt->bits == fmt->length);
+	fmt->is_fully_defined =
+			(sign == 'S' || sign == 'U' || sign == 'F' || fmt->bits == fmt->length);
 
 	return 0;
 }
@@ -635,7 +645,9 @@ void iio_channel_convert(const struct iio_channel *chn, void *dst, const void *s
 			shift_bits((void *)dst_ptr, chn->format.shift, len, false);
 
 		if (!chn->format.is_fully_defined) {
-			if (chn->format.is_signed)
+			/* Never sign-extend a float. A float narrower than its storage
+			 * only needs its unused upper bits cleared. */
+			if (chn->format.is_signed && !chn->format.is_float)
 				sign_extend((void *)dst_ptr, chn->format.bits, len);
 			else
 				mask_upper_bits((void *)dst_ptr, chn->format.bits, len);
