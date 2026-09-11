@@ -165,6 +165,9 @@ namespace iio
 
             /// <summary>Contains a value to be added to the raw sample before applying the scale.</summary>
             public double offset;
+
+            /// <summary>True if the sample is a floating-point number</summary>
+            [MarshalAs(UnmanagedType.I1)] public bool is_float;
         }
 
         internal IntPtr chn;
