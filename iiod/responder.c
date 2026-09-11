@@ -333,7 +333,7 @@ static void handle_refresh_format(struct parser_pdata *pdata, const struct iiod_
 
 	const struct iio_data_format *fmt = iio_channel_get_data_format(chn);
 	char endian = fmt->is_be ? 'b' : 'l';
-	char sign = fmt->is_signed ? 's' : 'u';
+	char sign = fmt->is_float ? 'f' : (fmt->is_signed ? 's' : 'u');
 	char repeat[12] = "";
 
 	if (fmt->repeat > 1)

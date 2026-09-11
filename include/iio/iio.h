@@ -1525,6 +1525,9 @@ struct iio_data_format {
 	/** @brief Contains a value to be added to the raw sample before
 	 *  applying the scale. */
 	double offset;
+
+	/** @brief Contains True if the channel's samples are floating-point numbers */
+	bool is_float;
 };
 
 /** @brief Create a new empty channels mask
