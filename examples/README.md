@@ -49,6 +49,23 @@ No hardware should be required to run this program.
 
 A Curses based application which implements real time monitoring of IIO non-buffer samples.
 
+## iio_adi_xflow_check
+  * Language : C
+  * Requirements : pthreads
+
+Streams a buffer to or from an IIO device and reports the underflows or overflows the device
+counts, to check whether a platform can sustain a given sample rate.
+It takes the device as the only positional argument, for example : `./iio_adi_xflow_check -u ip:192.168.2.1 cf-ad9361-lpc`
+
+## tinyiiod-linux
+  * Language : C
+  * Requirements : -DWITH_LIBTINYIIOD=ON; Linux
+
+A minimal IIOD server built on the tinyiiod framework, serving a simple emulated device over
+TCP on port 30431. It is a reference for implementing tinyiiod on embedded platforms, and lets
+tinyiiod be exercised without embedded hardware.
+See [tinyiiod-linux/README.md](tinyiiod-linux/README.md) for the details.
+
 ## Other languages
 
 Examples for the other supported languages live with their bindings:
