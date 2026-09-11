@@ -49,7 +49,10 @@ No hardware should be required to run this program.
 
 A Curses based application which implements real time monitoring of IIO non-buffer samples.
 
-## iopp-enum
-  * Language : C++
+## Other languages
 
-Demonstrates the usage of the C++ API.
+Examples for the other supported languages live with their bindings:
+
+  * C++ : [bindings/cpp/examples](../bindings/cpp/examples)
+  * C# : [bindings/csharp/examples](../bindings/csharp/examples)
+  * Python : [bindings/python/examples](../bindings/python/examples)
