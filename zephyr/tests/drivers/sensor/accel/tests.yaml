@@ -1,0 +1,88 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+# The hardware map's post_flash_script must attach the board's USB device
+# (0456:b673) to the host after every flash.
+
+common:
+  tags:
+    - libiio
+    - drivers
+    - sensor
+    - streaming
+  extra_args:
+    - SNIPPET=iiod-usb
+  harness: pytest
+  timeout: 120
+
+tests:
+  libiio.drivers.sensor.accel.pmod_acl:
+    extra_args:
+      - SHIELD=pmod_acl;iio_pmod_acl
+    platform_allow:
+      - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4
+    harness_config:
+      pytest_dut_scope: session
+      fixture: pmod_acl
+      pytest_root:
+        - pytest/test_accel.py
+      pytest_args:
+        - --iiod-transport=usb
+        - --accel=adxl345:100:31:124
+
+  libiio.drivers.sensor.accel.eval_adxl362_ardz:
+    extra_args:
+      - SHIELD=eval_adxl362_ardz;iio_eval_adxl362_ardz
+    extra_configs:
+      - CONFIG_ADXL362_ACCEL_ODR_200=y
+    platform_allow:
+      - apard32690/max32690/m4
+      - frdm_k64f
+    integration_platforms:
+      - apard32690/max32690/m4
+      - frdm_k64f
+    harness_config:
+      pytest_dut_scope: session
+      fixture: eval_adxl362_ardz
+      pytest_root:
+        - pytest/test_accel.py
+      pytest_args:
+        - --iiod-transport=usb
+        - --accel=adxl362:200:128:512:4:4:3.0
+
+  libiio.drivers.sensor.accel.x_nucleo_iks4a1:
+    extra_args:
+      - SHIELD=x_nucleo_iks4a1;iio_x_nucleo_iks4a1
+    platform_allow:
+      - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4
+    harness_config:
+      pytest_dut_scope: session
+      fixture: x_nucleo_iks4a1
+      pytest_root:
+        - pytest/test_accel.py
+      pytest_args:
+        - --iiod-transport=usb
+        - --accel=lsm6dsv:120:32:256
+
+  libiio.drivers.sensor.accel.multi_shield:
+    extra_args:
+      - SHIELD=pmod_acl;iio_pmod_acl;x_nucleo_iks4a1;iio_x_nucleo_iks4a1
+    platform_allow:
+      - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4
+    harness_config:
+      pytest_dut_scope: session
+      fixture:
+        - pmod_acl
+        - x_nucleo_iks4a1
+      pytest_root:
+        - pytest/test_accel.py
+      pytest_args:
+        - --iiod-transport=usb
+        - --accel=adxl345:100:31:124:4:6
+        - --accel=lis2dux12:100:32:256:4:6
