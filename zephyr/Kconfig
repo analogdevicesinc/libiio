@@ -86,6 +86,17 @@ config LIBIIO_COND_POOL_SIZE
 	  LIBIIO_MUTEX_POOL_SIZE.
 
 endif # LIBIIO_MULTITHREADING
+config LIBIIO_IIOD_V0_COMPAT
+	bool "libiio v0.x (ASCII protocol) compatibility"
+	default y
+	help
+	  Make the iiod server understand the line-based ASCII command
+	  protocol used by libiio v0.x clients, in addition to the binary
+	  protocol used by v1.x clients. The client is detected automatically:
+	  a v1 client's first command is "BINARY", which switches the server
+	  to the binary protocol; a v0 client stays on the ASCII protocol.
+
+	  Disable this to build a binary-only (v1) server.
 
 rsource "drivers/Kconfig"
 rsource "iiod/Kconfig"
