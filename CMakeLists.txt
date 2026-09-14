@@ -160,8 +160,8 @@ if (WIN32)
                        ${LIBIIO_WIN32_PREFIX}iio${PROJECT_VERSION_MAJOR})
 
     if (IIO_COMPAT_LIB)
-        set_target_properties(
-            ${IIO_COMPAT_LIB} PROPERTIES OUTPUT_NAME libiio PREFIX "")
+        set_target_properties(${IIO_COMPAT_LIB} PROPERTIES OUTPUT_NAME libiio
+                                                           PREFIX "")
     endif ()
 endif ()
 
