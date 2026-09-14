@@ -39,6 +39,35 @@ if(CONFIG_LIBIIO)
     set(LIBIIO_NO_THREADS 1)
   endif()
 
+  # libiio v0.x (ASCII protocol) compatibility.
+  if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
+    # Generate the scanner/parser into the build directory
+    find_package(FLEX REQUIRED)
+    find_package(BISON REQUIRED)
+    flex_target(iiod_v0_lexer ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.l
+                ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
+    bison_target(iiod_v0_parser ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.y
+                 ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
+    add_flex_bison_dependency(iiod_v0_lexer iiod_v0_parser)
+
+    zephyr_library_sources(
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
+      ${FLEX_iiod_v0_lexer_OUTPUTS}
+      ${BISON_iiod_v0_parser_OUTPUTS}
+    )
+    set_source_files_properties(
+      ${FLEX_iiod_v0_lexer_OUTPUTS}
+      ${BISON_iiod_v0_parser_OUTPUTS}
+      PROPERTIES COMPILE_OPTIONS "-iquote${ZEPHYR_LIBIIO_MODULE_DIR}/iiod;-Wno-sign-compare"
+    )
+    set_source_files_properties(
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
+      PROPERTIES COMPILE_OPTIONS
+                 "-iquote${CMAKE_CURRENT_BINARY_DIR};-iquote${ZEPHYR_LIBIIO_MODULE_DIR}/iiod"
+                 OBJECT_DEPENDS ${BISON_iiod_v0_parser_OUTPUT_HEADER}
+    )
+  endif()
+
   zephyr_include_directories(
     ${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/include
     ${ZEPHYR_LIBIIO_MODULE_DIR}/include
@@ -48,15 +77,27 @@ if(CONFIG_LIBIIO)
   # zephyr log levels (0-4) are offset by 1 from libiio levels (1-5)
   math(EXPR default_log_level "${CONFIG_LIBIIO_LOG_LEVEL} + 1")
 
+  # WITH_IIOD_V0_COMPAT is referenced by files that are always compiled (e.g.
+  # responder.c), so it must always be defined - as 1 or 0 - not just added
+  # when enabled. WITH_TINYIIOD_V0_COMPAT makes tinyiiod.c run the ASCII front
+  # end; it is separate because on host builds WITH_IIOD_V0_COMPAT describes the
+  # full iiod, while host tinyiiod stays binary-only.
+  if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
+    set(with_iiod_v0_compat 1)
+  else()
+    set(with_iiod_v0_compat 0)
+  endif()
+
   zephyr_library_compile_definitions(
     LIBIIO_STATIC=1
     NO_THREADS=${LIBIIO_NO_THREADS}
     WITH_ZSTD=0
     WITH_LIBTINYIIOD=1
+    WITH_TINYIIOD_V0_COMPAT=${with_iiod_v0_compat}
     WITH_EXTERNAL_BACKEND=1
     # Only define the minimal macros actually needed for compilation
     WITH_IIOD_USB_DMABUF=0
-    WITH_IIOD_V0_COMPAT=0
+    WITH_IIOD_V0_COMPAT=${with_iiod_v0_compat}
     WITH_LOCAL_BACKEND=0
     WITH_NETWORK_BACKEND=0
     WITH_SERIAL_BACKEND=0
