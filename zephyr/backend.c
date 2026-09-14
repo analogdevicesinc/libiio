@@ -45,7 +45,7 @@ zephyr_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 static const struct iio_device *
 zephyr_get_trigger(const struct iio_device *dev)
 {
-	return NULL;
+	return iio_ptr(-ENOENT);
 }
 
 static struct iio_context *
