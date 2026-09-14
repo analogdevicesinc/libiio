@@ -810,8 +810,6 @@ if (WITH_EMU_BACKEND)
         target_include_directories(iio PRIVATE ${LIBXML2_INCLUDE_DIR})
         target_link_libraries(iio PRIVATE ${LIBXML2_LIBRARIES})
     endif ()
-
-    message(STATUS "EMU backend enabled")
 endif ()
 
 if (WITH_LIBTINYIIOD)
