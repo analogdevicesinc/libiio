@@ -23,7 +23,7 @@ static const char xml_header[] =
 		"<!ELEMENT context-attribute EMPTY>"
 		"<!ELEMENT device (channel | buffer | attribute | debug-attribute | event-attribute | buffer-attribute)*>"
 		"<!ELEMENT channel (scan-element?, attribute*, event-attribute*)>"
-		"<!ELEMENT buffer (attribute*, channel+)>"
+		"<!ELEMENT buffer (attribute*, channel*)>"
 		"<!ELEMENT attribute EMPTY>"
 		"<!ELEMENT scan-element EMPTY>"
 		"<!ELEMENT debug-attribute EMPTY>"
