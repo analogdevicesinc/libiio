@@ -23,7 +23,7 @@ jobs:
           run: |
             mkdir build
             cd build
-            cmake .. -DWITH_TESTS=ON -DTESTS_DEBUG=ON -DWITH_GCOV=ON -DWITH_EMU_BACKEND=ON
+            cmake .. -DWITH_TESTS=ON -DTESTS_DEBUG=ON -DWITH_GCOV=ON -DWITH_EMU_BACKEND=ON -DWITH_IIOD_EMU=ON
             make
             make coverage
 
