@@ -7,7 +7,7 @@ project(adrv9009-iiostream C)
 project(dummy-iiostream C)
 project(adrv9002-iiostream C)
 
-add_library(iiostream_helper STATIC iiostream-common.c)
+add_library(iiostream_helper OBJECT iiostream-common.c)
 target_link_libraries(iiostream_helper PUBLIC iio iio_common_config)
 
 if (APPLE)
