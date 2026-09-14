@@ -257,6 +257,9 @@ static int iio_usb_request_handler(struct usbd_class_data *const c_data, struct 
 	if (ep == pipe->ep_out) {
 		/* Received data from host (RX) — append to FIFO */
 		LOG_DBG("Pipe %d RX complete: err=%d, len=%u", pipe_idx, err, buf->len);
+		if (atomic_cas(&pipe->reset_pending, 1, 0)) {
+			ring_buf_reset(&pipe->rx_ringbuf);
+		}
 
 		if (err == 0 && buf->len > 0) {
 			uint32_t written = ring_buf_put(&pipe->rx_ringbuf, buf->data, buf->len);
