@@ -99,7 +99,10 @@
           <ul>
 <li><a class="reference internal" href="#">Installation</a><ul>
 <li><a class="reference internal" href="#installation-packages">Installation Packages</a><ul>
-<li><a class="reference internal" href="#windows">Windows</a></li>
+<li><a class="reference internal" href="#windows">Windows</a><ul>
+<li><a class="reference internal" href="#where-the-files-are-installed">Where the files are installed</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#linux">Linux</a></li>
 <li><a class="reference internal" href="#macos">macOS</a></li>
 </ul>
@@ -255,6 +258,78 @@ Content on this topic
 <h3>Windows<a class="headerlink" href="#windows" title="Link to this heading"></a></h3>
 <p>Install the latest release from the <a class="icon link reference external" href="https://github.com/analogdevicesinc/libiio/releases" target="_blank">GitHub releases page</a>.</p>
 <p>The EXE installer is recommend but zip packages include the same files, which can be useful for developers.</p>
+<section id="where-the-files-are-installed">
+<h4>Where the files are installed<a class="headerlink" href="#where-the-files-are-installed" title="Link to this heading"></a></h4>
+<p>The EXE installer does not create an application directory. Instead, each file is placed
+where Windows, the compiler or the CLR expects to find it. On a 64-bit machine:</p>
+<div class="table-wrapper colwidths-auto docutils container">
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>File</p></th>
+<th class="head"><p>Installed to</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">libiio1.dll</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Windows\System32</span></code></p></td>
+<td><p>The libiio 1.x library itself. Replaced only if the installed copy is not newer</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">libiio.dll</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Windows\System32</span></code></p></td>
+<td><p>The 0.x compatibility layer. Replaced only if the installed copy is not newer</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">iio_info.exe</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_attr.exe</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_rwdev.exe</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_reg.exe</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_event.exe</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_genxml.exe</span></code>, …</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Windows\System32</span></code></p></td>
+<td><p>The command-line utilities, on <code class="docutils literal notranslate"><span class="pre">PATH</span></code> by default</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">libxml2.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">libusb-1.0.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">libserialport.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">libzstd.dll</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Windows\System32</span></code></p></td>
+<td><p>Backend dependencies, only installed if not already present</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">msvcp140.dll</span></code>, <code class="docutils literal notranslate"><span class="pre">vcruntime140.dll</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Windows\System32</span></code></p></td>
+<td><p>MSVC runtime, only installed if not already present</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">libiio1.lib</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files</span> <span class="pre">(x86)\Microsoft</span> <span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">12.0\VC\lib\amd64</span></code></p></td>
+<td><p>Import library, for linking against libiio</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">iio.h</span></code>, <code class="docutils literal notranslate"><span class="pre">iio-backend.h</span></code>, <code class="docutils literal notranslate"><span class="pre">iio-debug.h</span></code>, <code class="docutils literal notranslate"><span class="pre">iio-lock.h</span></code>, <code class="docutils literal notranslate"><span class="pre">iiod-client.h</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files</span> <span class="pre">(x86)\Microsoft</span> <span class="pre">Visual</span> <span class="pre">Studio</span> <span class="pre">12.0\VC\include\iio</span></code></p></td>
+<td><p>Public headers</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">libiio-sharp.dll</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\Common</span> <span class="pre">Files\libiio</span></code></p></td>
+<td><p>The C# binding assembly</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The installer also sets a <code class="docutils literal notranslate"><span class="pre">LIBIIO_VERSION</span></code> system environment variable to the installed
+version.</p>
+<p>Both <code class="docutils literal notranslate"><span class="pre">libiio1.dll</span></code> and <code class="docutils literal notranslate"><span class="pre">libiio.dll</span></code> are installed, and they are not two copies of the same
+library. <code class="docutils literal notranslate"><span class="pre">libiio1.dll</span></code> is libiio 1.x, and is what you link against for new development.
+<code class="docutils literal notranslate"><span class="pre">libiio.dll</span></code> is a translation layer: it exports the old libiio 0.x API and forwards each
+call to <code class="docutils literal notranslate"><span class="pre">libiio1.dll</span></code>, which it loads dynamically at runtime. Keeping it under the name the
+0.x library used means applications that were built against libiio 0.x keep loading and
+running seamlessly after upgrading, with no rebuild. See the
+<a class="reference internal" href="../migration/"><span class="std std-doc">0.x to 1.x API update guide</span></a> when you are ready to port such an application
+to the 1.x API.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\Common</span> <span class="pre">Files\libiio</span></code> is not searched by the .NET assembly loader, and
+<code class="docutils literal notranslate"><span class="pre">libiio-sharp.dll</span></code> is not registered in the GAC. To use the C# binding, reference the
+assembly from that location in your project and let it be copied next to your own
+executable; do not expect it to be found there at runtime.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On a machine where the installer runs in 32-bit mode, <code class="docutils literal notranslate"><span class="pre">C:\Windows\System32</span></code> becomes
+<code class="docutils literal notranslate"><span class="pre">C:\Windows\SysWOW64</span></code> and <code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files\Common</span> <span class="pre">Files</span></code> becomes
+<code class="docutils literal notranslate"><span class="pre">C:\Program</span> <span class="pre">Files</span> <span class="pre">(x86)\Common</span> <span class="pre">Files</span></code>.</p>
+</div>
+</section>
 </section>
 <section id="linux">
 <h3>Linux<a class="headerlink" href="#linux" title="Link to this heading"></a></h3>
