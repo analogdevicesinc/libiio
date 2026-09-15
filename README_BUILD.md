@@ -149,6 +149,7 @@ Cmake Options          | Default | Target | Description                         
 `CPP_BINDINGS`         | OFF |        All | Install C++ bindings |
 `CPP_EXAMPLES`         | OFF |        All | Build C++ examples (C++17 required) |
 `WITH_UTILS`           |  ON |        All | Build the utility programs (iio-utils)           |
+`WITH_IIOD_EMU`        | OFF |        All | Build iiod-emu, the IIO device emulator            |
 `WITH_EXAMPLES`        | OFF |        All | Build the example programs                         |
 `CSHARP_BINDINGS`      | OFF |    Windows | Install C# bindings                                |
 `CMAKE_INSTALL_PREFIX` | `/usr` |   Linux | default install path |
@@ -182,6 +183,19 @@ Cmake Options          | Default | Depends on    | Description                  
 `WITH_LOCAL_CONFIG`    |  ON | Local backend | Read local context attributes from /etc/libiio.ini |
 `WITH_EMU_BACKEND`     | OFF | libxml2       | Enable the emulation backend for XML-based device simulation |
 `WITH_EMU_BACKEND_DYNAMIC` |  ON | Modules + emu backend | Compile the emulation backend as a module |
+
+`iiod-emu` serves an XML device description over TCP/IP, so that clients can be
+tested against emulated devices without real hardware. It builds without the
+emulation backend, but it creates its context through the `emu:` URI, so
+`WITH_EMU_BACKEND=ON` is required to actually run it. Both default to `OFF` and
+are meant to be enabled together:
+
+```shell
+analog@precision:~/libiio/build$ cmake .. -DWITH_EMU_BACKEND=ON -DWITH_IIOD_EMU=ON
+```
+
+CMake prints a reminder when `WITH_IIOD_EMU` is enabled and `WITH_EMU_BACKEND`
+is not.
 
 
 There are a few options, which are experimental, which should be left to their default settings:
