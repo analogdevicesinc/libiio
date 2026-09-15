@@ -1,0 +1,6 @@
+shield:
+  name: iio_adafruit_ism330dhcx
+  full_name: IIO Support for the Adafruit ISM330DHCX shield
+  vendor: adafruit
+  supported_features:
+    - sensor

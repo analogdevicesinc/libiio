@@ -9,13 +9,16 @@ manifest:
   projects:
     - name: zephyr
       remote: zephyrproject-rtos
-      revision: 357467a011cd2557a1a3f0b4be83d817c4addc9b
+      revision: b1e130ee3ab3c7a662de97909c664cfa2c591a6f
       clone-depth: 1
       import:
         name-allowlist:
           - cmsis_6
           - hal_adi
+          - hal_nordic
           - hal_nxp
+          - hal_rpi_pico
           - hal_stm32
+          - hal_st
           - net-tools
           - picolibc

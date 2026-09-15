@@ -8,6 +8,7 @@ build:
   settings:
     dts_root: zephyr
     snippet_root: zephyr
+    board_root: zephyr
 tests:
   - zephyr/tests
 samples:

@@ -1,0 +1,6 @@
+shield:
+  name: iio_adafruit_veml7700
+  full_name: IIO Support for the Adafruit VEML7700 shield
+  vendor: adafruit
+  supported_features:
+    - sensor

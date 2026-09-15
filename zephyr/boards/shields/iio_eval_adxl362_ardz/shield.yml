@@ -1,0 +1,6 @@
+shield:
+  name: iio_eval_adxl362_ardz
+  full_name: IIO Support for the EVAL-ADXL362_ARDZ shield
+  vendor: adi
+  supported_features:
+    - sensor

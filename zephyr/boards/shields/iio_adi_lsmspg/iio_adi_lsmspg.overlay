@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		ad5592r {
+			compatible = "iio,io-channels";
+			io-name = "ad5592r";
+			io-channels = <&ad5592_dac 0 &ad5592_adc 0 &ad5592_adc 1 &ad5592_dac 2 &ad5592_adc 2>;
+			io-channel-names = "voltage0", "voltage0", "voltage1", "voltage2", "voltage2";
+		};
+
+		ad5593r {
+			compatible = "iio,io-channels";
+			io-name = "ad5593r";
+			io-channels = <&ad5593_dac 0 &ad5593_adc 0 &ad5593_adc 1 &ad5593_dac 2 &ad5593_adc 2 &ad5593_dac 3>;
+			io-channel-names = "voltage0", "voltage0", "voltage1", "voltage2", "voltage2", "voltage3";
+		};
+
+		lm75 {
+			compatible = "iio,sensor";
+			io-name = "lm75";
+			sensor-device = <&lm75>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_AMBIENT_TEMP
+			>;
+		};
+	};
+};

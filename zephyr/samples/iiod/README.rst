@@ -11,22 +11,57 @@ including ADC channels and sensors — to a host PC over serial, USB CDC ACM,
 native USB, or network interfaces. Clients can interact with the devices using
 the libiio command-line utilities, `Scopy`_, or `pyadi-iio`_.
 
-The following hardware and emulated configurations are supported:
+The following configurations are supported:
 
+Hardware
+========
+
+1. Several Arduino Uno compatible sensor shields:
+
+  * ST X-Nucleo-IKS4A1
+  * Analog Devices EVAL-ADXL362-ARDZ
+
+  With the following boards:
+
+  * APARD32690
+  * FRDM-MCXN236
+  * Nucleo H723ZG
+  * nRF52840DK
+
+2. Several Adafruit STEMMA sensor boards:
+
+  * Adafruit aht20
+  * Adafruit ism330dhcx
+  * Adafruit lis3dh
+  * Adafruitveml7700
+
+  With the following boards:
+
+  * Adafruit Qt PY RP2040
+  * Adafruit Metro RP2040
+
+3. The Analog Devices Low-Speed Mixed Signal Playground (LSMSPG) shield, with:
+
+  * MAX32655FTHR
+  * MAX32666FTHR
+  * Cygnet
+
+4. Digilent PMOD ACL shield, with:
+
+  * APARD32690
+
+Many of the shields listed above can be used with other controllers supporting
+corresponding connection (e.g. PMOD, Arduino Uno R3, etc) but will need to be
+built passing an explicit snippet to enable an IIOD server backend/transport.
+
+Emulated
+========
+
+The following emulated sensor/ADC configurations can be used on hardware or running 
 - **ADC emulator** (``CONFIG_LIBIIO_IIOD_ADC_EMUL``): two-channel ADC exposed
   via a Zephyr software emulator; no real hardware required.
 - **Sensor emulator** (``CONFIG_LIBIIO_IIOD_SENSOR_EMUL``): emulated ADLTC2990
   voltage/current/temperature monitor exposed via a Zephyr I2C emulator.
-- **ADXL345 accelerometer** (``CONFIG_LIBIIO_IIOD_SENSOR_ADXL345``): real
-  hardware 3-axis accelerometer connected via I2C.
-- **PMOD ACL shield** (``SHIELD=pmod_acl``): ADXL345 mounted on the PMOD ACL
-  module.
-- **eval_ad4052_ardz shield** (``SHIELD=eval_ad4052_ardz``): AD4052 SAR ADC
-  evaluation board.
-- **Multi-sensor** (``CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y`` +
-  ``CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y``): ADXL345 real hardware accelerometer
-  and an emulated ADLTC2990 voltage/temperature monitor exposed simultaneously
-  as two IIO devices.
 
 Requirements
 ************
@@ -97,36 +132,6 @@ channels (``accel_x``, ``accel_y``, ``accel_z``) in the IIO context.
    :board: apard32690/max32690/m4
    :snippets: iiod-console
    :gen-args: -DCONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y
-   :goals: build flash
-   :compact:
-
-PMOD ACL Shield (ADXL345)
-=========================
-
-Use the ``pmod_acl`` shield to build with an ADXL345 3-axis accelerometer
-mounted on the PMOD ACL module.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/iiod
-   :board: apard32690/max32690/m4
-   :shield: pmod_acl
-   :snippets: iiod-console
-   :goals: build flash
-   :compact:
-
-Multi-Sensor (ADXL345 + ADLTC2990)
-====================================
-
-Use both ``CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y`` and
-``CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y`` together to expose two IIO devices
-simultaneously: the ADXL345 accelerometer (real hardware on I2C) and an
-emulated ADLTC2990 voltage/current/temperature monitor.
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/iiod
-   :board: apard32690/max32690/m4
-   :snippets: iiod-console
-   :gen-args: -DCONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y -DCONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
    :goals: build flash
    :compact:
 
@@ -246,9 +251,8 @@ Sensor Device
 ADXL345 Accelerometer
 ----------------------
 
-When building with ``CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y`` or the ``pmod_acl``
-shield, the IIO context contains a sensor device with three acceleration
-channels:
+When building the ``pmod_acl`` and ``iio_pmod_acl`` sample shields, the IIO
+context contains a sensor device with three acceleration channels:
 
 .. code-block:: console
 
@@ -269,125 +273,6 @@ channels:
                                 attr  1: scale value: 0.001
                     No trigger assigned to device
 
-Multi-Sensor (ADXL345 + ADLTC2990)
-------------------------------------
-
-When building with both ``CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y`` and
-``CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y``, the IIO context exposes two devices:
-``iio:device0`` (ADXL345 accelerometer) and ``iio:device1`` (ADLTC2990
-voltage/current/temperature monitor):
-
-.. code-block:: console
-
-      iio_info version: 1.0 (git tag:v1.0)
-      Libiio version: 1.0 (git tag: v1.0) backends: ip serial usb xml
-      IIO context created with serial backend.
-      Backend version: 4.4 (git tag: v4.3.0-9-ga516ab0dab3a)
-      Backend description string: Zephyr v4.3.0-9-ga516ab0dab3a May 18 2026 12:12:07
-      IIO context has 3 attributes:
-            attr  0: serial,description value: USB Serial Device (COM9)
-            attr  1: serial,port value: COM9
-            attr  2: uri value: serial:COM9,115200,8n1n
-      IIO context has 2 devices:
-            iio:device0: iio-device@1 (buffer capable)
-                     3 channels found:
-                              accel_x:  (input, index: 0, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 0
-                                    attr  1: scale value: 0.001
-                              accel_y:  (input, index: 1, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 6129
-                                    attr  1: scale value: 0.001
-                              accel_z:  (input, index: 2, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 7201
-                                    attr  1: scale value: 0.001
-                     1 buffer attributes found:
-                              attr  0: buffer value:
-                     Current trigger: iio:device0(iio-device@1)
-            iio:device1: iio-device@2 (buffer capable)
-                     4 channels found:
-                              voltage0:  (input, index: 0, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 0
-                                    attr  1: scale value: 0.001
-                              current0:  (input, index: 1, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 0
-                                    attr  1: scale value: 0.001
-                              temp_die:  (input, index: 2, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 0
-                                    attr  1: scale value: 0.001
-                              temp_ambient:  (input, index: 3, format: le:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 0
-                                    attr  1: scale value: 0.001
-
-Multi-device (ADXL345 + AD4052)
-------------------------------------
-
-When building with both ``CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y`` and
-``CONFIG_LIBIIO_IIOD_SENSOR_AD4052=y``, the IIO context exposes two devices:
-``iio:device1`` (ADXL345 accelerometer) and ``iio:device0`` (AD4052
-analog-to-digital converter):
-
-.. code-block:: console
-
-      iio_info version: 1.0 (git tag:v1.0)
-      Libiio version: 1.0 (git tag: v1.0) backends: ip serial usb xml
-      IIO context created with serial backend.
-      Backend version: 4.4 (git tag: v4.4.0)
-      Backend description string: Zephyr v4.4.0 May 18 2026 16:17:15
-      IIO context has 3 attributes:
-            attr  0: serial,description value: USB Serial Device (COM3)
-            attr  1: serial,port value: COM3
-            attr  2: uri value: serial:COM3,115200,8n1n
-      IIO context has 4 devices:
-            iio:device0: iio-device@0 (buffer capable)
-                     1 channels found:
-                              voltage0:  (input, index: 0, format: be:u12/16>>0)
-                              6 channel-specific attributes found:
-                                    attr  0: differential value: 0
-                                    attr  1: gain value: 1
-                                    attr  2: process value: 490
-                                    attr  3: raw value: 1599
-                                    attr  4: reference value: Internal
-                                    attr  5: scale value: 0.305175
-                     1 device-specific attributes found:
-                              attr  0: internal_ref_voltage value: 1250
-                     1 buffer attributes found:
-                              attr  0: buffer0 value:
-                     Current trigger: trigger0(timer1)
-            iio:device1: iio-device@1 (buffer capable)
-                     3 channels found:
-                              accel_x:  (input, index: 0, format: be:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: -459
-                                    attr  1: scale value: 0.001
-                              accel_y:  (input, index: 1, format: be:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 5209
-                                    attr  1: scale value: 0.001
-                              accel_z:  (input, index: 2, format: be:S16/16>>0)
-                              2 channel-specific attributes found:
-                                    attr  0: raw value: 7354
-                                    attr  1: scale value: 0.001
-                     1 buffer attributes found:
-                              attr  0: buffer1 value:
-                     Current trigger: trigger1(common_trigger1)
-            trigger0: timer1
-                     0 channels found:
-                     1 device-specific attributes found:
-                              attr  0: sampling_period value: 100
-                     No trigger on this device
-            trigger1: common_trigger1
-                     0 channels found:
-                     2 device-specific attributes found:
-                              attr  0: common_trigger_channel value: all
-                              attr  1: common_trigger_type value: data_ready
-                     No trigger on this device
 Using with Scopy
 ================
 

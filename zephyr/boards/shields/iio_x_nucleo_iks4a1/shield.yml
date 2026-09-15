@@ -1,0 +1,6 @@
+shield:
+  name: iio_x_nucleo_iks4a1
+  full_name: ST X-Nucleo-IKS4A1 IIO Support
+  vendor: st
+  supported_features:
+    - sensor

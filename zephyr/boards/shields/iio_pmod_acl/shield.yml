@@ -1,0 +1,6 @@
+shield:
+  name: iio_pmod_acl
+  full_name: IIO Support for the PMOD ACL shield
+  vendor: adi
+  supported_features:
+    - sensor

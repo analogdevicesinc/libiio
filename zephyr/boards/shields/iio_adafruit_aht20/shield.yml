@@ -1,0 +1,6 @@
+shield:
+  name: iio_adafruit_aht20
+  full_name: IIO Support for the Adafruit AHT20 shield
+  vendor: adafruit
+  supported_features:
+    - sensor
