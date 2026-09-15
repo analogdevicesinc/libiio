@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		adafruit_lis3dh {
+			compatible = "iio,sensor";
+			io-name = "lis3dh";
+			sensor-device = <&adafruit_lis3dh>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_ACCEL_X
+				IIO_SENSOR_CHAN_ACCEL_Y
+				IIO_SENSOR_CHAN_ACCEL_Z
+			>;
+		};
+	};
+};

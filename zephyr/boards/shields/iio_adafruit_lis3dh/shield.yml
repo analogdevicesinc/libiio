@@ -1,0 +1,6 @@
+shield:
+  name: iio_adafruit_lis3dh
+  full_name: IIO Support for the Adafruit LIS3DH shield
+  vendor: adafruit
+  supported_features:
+    - sensor

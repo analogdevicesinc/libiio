@@ -1,0 +1,84 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		iio-sensors {
+			/* First ADLTC2990 instance — I2C address 0x4c */
+			ltc2990_0 {
+				compatible = "iio,sensor";
+				sensor-device = <&adltc2990_emul_0>;
+				sensor-channels = <
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_CURRENT
+					IIO_SENSOR_CHAN_DIE_TEMP
+					IIO_SENSOR_CHAN_AMBIENT_TEMP
+				>;
+				buffer-name = "buffer0";
+				io-name = "ltc2990-0";
+			};
+
+			/* Second ADLTC2990 instance — I2C address 0x4e */
+			ltc2990_1 {
+				compatible = "iio,sensor";
+				sensor-device = <&adltc2990_emul_1>;
+				sensor-channels = <
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_VOLTAGE
+					IIO_SENSOR_CHAN_CURRENT
+					IIO_SENSOR_CHAN_DIE_TEMP
+					IIO_SENSOR_CHAN_AMBIENT_TEMP
+				>;
+				buffer-name = "buffer1";
+				io-name = "ltc2990-1";
+			};
+		};
+	};
+
+	/* Emulated I2C bus hosting both ADLTC2990 instances */
+	i2c_emul: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+
+		adltc2990_emul_0: adltc2990@4c {
+			compatible = "adi,adltc2990";
+			reg = <0x4c>;
+			status = "okay";
+			measurement-mode = <0 0>;
+			pins-v1-v2-current-resistor = <0>;
+			pins-v3-v4-current-resistor = <0>;
+			pin-v1-voltage-divider-resistors = <500 1000>;
+			pin-v2-voltage-divider-resistors = <110000 100000>;
+			pin-v3-voltage-divider-resistors = <7000 1000>;
+			pin-v4-voltage-divider-resistors = <500 1000>;
+		};
+
+		adltc2990_emul_1: adltc2990@4e {
+			compatible = "adi,adltc2990";
+			reg = <0x4e>;
+			status = "okay";
+			measurement-mode = <0 0>;
+			pins-v1-v2-current-resistor = <0>;
+			pins-v3-v4-current-resistor = <0>;
+			pin-v1-voltage-divider-resistors = <500 1000>;
+			pin-v2-voltage-divider-resistors = <110000 100000>;
+			pin-v3-voltage-divider-resistors = <7000 1000>;
+			pin-v4-voltage-divider-resistors = <500 1000>;
+		};
+	};
+};

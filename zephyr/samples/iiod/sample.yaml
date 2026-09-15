@@ -8,106 +8,39 @@ common:
     type: one_line
     regex:
       - "Booting Zephyr OS"
+  extra_args:
+    - platform:max32666fthr/max32666/cpu0:SNIPPET="iiod-usb"
+    - platform:nucleo_h723zg/stm32h723xx:SNIPPET="iiod-network"
+    - platform:cygnet/stm32l433xx:SNIPPET="iiod-usb"
+    - platform:apard32690@D/max32690/m4:SNIPPET="iiod-usb"
+    - platform:nrf52840dk/nrf52840:SNIPPET="iiod-usb"
+    - platform:apard32690@E/max32690/m4:SNIPPET="iiod-usb"
+    - platform:frdm_mcxn236/mcxn236:SNIPPET="iiod-usb"
+    - platform:adafruit_metro_rp2040/rp2040:SNIPPET="iiod-usb"
+    - platform:adafruit_qt_py_rp2040/rp2040:SNIPPET="iiod-cdc-acm"
+
 tests:
-  sample.iiod.usb.pytest:
-    # Needs privileged one-time host setup (usbip client, TAP interface,
-    # vhci_hcd, udev rule -- see conftest.py's _usb_context()), so no
-    # integration_platforms. Run manually with:
-    #   west twister -p native_sim --test sample.iiod.usb.pytest
-    tags: usb-hostreq
-    extra_args:
-      - SNIPPET=iiod-usb
-      # Overlays/confs set here, not via CMakeLists.txt's Kconfig-gated
-      # append, which gets shadowed once EXTRA_DTC_OVERLAY_FILE is set.
-      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
-      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
-    extra_configs:
-      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
-      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - native_sim
-    harness: pytest
-    timeout: 60
-    harness_config:
-      pytest_root:
-        - pytest/test_iiod.py
-      pytest_dut_scope: session
-      pytest_args:
-        - --iiod-transport=usb
-
-  sample.iiod.network.pytest:
-    extra_args:
-      - SNIPPET=iiod-network
-      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
-      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
-    harness: pytest
-    timeout: 120
-    harness_config:
-      pytest_root:
-        - pytest/test_iiod.py
-      pytest_dut_scope: session
-      pytest_args:
-        - --iiod-transport=network
-
-  sample.iiod.uart.pytest:
-    extra_args:
-      - SNIPPET=iiod-console
-      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
-      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
-    harness: pytest
-    harness_config:
-      pytest_root:
-        - pytest/test_iiod.py
-      pytest_dut_scope: session
-      pytest_args:
-        - --iiod-transport=uart
-
-  sample.iiod.uart.multithread.pytest:
-    extra_args:
-      - SNIPPET=iiod-console
-      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
-      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-      - CONFIG_LIBIIO_MULTITHREADING=y
-    platform_allow:
-      - native_sim
-    integration_platforms:
-      - native_sim
-    harness: pytest
-    timeout: 120
-    harness_config:
-      pytest_dut_scope: session
-      pytest_args:
-        - --iiod-transport=uart
-
-  sample.iiod.usb:
+  sample.iiod.emul.usb:
+    depends_on:
+      - usbd
     extra_args:
       - SNIPPET=iiod-usb
     extra_configs:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - native_sim
 
-  sample.iiod.cdc-acm.emul:
+  sample.iiod.emul.cdc-acm:
+    depends_on:
+      - usbd
     extra_args:
       - SNIPPET=iiod-cdc-acm
     extra_configs:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - apard32690/max32690/m4
-      - adi_sdp_k1
-      - frdm_k64f
 
-  sample.iiod.console.emul:
+  sample.iiod.emul.console:
+    depends_on:
+      - serial
     extra_args:
       - SNIPPET=iiod-console
     extra_configs:
@@ -115,53 +48,147 @@ tests:
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
     platform_allow:
       - apard32690/max32690/m4
-      - adi_sdp_k1
-      - frdm_k64f
 
-  sample.iiod.console.multi-sensor:
-    extra_args:
-      - SNIPPET=iiod-console
-    extra_configs:
-      - CONFIG_LIBIIO_IIOD_SENSOR_ADXL345=y
-      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
-    platform_allow:
-      - apard32690/max32690/m4
-
-  sample.iiod.console.multi-sensor-emul:
+  sample.iiod.multi-sensor-emul.console:
+    depends_on:
+      - serial
     extra_args:
       - SNIPPET=iiod-console
     extra_configs:
       - CONFIG_LIBIIO_IIOD_MULTI_SENSOR_EMUL=y
     platform_allow:
       - apard32690/max32690/m4
-      - adi_sdp_k1
-      - frdm_k64f
 
-  sample.iiod.console.eval_ad4052_ardz:
-    extra_args:
-      - SNIPPET=iiod-console
-      - SHIELD=eval_ad4052_ardz
-    platform_allow:
-      - apard32690/max32690/m4
-
-  sample.iiod.console.eval_adxl362_ardz:
-    extra_args:
-      - SNIPPET=iiod-console
-      - SHIELD=eval_adxl362_ardz
-    platform_allow:
-      - apard32690/max32690/m4
-      - frdm_k64f
-
-  sample.iiod.console.pmod_acl:
-    extra_args:
-      - SNIPPET=iiod-console
-      - SHIELD=pmod_acl
-    platform_allow:
-      - apard32690/max32690/m4
-
-  sample.iiod.console.adc_max32:
+  sample.iiod.adc_max32.console:
     extra_args:
       - SNIPPET=iiod-console
       - EXTRA_DTC_OVERLAY_FILE=adc-max32.overlay
     platform_allow:
       - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4
+
+  sample.iiod.lsmspg:
+    depends_on:
+      - feather_spi
+      - feather_i2c
+    integration_platforms:
+      - max32666fthr/max32666/cpu0
+      - max32655fthr/max32655/m4
+      - cygnet
+    extra_configs:
+      - CONFIG_SENSOR=y
+      - CONFIG_ADC=y
+      - CONFIG_DAC=y
+    extra_args:
+      - SHIELD="adi_lsmspg;iio_adi_lsmspg"
+
+  sample.iiod.pmod_acl:
+    depends_on:
+      - pmod_spi
+    integration_platforms:
+      - apard32690/max32690/m4
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="pmod_acl;iio_pmod_acl"
+
+  sample.iiod.eval_adxl362_ardz:
+    depends_on:
+      - arduino_spi
+      - arduino_gpio
+    integration_platforms:
+      - nucleo_h723zg/stm32h723xx
+      - apard32690/max32690/m4
+      - nrf52840dk/nrf52840
+      - frdm_mcxn236/mcxn236
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="eval_adxl362_ardz;iio_eval_adxl362_ardz"
+
+  sample.iiod.eval_ad4052_ardz:
+    depends_on:
+      - arduino_spi
+      - arduino_gpio
+    integration_platforms:
+      - apard32690/max32690/m4
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="eval_ad4052_ardz;iio_eval_ad4052_ardz"
+
+  sample.iiod.x_nucleo_iks4a1:
+    depends_on:
+      - arduino_spi
+      - arduino_i2c
+      - arduino_gpio
+    integration_platforms:
+      - nucleo_h723zg/stm32h723xx
+      - apard32690/max32690/m4
+      - nrf52840dk/nrf52840
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="x_nucleo_iks4a1;iio_x_nucleo_iks4a1"
+
+  sample.iiod.adafruit_ism330dhcx:
+    platform_allow:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    integration_platforms:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="adafruit_ism330dhcx;iio_adafruit_ism330dhcx"
+
+  sample.iiod.adafruit_aht20:
+    platform_allow:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    integration_platforms:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="adafruit_aht20;iio_adafruit_aht20"
+
+  sample.iiod.adafruit_veml7700:
+    platform_allow:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    integration_platforms:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="adafruit_veml7700;iio_adafruit_veml7700"
+
+  sample.iiod.adafruit_lis3dh:
+    platform_allow:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    integration_platforms:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="adafruit_lis3dh;iio_adafruit_lis3dh"
+
+  sample.iiod.adafruit_daisy_chain:
+    platform_allow:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    integration_platforms:
+      - adafruit_metro_rp2040/rp2040
+      - adafruit_qt_py_rp2040/rp2040
+    extra_configs:
+      - CONFIG_SENSOR=y
+    extra_args:
+      - SHIELD="adafruit_lis3dh;iio_adafruit_lis3dh;adafruit_aht20;iio_adafruit_aht20;adafruit_veml7700;iio_adafruit_veml7700;adafruit_ism330dhcx;iio_adafruit_ism330dhcx"
+

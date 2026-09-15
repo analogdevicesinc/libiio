@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		adxl362_eval_adxl362_ardz {
+			compatible = "iio,sensor";
+			io-name = "adxl362";
+			sensor-device = <&adxl362_eval_adxl362_ardz>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_ACCEL_X
+				IIO_SENSOR_CHAN_ACCEL_Y
+				IIO_SENSOR_CHAN_ACCEL_Z
+			>;
+		};
+	};
+};

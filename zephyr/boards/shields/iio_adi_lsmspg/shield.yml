@@ -1,0 +1,7 @@
+shield:
+  name: iio_adi_lsmspg
+  full_name: Analog Devices Low-Speed Mixed-Signal Playground IIO Support
+  vendor: adi
+  supported_features:
+    - adc
+    - dac

@@ -1,0 +1,6 @@
+shield:
+  name: iio_eval_ad4052_ardz
+  full_name: IIO Support for the EVAL-AD4052_ARDZ shield
+  vendor: adi
+  supported_features:
+    - adc
