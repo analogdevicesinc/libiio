@@ -36,6 +36,7 @@ concurrency:
 
 permissions:
   contents: write
+  id-token: write
 
 jobs:
   #############################################
@@ -94,11 +95,33 @@ jobs:
       build-type: ${{ needs.config.outputs.build-type }}
 
   #############################################
+  # Python sdist/wheel
+  #############################################
+  build-pypi:
+    if: needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
+    needs: [config]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 1
+      - uses: analogdevicesinc/shared-actions/pypi-build@main
+        with:
+          cmake-options: '-DPYTHON_BINDINGS=ON -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF -DWITH_IIOD=OFF'
+          apt-packages: 'cmake libxml2-dev libusb-1.0-0-dev'
+          artifact-name: pylibiio-dist
+
+  #############################################
   # Check Artifacts
   #############################################
   check-artifacts:
-    if: needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
-    needs: [config, linux, windows, macos, arm]
+    if: |
+      always() &&
+      !cancelled() &&
+      !contains(needs.*.result, 'failure') &&
+      (needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true')
+    needs: [config, linux, windows, macos, arm, build-pypi]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
@@ -230,3 +253,22 @@ jobs:
           name: "Libiio release ${{ github.ref_name }}"
           files: ${{ github.workspace }}/artifacts/*
           generate_release_notes: true
+
+  #############################################
+  # Publish to PyPI (manual approval)
+  #############################################
+  push-pypi:
+    if: needs.config.outputs.is-release == 'true'
+    needs: [config, build-pypi, push-github-release]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment: pypi
+    steps:
+      - uses: actions/download-artifact@v8
+        with:
+          name: pylibiio-dist
+          path: dist/
+
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          packages-dir: dist/
