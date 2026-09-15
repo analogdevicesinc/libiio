@@ -1,4 +1,4 @@
-name: Zephyr
+name: Zephyr Tests
 
 on:
   push:
@@ -60,7 +60,7 @@ jobs:
           if [ "${{ runner.os }}" = "Windows" ]; then
             EXTRA_TWISTER_FLAGS="--short-build-path -O/tmp/twister-out"
           fi
-          west twister -T samples -T tests -v --force-color --inline-logs --integration \
+          west twister -T tests -v --force-color --inline-logs --integration \
             --exclude-tag usb-hostreq $EXTRA_TWISTER_FLAGS
 
   regression-tests:
@@ -202,3 +202,4 @@ jobs:
         run: |
           west twister -p native_sim -v --force-color --inline-logs \
             -T samples --test sample.iiod.usb.pytest
+

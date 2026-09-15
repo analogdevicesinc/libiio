@@ -1,0 +1,48 @@
+name: Zephyr Samples
+
+on:
+  push:
+    paths:
+      - "zephyr/**"
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+      timezone: "America/New_York"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Zephyr samples
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: libiio
+          persist-credentials: false
+
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: 3.12
+
+      - name: Setup Zephyr project
+        uses: zephyrproject-rtos/action-zephyr-setup@5ec39f5cba83346d83a836dfed1524270c660e28 # v1.0.14
+        with:
+          app-path: libiio
+          toolchains: arm-zephyr-eabi
+          ccache-cache-key: libiio-zephyr-samples-v1
+
+      - name: Run Twister
+        working-directory: libiio/zephyr
+        shell: bash
+        run: |
+          west twister -T samples -v --force-color --inline-logs --integration
+
+      - name: Archive Sample Builds
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: zephyr-iiod-samples
+          path: libiio/zephyr/twister-out/**/*.hex

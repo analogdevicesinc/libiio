@@ -8,14 +8,18 @@
 
 / {
 	iio-context {
-		adxl362_eval_adxl362_ardz {
+		fxos8700 {
 			compatible = "iio,sensor";
-			sensor-device = <&adxl362_eval_adxl362_ardz>;
+			sensor-device = <&fxos8700>;
 			sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X
 					   IIO_SENSOR_CHAN_ACCEL_Y
-					   IIO_SENSOR_CHAN_ACCEL_Z>;
+					   IIO_SENSOR_CHAN_ACCEL_Z
+					   IIO_SENSOR_CHAN_MAGN_X
+					   IIO_SENSOR_CHAN_MAGN_Y
+					   IIO_SENSOR_CHAN_MAGN_Z
+					   IIO_SENSOR_CHAN_DIE_TEMP>;
 			buffer-name = "buffer0";
-			io-name = "adxl362";
+			io-name = "fxos8700";
 		};
 	};
 };

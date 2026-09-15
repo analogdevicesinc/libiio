@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/* Enable power save mode, so fetching values does not force a sleep */
+&adafruit_veml7700 {
+	psm-mode = <0x01>;
+};
+
+/ {
+	iio-context {
+		adafruit_veml7700 {
+			compatible = "iio,sensor";
+			io-name = "veml7700";
+			sensor-device = <&adafruit_veml7700>;
+			sensor-channels = <IIO_SENSOR_CHAN_LIGHT>;
+		};
+	};
+};

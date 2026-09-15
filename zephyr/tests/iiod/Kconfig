@@ -1,0 +1,25 @@
+# Copyright (c) 2025-2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+menu "iiod test"
+
+config LIBIIO_IIOD_ADC_EMUL
+	bool "Enable ADC emulator"
+	help
+	  Enable ADC emulator IIO device driver.
+
+config LIBIIO_IIOD_SENSOR_EMUL
+	bool "Enable sensor emulator"
+	help
+	  Enable sensor emulator IIO device driver.
+
+config LIBIIO_IIOD_MULTI_SENSOR_EMUL
+	bool "Enable multi-sensor emulator (two ADLTC2990 instances)"
+	help
+	  Enable two emulated ADLTC2990 sensor instances. Demonstrates that
+	  the reg property and @N unit-address are required when multiple
+	  nodes share the same compatible and name within an iio-sensors bus.
+
+endmenu
+
+source "Kconfig.zephyr"
