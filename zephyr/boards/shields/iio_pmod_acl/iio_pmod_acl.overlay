@@ -6,6 +6,7 @@
 
 #include <dt-bindings/iio/sensor-channels.h>
 #include <dt-bindings/iio/sensor-attrs.h>
+#include <dt-bindings/iio/sensor-triggers.h>
 
 / {
 	iio-context {
@@ -13,6 +14,9 @@
 			compatible = "iio,sensor";
 			io-name = "adxl345";
 			sensor-device = <&adxl345_pmod_acl>;
+			stream-triggers = <IIO_SENSOR_TRIG_FIFO_WATERMARK>;
+			buffer-name = "buffer0";
+			buffer-block-size-max = <1488>;
 
 			accel_x {
 				channel = <IIO_SENSOR_CHAN_ACCEL_X>;
@@ -33,4 +37,8 @@
 			};
 		};
 	};
+};
+
+&adxl345_pmod_acl {
+	odr = <ADXL345_DT_ODR_100>;
 };

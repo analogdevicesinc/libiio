@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/iio/sensor-channels.h>
+#include <dt-bindings/iio/sensor-triggers.h>
 
 / {
 	iio-context {
@@ -17,6 +18,9 @@
 				IIO_SENSOR_CHAN_ACCEL_Y
 				IIO_SENSOR_CHAN_ACCEL_Z
 			>;
+			stream-triggers = <IIO_SENSOR_TRIG_FIFO_WATERMARK>;
+			buffer-name = "buffer0";
+			buffer-block-size-max = <6144>;
 		};
 	};
 };

@@ -6,12 +6,32 @@
 
 #include <dt-bindings/iio/sensor-channels.h>
 #include <dt-bindings/iio/sensor-attrs.h>
+#include <dt-bindings/iio/sensor-triggers.h>
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/sensor/lis2dux12.h>
 #include <zephyr/dt-bindings/sensor/lps2xdf.h>
+#include <zephyr/dt-bindings/sensor/lsm6dsv16x.h>
+
+&arduino_i2c {
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+/* The shield wires the LSM6DSV16X INT1 pin to D5, not D4. */
+&lsm6dsv16x_6b_x_nucleo_iks4a1 {
+	int1-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+	drdy-pin = <1>;
+	accel-odr = <LSM6DSVXXX_DT_ODR_AT_120Hz>;
+	accel-range = <LSM6DSV16X_DT_FS_16G>;
+	accel-fifo-batch-rate = <LSM6DSVXXX_DT_XL_BATCHED_AT_120Hz>;
+	fifo-watermark = <32>;
+};
 
 &lis2duxs12_1e_x_nucleo_iks4a1 {
 	power-mode = <LIS2DUX12_OPER_MODE_LOW_POWER>;
-	odr = <LIS2DUX12_DT_ODR_12Hz5>;
+	odr = <LIS2DUX12_DT_ODR_100Hz>;
+	accel-fifo-batch-rate = <LIS2DUX12_DT_BDR_XL_ODR>;
+	fifo-watermark = <32>;
 };
 
 &lps22df_5d_x_nucleo_iks4a1 {
@@ -40,6 +60,9 @@
 				IIO_SENSOR_CHAN_ACCEL_Y
 				IIO_SENSOR_CHAN_ACCEL_Z
 			>;
+			stream-triggers = <IIO_SENSOR_TRIG_FIFO_WATERMARK>;
+			buffer-name = "buffer0";
+			buffer-block-size-max = <3072>;
 		};
 
 		lis2duxs12_1e_x_nucleo_iks4a1 {
@@ -52,6 +75,9 @@
 				IIO_SENSOR_CHAN_ACCEL_Z
 				IIO_SENSOR_CHAN_DIE_TEMP
 			>;
+			stream-triggers = <IIO_SENSOR_TRIG_FIFO_WATERMARK>;
+			buffer-name = "buffer0";
+			buffer-block-size-max = <3072>;
 		};
 
 		lps22df_5d_x_nucleo_iks4a1 {
