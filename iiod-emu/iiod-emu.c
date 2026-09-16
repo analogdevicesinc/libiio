@@ -10,15 +10,18 @@
 #include <iio/iio-lock.h>
 #include <iio/iio.h>
 #include <iiod/xml-zstd.h>
+#include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <tinyiiod/tinyiiod.h>
 
+/* Must come after network.h, which pulls in winsock2.h. */
 #include "network.h"
 
 #ifdef _WIN32
+#include <windows.h>
 #define strncasecmp _strnicmp
 #endif
 
@@ -46,6 +49,58 @@ struct iiod_emu {
 	struct iio_mutex *lock;
 	struct client *clients;
 };
+
+/*
+ * Set when the user asks us to quit. A signal handler may touch very little, and
+ * the Windows console handler runs on a thread of its own, so storing here is all
+ * either of them does; main() looks at it once per trip round the accept loop.
+ */
+static volatile sig_atomic_t stop;
+
+#ifdef _WIN32
+
+static BOOL WINAPI console_handler(DWORD type)
+{
+	switch (type) {
+	case CTRL_C_EVENT:
+	case CTRL_CLOSE_EVENT:
+		stop = 1;
+		return TRUE;
+	default:
+		return FALSE;
+	}
+}
+
+static void setup_signals(void)
+{
+	SetConsoleCtrlHandler(console_handler, TRUE);
+}
+
+#else
+
+static void sig_handler(int sig)
+{
+	(void)sig;
+
+	stop = 1;
+}
+
+static void set_handler(int sig)
+{
+	struct sigaction action;
+
+	sigaction(sig, NULL, &action);
+	action.sa_handler = sig_handler;
+	sigaction(sig, &action, NULL);
+}
+
+static void setup_signals(void)
+{
+	set_handler(SIGINT);
+	set_handler(SIGTERM);
+}
+
+#endif
 
 static const struct option options[] = {
 	{ "help", no_argument, NULL, 'h' },
@@ -326,7 +381,14 @@ int main(int argc, char **argv)
 	printf("Emulating %u device(s) from %s\n", iio_context_get_devices_count(emu.ctx), uri);
 	printf("Listening on port %u; connect with: iio_info -u ip:127.0.0.1:%u\n", port, port);
 
-	for (;;) {
+	/*
+	 * Not any earlier: nothing above looks at <stop>, so a handler installed
+	 * there would swallow the first Ctrl+C and leave the user with a process
+	 * that ignores it.
+	 */
+	setup_signals();
+
+	while (!stop) {
 		char peer[32];
 		emu_socket sock;
 		bool fatal;
@@ -356,10 +418,15 @@ int main(int argc, char **argv)
 	}
 
 	/*
-	 * The only way out of the loop is a fatal accept() failure, which
-	 * emu_socket_accept() has already reported. Leave <ret> at EXIT_FAILURE;
-	 * a graceful shutdown will have to set success explicitly.
+	 * Two ways out of the loop. Either we were asked to quit, and what follows
+	 * is ordinary cleanup, or the listening socket is broken, which whoever
+	 * noticed has already reported and which leaves <ret> at EXIT_FAILURE.
 	 */
+	if (stop) {
+		printf("Shutting down\n");
+		ret = EXIT_SUCCESS;
+	}
+
 	emu_socket_close(srv);
 	reap_clients(&emu, true);
 out_free_xml:
