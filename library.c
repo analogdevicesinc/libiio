@@ -22,7 +22,7 @@ static void libiio_exit(void)
 {
 	if (WITH_XML_BACKEND)
 		libiio_cleanup_xml_backend();
-	if (WITH_EMU_BACKEND)
+	if (WITH_EMU_BACKEND && !WITH_EMU_BACKEND_DYNAMIC)
 		libiio_cleanup_emu_backend();
 }
 
