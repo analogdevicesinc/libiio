@@ -133,6 +133,16 @@ if (CPP_BINDINGS)
     list(APPEND IIO_PUBLIC_HEADERS bindings/cpp/iio.hpp)
 endif ()
 
+# The Makefiles/Ninja generators only embed PUBLIC_HEADER files into a
+# FRAMEWORK bundle if those headers are also part of the target's sources;
+# unlike the Xcode generator, they don't discover PUBLIC_HEADER files on
+# their own. Only needed for the OSX_FRAMEWORK build, so keep it out of
+# other builds where it has no effect but confuses tooling that walks
+# target sources (e.g. the SPDX license-header scan below).
+if (OSX_FRAMEWORK)
+    target_sources(iio PRIVATE ${IIO_PUBLIC_HEADERS})
+endif ()
+
 set_target_properties(
     iio
     PROPERTIES VERSION ${PROJECT_VERSION}
