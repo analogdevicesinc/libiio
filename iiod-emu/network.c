@@ -24,6 +24,7 @@ typedef int emu_socklen;
 #define emu_iobuf(p) ((char *)(p))
 #define emu_iolen(l) ((int)(l))
 #define emu_optval(p) ((const char *)(p))
+#define SHUT_RDWR SD_BOTH
 
 static int emu_errno(void)
 {
@@ -258,6 +259,16 @@ emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len)
 void emu_socket_close(emu_socket sock)
 {
 	closesocket(sock);
+}
+
+void emu_socket_shutdown(emu_socket sock)
+{
+	/*
+	 * Nothing to do about a failure: the only reason this call has to exist
+	 * is to unblock somebody else, and if the socket is already dead then it
+	 * is unblocked anyway.
+	 */
+	shutdown(sock, SHUT_RDWR);
 }
 
 ssize_t emu_socket_read(emu_socket sock, void *dst, size_t len)

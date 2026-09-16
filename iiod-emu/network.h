@@ -39,6 +39,13 @@ emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len);
 
 void emu_socket_close(emu_socket sock);
 
+/*
+ * Break a blocking read or write on <sock> without closing it, so that a thread
+ * parked in emu_socket_read() returns instead of waiting for a peer that is not
+ * going to say anything.
+ */
+void emu_socket_shutdown(emu_socket sock);
+
 /* Read/write exactly <len> bytes. Return <len>, 0 on orderly close, or -1. */
 ssize_t emu_socket_read(emu_socket sock, void *dst, size_t len);
 ssize_t emu_socket_write(emu_socket sock, const void *src, size_t len);

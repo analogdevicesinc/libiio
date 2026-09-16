@@ -151,16 +151,28 @@ static int client_thrd(void *d)
 
 	printf("Client %s disconnected\n", client->peer);
 
-	emu_socket_close(client->sock);
-
+	/*
+	 * Announce that we are done before closing, not after. reap_clients()
+	 * decides whether to shutdown() this socket while holding the lock, so
+	 * publishing <done> first is what tells it that the descriptor is gone;
+	 * the other order would let it shut down a descriptor the OS has already
+	 * handed to somebody else.
+	 */
 	iio_mutex_lock(emu->lock);
 	client->done = true;
 	iio_mutex_unlock(emu->lock);
 
+	emu_socket_close(client->sock);
+
 	return 0;
 }
 
-/* Join and free every client thread that has finished. */
+/*
+ * Join and free every client thread that has finished, or with <wait_all> every
+ * client there is. An unfinished client is normally sitting in recv() waiting
+ * for its peer to ask something; on the way out nobody is going to ask, so break
+ * the socket to make that recv() return, or the join below never completes.
+ */
 static void reap_clients(struct iiod_emu *emu, bool wait_all)
 {
 	struct client **prev, *client, *reap = NULL;
@@ -171,6 +183,9 @@ static void reap_clients(struct iiod_emu *emu, bool wait_all)
 			prev = &client->next;
 			continue;
 		}
+
+		if (!client->done)
+			emu_socket_shutdown(client->sock);
 
 		*prev = client->next;
 		client->next = reap;
