@@ -25,6 +25,9 @@
 #define DEFAULT_PORT 30431
 #define BACKLOG 16
 
+/* How long the server sits in select() before looking around. */
+#define POLL_TIMEOUT_MS 200
+
 #define ARRAY_SIZE(x) (sizeof(x) / sizeof((x)[0]))
 
 struct client {
@@ -326,12 +329,23 @@ int main(int argc, char **argv)
 	for (;;) {
 		char peer[32];
 		emu_socket sock;
-
-		sock = emu_socket_accept(srv, peer, sizeof(peer));
-		if (sock == EMU_INVALID_SOCKET)
-			break;
+		bool fatal;
+		int ready;
 
 		reap_clients(&emu, false);
+
+		ready = emu_socket_wait(srv, POLL_TIMEOUT_MS);
+		if (ready < 0)
+			break;
+		if (!ready)
+			continue;
+
+		sock = emu_socket_accept(srv, peer, sizeof(peer), &fatal);
+		if (sock == EMU_INVALID_SOCKET) {
+			if (fatal)
+				break;
+			continue;
+		}
 
 		err = spawn_client(&emu, sock, peer);
 		if (err) {

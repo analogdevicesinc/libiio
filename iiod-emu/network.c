@@ -25,6 +25,8 @@ typedef int emu_socklen;
 #define emu_iolen(l) ((int)(l))
 #define emu_optval(p) ((const char *)(p))
 #define SHUT_RDWR SD_BOTH
+/* select() ignores its first argument on Windows. */
+#define emu_nfds(s) 0
 
 static int emu_errno(void)
 {
@@ -34,6 +36,18 @@ static int emu_errno(void)
 static bool emu_should_retry(int err)
 {
 	return err == WSAEWOULDBLOCK || err == WSAETIMEDOUT || err == WSAEINTR;
+}
+
+static bool emu_would_block(int err)
+{
+	return err == WSAEWOULDBLOCK;
+}
+
+static int emu_set_nonblock(emu_socket sock, bool nonblock)
+{
+	unsigned long on = nonblock;
+
+	return ioctlsocket(sock, FIONBIO, &on);
 }
 
 static int emu_accept_retry_ms(int err)
@@ -47,7 +61,6 @@ static int emu_accept_retry_ms(int err)
 	/* Out of sockets or buffers; back off and let things drain. */
 	case WSAEMFILE:
 	case WSAENOBUFS:
-	case WSAEWOULDBLOCK:
 		return EMU_ACCEPT_BACKOFF_MS;
 	default:
 		return -1;
@@ -75,9 +88,11 @@ void emu_network_deinit(void)
 
 #else /* !_WIN32 */
 
+#include <fcntl.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #include <signal.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <time.h>
 #include <unistd.h>
@@ -91,6 +106,7 @@ typedef socklen_t emu_socklen;
 #define emu_iobuf(p) (p)
 #define emu_iolen(l) (l)
 #define emu_optval(p) (p)
+#define emu_nfds(s) ((int)(s) + 1)
 #define closesocket(s) close(s)
 
 static int emu_errno(void)
@@ -101,6 +117,26 @@ static int emu_errno(void)
 static bool emu_should_retry(int err)
 {
 	return err == EAGAIN || err == EWOULDBLOCK || err == EINTR;
+}
+
+static bool emu_would_block(int err)
+{
+	return err == EAGAIN || err == EWOULDBLOCK;
+}
+
+static int emu_set_nonblock(emu_socket sock, bool nonblock)
+{
+	int flags = fcntl(sock, F_GETFL, 0);
+
+	if (flags < 0)
+		return -1;
+
+	if (nonblock)
+		flags |= O_NONBLOCK;
+	else
+		flags &= ~O_NONBLOCK;
+
+	return fcntl(sock, F_SETFL, flags);
 }
 
 static int emu_accept_retry_ms(int err)
@@ -129,10 +165,6 @@ static int emu_accept_retry_ms(int err)
 	case ENFILE:
 	case ENOBUFS:
 	case ENOMEM:
-	case EAGAIN:
-#if EWOULDBLOCK != EAGAIN
-	case EWOULDBLOCK:
-#endif
 		return EMU_ACCEPT_BACKOFF_MS;
 	default:
 		return -1;
@@ -193,6 +225,19 @@ emu_socket emu_socket_listen(uint16_t port, int backlog)
 		goto err_close;
 	}
 
+	/*
+	 * The server waits with emu_socket_wait() so that it can notice a request
+	 * to shut down. A readable listening socket does not guarantee that
+	 * accept() will not block, though: the pending connection can be gone by
+	 * the time we ask for it. Blocking there would hold the shutdown until
+	 * the next client, which is the one thing the waiting was for.
+	 */
+	if (emu_set_nonblock(sock, true)) {
+		fprintf(stderr, "Unable to make the listening socket non-blocking: %d\n",
+				emu_errno());
+		goto err_close;
+	}
+
 	return sock;
 
 err_close:
@@ -200,12 +245,38 @@ err_close:
 	return EMU_INVALID_SOCKET;
 }
 
-emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len)
+int emu_socket_wait(emu_socket sock, unsigned int timeout_ms)
+{
+	struct timeval tv;
+	fd_set fds;
+	int ret;
+
+	do {
+		/* select() eats both of these, so set them up on every attempt. */
+		FD_ZERO(&fds);
+		FD_SET(sock, &fds);
+		tv.tv_sec = (long)(timeout_ms / 1000);
+		tv.tv_usec = (long)(timeout_ms % 1000) * 1000;
+
+		ret = select(emu_nfds(sock), &fds, NULL, NULL, &tv);
+	} while (ret < 0 && emu_should_retry(emu_errno()));
+
+	if (ret < 0) {
+		fprintf(stderr, "Unable to wait for a connection: %d\n", emu_errno());
+		return -1;
+	}
+
+	return ret > 0;
+}
+
+emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len, bool *fatal)
 {
 	struct sockaddr_in addr;
 	emu_socklen addr_len;
 	emu_socket sock;
 	int delay, yes = 1;
+
+	*fatal = false;
 
 	for (;;) {
 		int err;
@@ -218,9 +289,15 @@ emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len)
 			break;
 
 		err = emu_errno();
+
+		/* The connection we were told about went away before we took it. */
+		if (emu_would_block(err))
+			return EMU_INVALID_SOCKET;
+
 		delay = emu_accept_retry_ms(err);
 		if (delay < 0) {
 			fprintf(stderr, "Unable to accept connection: %d\n", err);
+			*fatal = true;
 			return EMU_INVALID_SOCKET;
 		}
 
@@ -231,6 +308,18 @@ emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len)
 		 */
 		if (delay)
 			emu_msleep((unsigned int)delay);
+	}
+
+	/*
+	 * Windows and the BSDs pass the listener's non-blocking mode down to the
+	 * sockets it accepts, Linux does not. A client thread wants a blocking
+	 * socket -- a non-blocking one makes emu_socket_read() spin -- so ask for
+	 * one instead of inheriting whatever the platform felt like.
+	 */
+	if (emu_set_nonblock(sock, false)) {
+		fprintf(stderr, "Unable to make the client socket blocking: %d\n", emu_errno());
+		closesocket(sock);
+		return EMU_INVALID_SOCKET;
 	}
 
 	/*

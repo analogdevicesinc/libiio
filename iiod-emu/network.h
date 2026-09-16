@@ -7,6 +7,7 @@
 #define IIOD_EMU_NETWORK_H
 
 #include <iio/iio.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -31,11 +32,25 @@ typedef int emu_socket;
 int emu_network_init(void);
 void emu_network_deinit(void);
 
-/* Create a blocking TCP socket bound to <port> and start listening. */
+/* Create a non-blocking TCP socket bound to <port> and start listening. */
 emu_socket emu_socket_listen(uint16_t port, int backlog);
 
-/* Accept one client; <peer> receives a printable "host:port" description. */
-emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len);
+/*
+ * Wait until <sock> has a connection to accept, or <timeout_ms> elapses. Returns
+ * 1 if it has, 0 on timeout, -1 on error.
+ *
+ * This is only for the listening socket. select() cannot look at a descriptor
+ * past FD_SETSIZE, and the listener is created before any client, so its own
+ * descriptor is always a low one.
+ */
+int emu_socket_wait(emu_socket sock, unsigned int timeout_ms);
+
+/*
+ * Accept one client; <peer> receives a printable "host:port" description.
+ * Returns EMU_INVALID_SOCKET when no client is waiting after all, or when the
+ * listening socket is beyond saving, which <fatal> tells apart.
+ */
+emu_socket emu_socket_accept(emu_socket srv, char *peer, size_t peer_len, bool *fatal);
 
 void emu_socket_close(emu_socket sock);
 
