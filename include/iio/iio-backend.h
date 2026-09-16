@@ -190,6 +190,8 @@ __api void iio_buffer_set_direction(struct iio_buffer *buf, const char *directio
 __api int iio_buffer_add_scan_element(
 		struct iio_buffer *buf, const struct iio_channel *chn, const char *en_path);
 
+__api int iio_parse_format_string(const char *fmt_str, struct iio_data_format *fmt);
+
 __api int iio_channel_add_attr(struct iio_channel *chn, const char *name, enum iio_attr_type type,
 		const char *filename);
 
