@@ -16,14 +16,16 @@ cd temp
 
 deps_dir=Library/Frameworks/iio.framework/Versions/Current/Dependencies
 libiio_loc=Library/Frameworks/iio.framework/Versions/Current/iio
-libiioheader_loc=Library/Frameworks/iio.framework/Versions/Current/Headers/iio.h
+libiioheaders_dir=Library/Frameworks/iio.framework/Versions/Current/Headers
 
 mkdir -p "${deps_dir}"
 
 # Create links to framework files
-mkdir -p usr/local/{lib,include}
+mkdir -p usr/local/{lib,include/iio}
 ln -fs "../../../${libiio_loc}" usr/local/lib/libiio.dylib
-ln -fs "../../../${libiioheader_loc}" usr/local/include/iio.h
+for header in "${libiioheaders_dir}"/*.h; do
+	ln -fs "../../../../${header}" "usr/local/include/iio/$(basename "${header}")"
+done
 
 # Update rpath of library
 install_name_tool -add_rpath @loader_path/. "${libiio_loc}"
