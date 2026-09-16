@@ -252,13 +252,19 @@ static int iiod_responder_reader_worker(struct iiod_responder *priv)
 
 		ret = iiod_rw_all(priv, NULL, &cmd_buf, 1, sizeof(cmd), true);
 
-		if (!strncmp((char *)&cmd, "BINARY\r\n", 8)) {
+		if (ret > 0 && !strncmp((char *)&cmd, "BINARY\r\n", 8)) {
 			/* If we receive again the "BINARY\r\n" string, send a
 			 * return code of zero and continue as usual.
 			 * This can happen with the serial backend when the
 			 * client disconnects and a new client appears.
 			 * Conveniently, the string is exactly 8 bytes, which is
-			 * the size of a iio_command. */
+			 * the size of a iio_command.
+			 *
+			 * A failed read leaves <cmd> holding whatever the last
+			 * successful one put there, so this has to know that the
+			 * read worked: otherwise a client that goes away right
+			 * after sending "BINARY\r\n" leaves us reading end of
+			 * file and taking this branch over and over. */
 
 			iiod_rw_all(priv, NULL, &ok_buf, 1, ok_buf.size, false);
 			continue;
