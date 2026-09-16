@@ -1139,6 +1139,17 @@ static ssize_t emu_write_attr_locked(struct iio_context_pdata *pdata, const stru
 	return write_device_attr(pdata->doc, device_id, attr_name, src, len, attr->type);
 }
 
+/*
+ * Same as string_ends_with(), which this cannot call: the emulation backend
+ * may be built as a module, and that symbol is private to the library.
+ */
+static bool emu_attr_is_available(const char *name)
+{
+	size_t len = strlen(name);
+
+	return len >= 10 && !strcmp(name + len - 10, "_available");
+}
+
 static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size_t len)
 {
 	const struct iio_device *dev;
@@ -1157,7 +1168,7 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 	device_id = iio_device_get_id(dev);
 	attr_name = iio_attr_get_name(attr);
 
-	if (string_ends_with(attr_name, "_available"))
+	if (emu_attr_is_available(attr_name))
 		return -EACCES;
 
 	iio_mutex_lock(pdata->lock);
@@ -1523,7 +1534,7 @@ static const struct iio_backend_ops emu_ops = {
 	.ping = emu_ping,
 };
 
-const struct iio_backend iio_emu_backend = {
+__api_export_if(WITH_EMU_BACKEND_DYNAMIC) const struct iio_backend iio_emu_backend = {
 	.api_version = IIO_BACKEND_API_V1,
 	.name = "emu",
 	.uri_prefix = "emu:",
