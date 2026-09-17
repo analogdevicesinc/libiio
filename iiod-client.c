@@ -1761,6 +1761,7 @@ int iiod_client_dequeue_block(struct iio_block_pdata *block, bool nonblock)
 		block->retry_dequeue = true;
 	} else {
 		block->enqueued = false;
+		ret = 0;
 	}
 
 out_unlock:
