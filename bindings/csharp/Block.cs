@@ -20,13 +20,13 @@ namespace iio
         private static extern void iio_block_destroy(IntPtr buf);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_block_start(IntPtr buf);
+        private static extern IIOPtr iio_block_start(IntPtr buf);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_block_end(IntPtr buf);
+        private static extern IIOPtr iio_block_end(IntPtr buf);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_block_first(IntPtr buf, IntPtr chn);
+        private static extern IIOPtr iio_block_first(IntPtr buf, IntPtr chn);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_block_enqueue(IntPtr block, uint bytes_used,
@@ -117,20 +117,22 @@ namespace iio
             if (array == null)
                 throw new ArgumentNullException("array");
 
-            IntPtr start = iio_block_start(hdl);
-            IntPtr end = iio_block_end(hdl);
+            IIOPtr start = iio_block_start(hdl);
+            if (!start)
+                throw new IIOException("Unable to get the start address of the block", start);
 
-            if (start == IntPtr.Zero || end == IntPtr.Zero)
-                throw new IIOException("Block returned null pointer — block may be in an invalid state");
+            IIOPtr end = iio_block_end(hdl);
+            if (!end)
+                throw new IIOException("Unable to get the end address of the block", end);
 
-            long length = (long)end - (long)start;
+            long length = (long)end.ptr - (long)start.ptr;
             if (length < 0)
                 throw new IIOException("Block has invalid bounds (end < start)");
 
             if (length > array.Length)
                 length = array.Length;
 
-            Marshal.Copy(array, 0, start, (int)length);
+            Marshal.Copy(array, 0, start.ptr, (int)length);
         }
 
         /// <summary>Extract the samples from the <see cref="iio.IOBuffer"/> object.</summary>
@@ -142,20 +144,22 @@ namespace iio
             if (array == null)
                 throw new ArgumentNullException("array");
 
-            IntPtr start = iio_block_start(hdl);
-            IntPtr end = iio_block_end(hdl);
+            IIOPtr start = iio_block_start(hdl);
+            if (!start)
+                throw new IIOException("Unable to get the start address of the block", start);
 
-            if (start == IntPtr.Zero || end == IntPtr.Zero)
-                throw new IIOException("Block returned null pointer — block may be in an invalid state");
+            IIOPtr end = iio_block_end(hdl);
+            if (!end)
+                throw new IIOException("Unable to get the end address of the block", end);
 
-            long length = (long)end - (long)start;
+            long length = (long)end.ptr - (long)start.ptr;
             if (length < 0)
                 throw new IIOException("Block has invalid bounds (end < start)");
 
             if (length > array.Length)
                 length = array.Length;
 
-            Marshal.Copy(start, array, 0, (int)length);
+            Marshal.Copy(start.ptr, array, 0, (int)length);
         }
 
         /// <summary>Gets a pointer to the first sample from the current buffer for a specific channel.</summary>
@@ -167,11 +171,11 @@ namespace iio
             if (ch == null)
                 throw new ArgumentNullException("ch");
 
-            IntPtr result = iio_block_first(hdl, ch.chn);
-            if (result == IntPtr.Zero)
-                throw new IIOException("Unable to get first sample pointer for channel");
+            IIOPtr result = iio_block_first(hdl, ch.chn);
+            if (!result)
+                throw new IIOException("Unable to get first sample pointer for channel", result);
 
-            return result;
+            return result.ptr;
         }
     }
 }

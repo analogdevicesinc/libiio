@@ -727,10 +727,12 @@ _channel_refresh_format.argtypes = (_ChannelPtr,)
 _block_start = _lib.iio_block_start
 _block_start.restype = c_void_p
 _block_start.argtypes = (_BlockPtr,)
+_block_start.errcheck = _check_ptr_err
 
 _block_end = _lib.iio_block_end
 _block_end.restype = c_void_p
 _block_end.argtypes = (_BlockPtr,)
+_block_end.errcheck = _check_ptr_err
 
 _buffer_get_device = _lib.iio_buffer_get_device
 _buffer_get_device.restype = _DevicePtr
