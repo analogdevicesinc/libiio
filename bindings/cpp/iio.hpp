@@ -363,9 +363,9 @@ public:
     Block(iio_block * block) : p(block){assert(block);}
     operator iio_block * () const {return p;}
 
-    void * start() {return iio_block_start(p);}
-    void * first(iio_channel * chn) {return iio_block_first(p, chn);}
-    void * end() {return iio_block_end(p);}
+    void * start() {return impl::check(iio_block_start(p), "iio_block_start");}
+    void * first(iio_channel * chn) {return impl::check(iio_block_first(p, chn), "iio_block_first");}
+    void * end() {return impl::check(iio_block_end(p), "iio_block_end");}
     ssize_t foreach_sample(const struct iio_channels_mask *mask,
                              ssize_t (*callback)(const struct iio_channel *chn, void *src, size_t bytes, void *d),
                              void *data)
