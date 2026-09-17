@@ -1257,14 +1257,20 @@ __api int iio_block_disable_cpu_access(struct iio_block *block, bool disable);
 
 /** @brief Get the start address of the block
  * @param block A pointer to an iio_block structure
- * @return A pointer corresponding to the start address of the block */
+ * @return On success, a pointer corresponding to the start address of the block
+ * @return On failure, a pointer-encoded error is returned
+ *
+ * <b>NOTE:</b> Check the returned pointer with iio_err before dereferencing it.
+ * A block's memory is not guaranteed to be reachable by the CPU; memory that cannot
+ * be mapped or accessed, would be reported this way rather than as a valid address. */
 __api void *iio_block_start(const struct iio_block *block);
 
 /** @brief Find the first sample of a channel in a block
  * @param block A pointer to an iio_block structure
  * @param chn A pointer to an iio_channel structure
- * @return A pointer to the first sample found, or to the end of the block if
- * no sample for the given channel is present in the block
+ * @return On success, a pointer to the first sample found, or to the end of
+ * the block if no sample for the given channel is present in the block
+ * @return On failure, a pointer-encoded error is returned; see iio_block_start
  *
  * <b>NOTE:</b> This function, coupled with iio_block_end, can be used to
  * iterate on all the samples of a given channel present in the block, doing
@@ -1285,8 +1291,9 @@ __api void *iio_block_first(const struct iio_block *block, const struct iio_chan
 
 /** @brief Get the address after the last sample in a block
  * @param block A pointer to an iio_block structure
- * @return A pointer corresponding to the address that follows the last sample
- * present in the buffer */
+ * @return On success, a pointer corresponding to the address that follows the
+ * last sample present in the buffer
+ * @return On failure, a pointer-encoded error is returned; see iio_block_start */
 __api void *iio_block_end(const struct iio_block *block);
 
 /** @brief Call the supplied callback for each sample found in a block
