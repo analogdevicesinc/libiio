@@ -1225,19 +1225,29 @@ __api __check_ret struct iio_block *iio_buffer_stream_create_block(
 		struct iio_buffer_stream *buf_stream, size_t size);
 
 /** @brief Destroy the given block
- * @param block A pointer to an iio_block structure */
+ * @param block A pointer to an iio_block structure
+ *
+ * <b>NOTE:</b> If the block is backed by a DMABUF object, the file descriptor
+ * previously returned by iio_block_get_dmabuf_fd is closed by this function. */
 __api void iio_block_destroy(struct iio_block *block);
 
 /** @brief Get the file descriptor of the underlying DMABUF object
  * @param block A pointer to an iio_block structure
  * @return The file descriptor of the underlying DMABUF object.
  * If the iio_block is not backed by a DMABUF object, -EINVAL is returned.
- * Otherwise, the file descriptor will be valid until the block is destroyed. */
+ * Otherwise, the file descriptor will be valid until the block is destroyed.
+ *
+ * <b>NOTE:</b> The returned file descriptor is owned by the iio_block. The
+ * caller must not close it; it is closed by iio_block_destroy. */
 __api __check_ret int iio_block_get_dmabuf_fd(const struct iio_block *block);
 
 /** @brief Disable CPU access of a given block
  * @param block A pointer to an iio_block structure
  * @param disable Whether or not to disable CPU access
+ * @return On success, 0 is returned
+ * @return On error, a negative error code is returned. -ENOSYS is returned if
+ * the backend does not implement CPU access control, -EINVAL if the block is
+ * not backed by an object for which it can be controlled.
  *
  * <b>NOTE:</b>Disabling CPU access is useful when manipulating DMABUF objects.
  * If CPU access is disabled, the block's internal buffer of samples should not
@@ -1285,7 +1295,8 @@ __api void *iio_block_end(const struct iio_block *block);
  *   the list of channels for which we want samples
  * @param callback A pointer to a function to call for each sample found
  * @param data A user-specified pointer that will be passed to the callback
- * @return number of bytes processed.
+ * @return On success, the number of bytes processed
+ * @return On error, a negative error code is returned
  *
  * <b>NOTE:</b> The callback receives four arguments:
  * * A pointer to the iio_channel structure corresponding to the sample,
