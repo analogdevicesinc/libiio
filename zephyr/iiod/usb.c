@@ -118,8 +118,8 @@ struct iio_usb_pipe {
 
 struct iio_usb_data {
 	struct iio_usb_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	struct usbd_desc_node *const iface_str_desc;
 	struct usbd_class_data *c_data;
 	struct k_sem enabled_sem;
@@ -226,7 +226,7 @@ static int iio_usb_queue_rx_pipe(struct usbd_class_data *const c_data, struct ii
 	return 0;
 }
 
-static void *iio_usb_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
+static const void *iio_usb_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
 {
 	struct iio_usb_data *data = usbd_class_get_private(c_data);
 
@@ -600,7 +600,7 @@ static void iio_usb_disable(struct usbd_class_data *const c_data)
 	}
 }
 
-static struct usbd_class_api iio_usb_api = {
+static const struct usbd_class_api iio_usb_api = {
 	.get_desc = iio_usb_get_desc,
 	.control_to_dev = iio_usb_control_to_dev,
 	.request = iio_usb_request_handler,
@@ -733,13 +733,13 @@ static struct iio_usb_desc iio_usb_desc_##inst = {                              
 	},                                                                                         \
 };                                                                                                 \
                                                                                                    \
-static const struct usb_desc_header *iio_fs_desc_##inst[] = {                                      \
+static const struct usb_desc_header *const iio_fs_desc_##inst[] = {                                \
 	(struct usb_desc_header *)&iio_usb_desc_##inst.if0,                                        \
 	LISTIFY(DT_INST_PROP(inst, num_pipes), DECLARE_FS_EP_PTR, (,), inst),                      \
 	(struct usb_desc_header *)&iio_usb_desc_##inst.nil_desc,                                   \
 };                                                                                                 \
                                                                                                    \
-static const struct usb_desc_header *iio_hs_desc_##inst[] = {                                      \
+static const struct usb_desc_header *const iio_hs_desc_##inst[] = {                                \
 	(struct usb_desc_header *)&iio_usb_desc_##inst.if0,                                        \
 	LISTIFY(DT_INST_PROP(inst, num_pipes), DECLARE_HS_EP_PTR, (,), inst),                      \
 	(struct usb_desc_header *)&iio_usb_desc_##inst.nil_desc,                                   \
