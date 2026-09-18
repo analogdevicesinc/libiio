@@ -63,11 +63,6 @@ namespace iio
             if (str == null)
                 return IntPtr.Zero;
 
-            // For .NET 5.0+ and .NET Core 3.0+, use built-in method
-#if NET5_0_OR_GREATER || NETCOREAPP3_0_OR_GREATER
-            return Marshal.StringToHGlobalUTF8(str);
-#else
-            // For older frameworks, manually encode UTF-8
             byte[] bytes = Encoding.UTF8.GetBytes(str);
             IntPtr ptr = Marshal.AllocHGlobal(bytes.Length + 1); // +1 for null terminator
 
@@ -75,7 +70,6 @@ namespace iio
             Marshal.WriteByte(ptr, bytes.Length, 0); // Add null terminator
 
             return ptr;
-#endif
         }
     }
 }
