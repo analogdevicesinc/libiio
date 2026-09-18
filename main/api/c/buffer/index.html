@@ -634,9 +634,10 @@ Content on this topic
 <dt class="sig sig-object cpp" id="_CPPv417iio_block_destroyP9iio_block">
 <span id="_CPPv317iio_block_destroyP9iio_block"></span><span id="_CPPv217iio_block_destroyP9iio_block"></span><span id="iio_block_destroy__iio_blockP"></span><span class="target" id="group__Block_1ga5cd4d9c5ea4d8c5db0912b2808334d56"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_destroy</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv417iio_block_destroyP9iio_block" title="Link to this definition"></a><br /></dt>
 <dd><p>Destroy the given block. </p>
+<p><strong>NOTE:</strong> If the block is backed by a DMABUF object, the file descriptor previously returned by iio_block_get_dmabuf_fd is closed by this function. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
+<dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure</p>
 </dd>
 </dl>
 </dd></dl>
@@ -645,12 +646,13 @@ Content on this topic
 <dt class="sig sig-object cpp" id="_CPPv423iio_block_get_dmabuf_fdPK9iio_block">
 <span id="_CPPv323iio_block_get_dmabuf_fdPK9iio_block"></span><span id="_CPPv223iio_block_get_dmabuf_fdPK9iio_block"></span><span id="iio_block_get_dmabuf_fd__iio_blockCP"></span><span class="target" id="group__Block_1ga609fabfbd55fcfc0de19b14eb2350d6e"></span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_get_dmabuf_fd</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv423iio_block_get_dmabuf_fdPK9iio_block" title="Link to this definition"></a><br /></dt>
 <dd><p>Get the file descriptor of the underlying DMABUF object. </p>
+<p><strong>NOTE:</strong> The returned file descriptor is owned by the <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a>. The caller must not close it; it is closed by iio_block_destroy. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>The file descriptor of the underlying DMABUF object. If the <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> is not backed by a DMABUF object, -EINVAL is returned. Otherwise, the file descriptor will be valid until the block is destroyed. </p>
+<dd class="field-even"><p>The file descriptor of the underlying DMABUF object. If the <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> is not backed by a DMABUF object, -EINVAL is returned. Otherwise, the file descriptor will be valid until the block is destroyed.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -664,8 +666,14 @@ Content on this topic
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p></li>
-<li><p><strong>disable</strong> – Whether or not to disable CPU access</p></li>
+<li><p><strong>disable</strong> – Whether or not to disable CPU access </p></li>
 </ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>On success, 0 is returned </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative error code is returned. -ENOSYS is returned if the backend does not implement CPU access control, -EINVAL if the block is not backed by an object for which it can be controlled.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -674,12 +682,16 @@ Content on this topic
 <dt class="sig sig-object cpp" id="_CPPv415iio_block_startPK9iio_block">
 <span id="_CPPv315iio_block_startPK9iio_block"></span><span id="_CPPv215iio_block_startPK9iio_block"></span><span id="iio_block_start__iio_blockCP"></span><span class="target" id="group__Block_1ga6a6a05297de153192edcc4e141c5dfb8"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_block_start</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="k"><span class="pre">struct</span></span><span class="w"> </span><a class="reference internal" href="#_CPPv49iio_block" title="iio_block"><span class="n"><span class="pre">iio_block</span></span></a><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">block</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv415iio_block_startPK9iio_block" title="Link to this definition"></a><br /></dt>
 <dd><p>Get the start address of the block. </p>
+<p><strong>NOTE:</strong> Check the returned pointer with iio_err before dereferencing it. A block’s memory is not guaranteed to be reachable by the CPU; memory that cannot be mapped or accessed, would be reported this way rather than as a valid address. </p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A pointer corresponding to the start address of the block </p>
+<dd class="field-even"><p>On success, a pointer corresponding to the start address of the block </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned</p>
 </dd>
 </dl>
 </dd></dl>
@@ -705,7 +717,10 @@ Content on this topic
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A pointer to the first sample found, or to the end of the block if no sample for the given channel is present in the block</p>
+<dd class="field-even"><p>On success, a pointer to the first sample found, or to the end of the block if no sample for the given channel is present in the block </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned; see iio_block_start</p>
 </dd>
 </dl>
 </dd></dl>
@@ -719,7 +734,10 @@ Content on this topic
 <dd class="field-odd"><p><strong>block</strong> – A pointer to an <a class="reference internal" href="#structiio__block"><span class="std std-ref">iio_block</span></a> structure </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>A pointer corresponding to the address that follows the last sample present in the buffer </p>
+<dd class="field-even"><p>On success, a pointer corresponding to the address that follows the last sample present in the buffer </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On failure, a pointer-encoded error is returned; see iio_block_start </p>
 </dd>
 </dl>
 </dd></dl>
@@ -745,7 +763,10 @@ Content on this topic
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>number of bytes processed.</p>
+<dd class="field-even"><p>On success, the number of bytes processed </p>
+</dd>
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>On error, a negative error code is returned</p>
 </dd>
 </dl>
 </dd></dl>
