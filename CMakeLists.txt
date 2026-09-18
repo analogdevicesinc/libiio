@@ -78,6 +78,61 @@ if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang" AND NOT ${CMAKE_SYSTEM_NAME}
     endif ()
 endif ()
 
+# Restrict the exported ABI to the symbols listed in libiio.map. This is what
+# turns the 1.0 export surface into a reviewed, frozen list rather than
+# whatever the compiler's visibility default happens to leave behind; see the
+# comment at the top of that file. Skipped on Windows, where exports come from
+# __declspec(dllexport) and PE has no equivalent concept.
+if (BUILD_SHARED_LIBS AND NOT WIN32)
+    set(LIBIIO_VERSION_SCRIPT "${CMAKE_CURRENT_SOURCE_DIR}/libiio.map")
+
+    include(CheckCSourceCompiles)
+    set(_saved_required_flags "${CMAKE_REQUIRED_FLAGS}")
+
+    # Probe with a throwaway script rather than libiio.map: none of libiio's
+    # symbols exist in the test program, which the check below would report as
+    # a failure of the linker to support the option at all.
+    set(_probe_map "${CMAKE_CURRENT_BINARY_DIR}/version-script-probe.map")
+    file(WRITE "${_probe_map}" "PROBE { global: main; local: *; };\n")
+    set(CMAKE_REQUIRED_FLAGS
+        "${_saved_required_flags} -Wl,--version-script=${_probe_map}")
+    check_c_source_compiles("int main(void) { return 0; }"
+                            HAS_LD_VERSION_SCRIPT)
+
+    # Optional sources mean that not every symbol in the map is built in every
+    # configuration: the iiod client, the XML backend and the locking
+    # implementation are all switchable. Whether a listed symbol that is not
+    # defined is an error depends on the linker and on how the distribution
+    # configured it, so ask for the lenient behaviour explicitly rather than
+    # relying on the default.
+    set(CMAKE_REQUIRED_FLAGS "${_saved_required_flags} -Wl,--undefined-version")
+    check_c_source_compiles("int main(void) { return 0; }"
+                            HAS_LD_UNDEFINED_VERSION)
+
+    set(CMAKE_REQUIRED_FLAGS "${_saved_required_flags}")
+    unset(_saved_required_flags)
+    unset(_probe_map)
+
+    if (HAS_LD_VERSION_SCRIPT)
+        target_link_options(iio PRIVATE
+                            "-Wl,--version-script=${LIBIIO_VERSION_SCRIPT}")
+        if (HAS_LD_UNDEFINED_VERSION)
+            target_link_options(iio PRIVATE -Wl,--undefined-version)
+        endif ()
+
+        # Relink when the map changes, not just when a source does.
+        set_property(
+            TARGET iio
+            APPEND
+            PROPERTY LINK_DEPENDS "${LIBIIO_VERSION_SCRIPT}")
+    else ()
+        message(
+            STATUS
+                "Linker does not support --version-script; libiio will export more than libiio.map describes"
+        )
+    endif ()
+endif ()
+
 if (CMAKE_C_COMPILER_ID MATCHES "GNU|Clang|MSVC")
     iio_option(LIBIIO_COMPAT "Add compatibility layer for libiio 0.x" ON
                "POSIX")
@@ -505,6 +560,15 @@ if (WITH_LOCAL_BACKEND)
                "Read local context attributes from /etc/libiio.ini" ON "POSIX")
     if (WITH_LOCAL_CONFIG)
         target_sources(iio PRIVATE deps/libini/libini.c)
+
+        # deps/libini declares its entry points with visibility("default"),
+        # which overrides -fvisibility=hidden, so they would be exported from
+        # libiio under generic names such as ini_open. libini already has a
+        # libini_STATIC flag for this case, but only tests it on Windows;
+        # define it here so that a subrepo pull which also honours it on GCC
+        # fixes this at the source with no further change. Until then the
+        # version script in libiio.map keeps them local; see below.
+        target_compile_definitions(iio PRIVATE libini_STATIC)
     endif ()
 
     iio_option(
