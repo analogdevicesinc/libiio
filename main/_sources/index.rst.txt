@@ -172,6 +172,7 @@ Project Pages
 
    install
    migration
+   tools_migration
    theory
    usage
    examples

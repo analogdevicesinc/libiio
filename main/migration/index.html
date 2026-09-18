@@ -15,7 +15,7 @@
     <script async="async" src="../_static/app.umd.js?v=8c78863f"></script>
     <link rel="index" title="Index" href="../genindex/" />
     <link rel="search" title="Search" href="../search/" />
-    <link rel="next" title="Theory of Operation" href="../theory/" />
+    <link rel="next" title="Libiio 0.x to 1.x command-line tools migration guide" href="../tools_migration/" />
     <link rel="prev" title="Building from Source" href="../install/source/" />
    
   
@@ -156,6 +156,7 @@ Content on this topic
 </ul>
 </li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Libiio 0.x to 1.x API update guide</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../tools_migration/">Libiio 0.x to 1.x command-line tools migration guide</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../theory/">Theory of Operation</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../usage/">Usage Model</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../examples/">Examples</a></li>
@@ -333,7 +334,7 @@ XML output (see the section below on <code class="docutils literal notranslate">
 </ul>
 </section>
 <section id="context-creation">
-<h2>Context creation<a class="headerlink" href="#context-creation" title="Link to this heading"></a></h2>
+<span id="id1"></span><h2>Context creation<a class="headerlink" href="#context-creation" title="Link to this heading"></a></h2>
 <p>Libiio context creation is now handled uniquely by the <code class="docutils literal notranslate"><span class="pre">iio_create_context</span></code>
 function. The first parameter is a pointer to a <code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code> structure;
 it is completely optional, and NULL is accepted. The second parameter
@@ -410,7 +411,7 @@ first argument (may be NULL).</p></li>
 </ul>
 </section>
 <section id="attributes">
-<h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
+<span id="id2"></span><h2>Attributes<a class="headerlink" href="#attributes" title="Link to this heading"></a></h2>
 <p>The various IIO objects still have attributes. However, the API changed
 slightly. Note also that v1.0 introduces event attributes as a new category,
 exposed on both devices (<code class="docutils literal notranslate"><span class="pre">iio_device_get_event_attr</span></code>,
@@ -684,7 +685,7 @@ three new sentinel values:</p>
               <div class="related">
                 &nbsp;
     <a href="../install/source/" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Building from Source</a>
-    <a href="../theory/" title="Next document (Alt+Shift+RightArrow)" class="next">Theory of Operation</a>
+    <a href="../tools_migration/" title="Next document (Alt+Shift+RightArrow)" class="next">Libiio 0.x to 1.x command-line tools migration guide</a>
               </div>
           
         </div>
