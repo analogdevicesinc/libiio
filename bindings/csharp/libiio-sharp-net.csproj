@@ -1,0 +1,30 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <AssemblyName>libiio-sharp</AssemblyName>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <SignAssembly>true</SignAssembly>
+    <AssemblyOriginatorKeyFile>key.snk</AssemblyOriginatorKeyFile>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Attr.cs" />
+    <Compile Include="Block.cs" />
+    <Compile Include="Channel.cs" />
+    <Compile Include="ChannelsMask.cs" />
+    <Compile Include="Context.cs" />
+    <Compile Include="Device.cs" />
+    <Compile Include="EventStream.cs" />
+    <Compile Include="IOBuffer.cs" />
+    <Compile Include="IIOEvent.cs" />
+    <Compile Include="Trigger.cs" />
+    <Compile Include="IioLib.cs" />
+    <Compile Include="NativeLibraryResolver.cs" />
+    <Compile Include="Scan.cs" />
+    <Compile Include="Stream.cs" />
+    <Compile Include="UTF8Marshaler.cs" />
+  </ItemGroup>
+</Project>
