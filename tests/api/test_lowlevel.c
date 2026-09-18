@@ -6,10 +6,21 @@
  */
 
 #include <errno.h>
+#include <iio/iio-backend.h>
+#include <iio/iio-debug.h>
 #include <iio/iio.h>
 
 #include "test_framework.h"
 #include "test_helpers.h"
+
+static unsigned int fake_ticks_calls;
+
+static uint64_t fake_ticks_us(void)
+{
+	fake_ticks_calls++;
+
+	return 1234567890123ull;
+}
 
 TEST_FUNCTION(channels_mask_operations)
 {
@@ -61,12 +72,44 @@ TEST_FUNCTION(sample_size_calculation)
 	iio_context_destroy(ctx);
 }
 
+TEST_FUNCTION(register_get_ticks_us_cb)
+{
+	struct iio_context_params params;
+	FILE *sink = tmpfile();
+
+	TEST_ASSERT_PTR_NOT_NULL(sink, "Temporary file for log output");
+	if (!sink)
+		return;
+
+	/* Emit at LEVEL_ERROR, and ask for messages at that level to carry a
+	 * timestamp, which is the only thing the callback feeds. */
+	memset(&params, 0, sizeof(params));
+	params.out = sink;
+	params.err = sink;
+	params.log_level = LEVEL_ERROR;
+	params.stderr_level = LEVEL_ERROR;
+	params.timestamp_level = LEVEL_ERROR;
+
+	iio_register_get_ticks_us_cb(fake_ticks_us);
+	fake_ticks_calls = 0;
+	iio_prm_printf(&params, LEVEL_ERROR, "timestamped message\n");
+	TEST_ASSERT(fake_ticks_calls > 0, "Registered callback should supply the log timestamp");
+
+	iio_register_get_ticks_us_cb(NULL);
+	fake_ticks_calls = 0;
+	iio_prm_printf(&params, LEVEL_ERROR, "timestamped message\n");
+	TEST_ASSERT_EQ(fake_ticks_calls, 0, "Callback should no longer be used once unregistered");
+
+	fclose(sink);
+}
+
 int main(void)
 {
 	DEBUG_PRINT("=== libiio Low-level Tests ===\n\n");
 
 	RUN_TEST(channels_mask_operations);
 	RUN_TEST(sample_size_calculation);
+	RUN_TEST(register_get_ticks_us_cb);
 
 	TEST_SUMMARY();
 	return 0;

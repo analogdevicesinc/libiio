@@ -45,9 +45,10 @@
 
 /*
  * Prototype of a user-supplied function that retrieves the number of ticks
- * (as microseconds) from a clock source.
+ * (as microseconds) from a clock source. The value is used as a 64-bit
+ * microsecond count; a 32-bit one would wrap after about 72 minutes.
  */
-typedef unsigned int (*iio_get_ticks_us)(void);
+typedef uint64_t (*iio_get_ticks_us)(void);
 
 struct iio_buffer;
 struct iio_device;
