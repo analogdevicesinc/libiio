@@ -26,10 +26,17 @@ static void libiio_exit(void)
 		libiio_cleanup_emu_backend();
 }
 
-void iio_set_get_ticks_us_cb(iio_get_ticks_us cb)
+void iio_register_get_ticks_us_cb(iio_get_ticks_us cb)
 {
 	if (platform_get_ticks_us != cb) {
 		platform_get_ticks_us = cb;
+
+		/* Log timestamps are reported relative to library_startup_time_us,
+		* which was read from the built-in clock when the library was loaded.
+		* Re-base it onto the time source that is now in effect, otherwise
+		* every timestamp would be the difference between two unrelated
+		* clocks. */
+		library_startup_time_us = iio_read_counter_us();
 	}
 }
 
