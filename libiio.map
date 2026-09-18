@@ -1,0 +1,247 @@
+/* SPDX-License-Identifier: MIT */
+/*
+ * Linker version script describing libiio's exported ABI.
+ *
+ * Every symbol libiio makes available to applications is listed here, and
+ * "local: *" hides everything else. This is what freezes the export surface:
+ * -fvisibility=hidden already hides most internals, but it is only a compiler
+ * default, and any single __attribute__ overrides it -- as the symbols of
+ * deps/libini used to demonstrate.
+ *
+ * This file was generated from the public headers with
+ *
+ *     ./CI/symbol-map.py generate $(public headers) -o libiio.map
+ *
+ * but once a release is out, do not regenerate it over the top of this one,
+ * and never remove or rename an entry: an application linked against
+ * LIBIIO_1.0 records that dependency and refuses to start against a library
+ * that no longer defines it. Add new symbols by hand, in a node of their own,
+ *
+ *     LIBIIO_1.1 { global: iio_new_thing; } LIBIIO_1.0;
+ *
+ * which keeps binaries built against 1.0 working, while a binary that calls
+ * iio_new_thing records the stricter requirement and so fails early against
+ * an older library rather than at the call.
+ *
+ * Not every symbol listed here exists in every build -- the iiod client, the
+ * XML backend and the locking implementation are all optional -- and some
+ * linkers reject a script that names a symbol they cannot find. The build
+ * passes --undefined-version where it is supported so that those reduced
+ * configurations keep linking.
+ */
+
+LIBIIO_1.0 {
+global:
+	iio_attr_get_available;
+	iio_attr_get_available_buf;
+	iio_attr_get_filename;
+	iio_attr_get_name;
+	iio_attr_get_range;
+	iio_attr_get_static_value;
+	iio_attr_read_bool;
+	iio_attr_read_double;
+	iio_attr_read_longlong;
+	iio_attr_read_raw;
+	iio_attr_write_bool;
+	iio_attr_write_double;
+	iio_attr_write_longlong;
+	iio_attr_write_raw;
+	iio_attr_write_string;
+	iio_available_list_free;
+	iio_block_dequeue;
+	iio_block_destroy;
+	iio_block_disable_cpu_access;
+	iio_block_end;
+	iio_block_enqueue;
+	iio_block_first;
+	iio_block_foreach_sample;
+	iio_block_get_buffer_stream;
+	iio_block_get_dmabuf_fd;
+	iio_block_start;
+	iio_buffer_add_attr;
+	iio_buffer_add_scan_element;
+	iio_buffer_close;
+	iio_buffer_create_stream;
+	iio_buffer_find_attr;
+	iio_buffer_get_attr;
+	iio_buffer_get_attrs_count;
+	iio_buffer_get_data;
+	iio_buffer_get_device;
+	iio_buffer_get_scan_element;
+	iio_buffer_get_scan_elements_count;
+	iio_buffer_is_output;
+	iio_buffer_open;
+	iio_buffer_set_data;
+	iio_buffer_set_direction;
+	iio_buffer_stream_cancel;
+	iio_buffer_stream_create_block;
+	iio_buffer_stream_get_channels_mask;
+	iio_buffer_stream_start;
+	iio_buffer_stream_stop;
+	iio_channel_add_attr;
+	iio_channel_convert;
+	iio_channel_convert_inverse;
+	iio_channel_disable;
+	iio_channel_enable;
+	iio_channel_find_attr;
+	iio_channel_find_event_attr;
+	iio_channel_get_attr;
+	iio_channel_get_attrs_count;
+	iio_channel_get_data;
+	iio_channel_get_data_format;
+	iio_channel_get_device;
+	iio_channel_get_event_attr;
+	iio_channel_get_event_attrs_count;
+	iio_channel_get_id;
+	iio_channel_get_index;
+	iio_channel_get_label;
+	iio_channel_get_modifier;
+	iio_channel_get_name;
+	iio_channel_get_pdata;
+	iio_channel_get_type;
+	iio_channel_is_enabled;
+	iio_channel_is_output;
+	iio_channel_is_scan_element;
+	iio_channel_read;
+	iio_channel_refresh_format;
+	iio_channel_set_data;
+	iio_channel_set_pdata;
+	iio_channel_write;
+	iio_channels_mask_destroy;
+	iio_cond_create;
+	iio_cond_destroy;
+	iio_cond_signal;
+	iio_cond_wait;
+	iio_context_add_attr;
+	iio_context_add_device;
+	iio_context_create_from_backend;
+	iio_context_destroy;
+	iio_context_find_attr;
+	iio_context_find_device;
+	iio_context_get_attr;
+	iio_context_get_attrs_count;
+	iio_context_get_data;
+	iio_context_get_description;
+	iio_context_get_device;
+	iio_context_get_devices_count;
+	iio_context_get_name;
+	iio_context_get_params;
+	iio_context_get_pdata;
+	iio_context_get_version_major;
+	iio_context_get_version_minor;
+	iio_context_get_version_patch;
+	iio_context_get_version_tag;
+	iio_context_get_xml;
+	iio_context_ping;
+	iio_context_set_data;
+	iio_context_set_pdata;
+	iio_context_set_timeout;
+	iio_create_channels_mask;
+	iio_create_context;
+	iio_create_context_from_xml;
+	iio_device_add_attr;
+	iio_device_add_buffer;
+	iio_device_add_channel;
+	iio_device_create_event_stream;
+	iio_device_find_attr;
+	iio_device_find_channel;
+	iio_device_find_debug_attr;
+	iio_device_find_event_attr;
+	iio_device_get_attr;
+	iio_device_get_attrs_count;
+	iio_device_get_buffer;
+	iio_device_get_buffers_count;
+	iio_device_get_channel;
+	iio_device_get_channels_count;
+	iio_device_get_context;
+	iio_device_get_data;
+	iio_device_get_debug_attr;
+	iio_device_get_debug_attrs_count;
+	iio_device_get_event_attr;
+	iio_device_get_event_attrs_count;
+	iio_device_get_id;
+	iio_device_get_label;
+	iio_device_get_name;
+	iio_device_get_pdata;
+	iio_device_get_sample_size;
+	iio_device_get_trigger;
+	iio_device_is_trigger;
+	iio_device_reg_read;
+	iio_device_reg_write;
+	iio_device_set_data;
+	iio_device_set_pdata;
+	iio_device_set_trigger;
+	iio_event_get_channel;
+	iio_event_stream_destroy;
+	iio_event_stream_read;
+	iio_fopen;
+	iio_get_builtin_backend;
+	iio_get_builtin_backends_count;
+	iio_has_backend;
+	iio_mutex_create;
+	iio_mutex_destroy;
+	iio_mutex_lock;
+	iio_mutex_unlock;
+	iio_parse_format_string;
+	iio_prm_printf;
+	iio_register_get_ticks_us_cb;
+	iio_scan;
+	iio_scan_add_result;
+	iio_scan_destroy;
+	iio_scan_get_description;
+	iio_scan_get_results_count;
+	iio_scan_get_uri;
+	iio_snprintf;
+	iio_strdup;
+	iio_stream_cancel;
+	iio_stream_destroy;
+	iio_stream_get_next_block;
+	iio_strerror;
+	iio_strlcpy;
+	iio_task_cancel;
+	iio_task_cancel_sync;
+	iio_task_create;
+	iio_task_destroy;
+	iio_task_enqueue;
+	iio_task_enqueue_autoclear;
+	iio_task_flush;
+	iio_task_is_done;
+	iio_task_start;
+	iio_task_stop;
+	iio_task_sync;
+	iio_task_token_create;
+	iio_task_token_destroy;
+	iio_task_token_enqueue;
+	iio_thrd_create;
+	iio_thrd_join_and_destroy;
+	iiod_client_attr_read;
+	iiod_client_attr_write;
+	iiod_client_close_buffer;
+	iiod_client_close_event_stream;
+	iiod_client_create_block;
+	iiod_client_create_context;
+	iiod_client_dequeue_block;
+	iiod_client_destroy;
+	iiod_client_enable_buffer;
+	iiod_client_enqueue_block;
+	iiod_client_free_block;
+	iiod_client_get_trigger;
+	iiod_client_mutex_lock;
+	iiod_client_mutex_unlock;
+	iiod_client_new;
+	iiod_client_nop;
+	iiod_client_open_buffer;
+	iiod_client_open_event_stream;
+	iiod_client_read_event;
+	iiod_client_readbuf;
+	iiod_client_refresh_format;
+	iiod_client_reg_read;
+	iiod_client_reg_write;
+	iiod_client_set_timeout;
+	iiod_client_set_trigger;
+	iiod_client_uses_binary_interface;
+	iiod_client_writebuf;
+
+local:
+	*;
+};
