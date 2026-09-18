@@ -59,11 +59,11 @@ static void iiod_uart_irq_rx_ready(const struct device *dev, struct ring_buf *bu
 	uint8_t *data;
 
 	do {
-		buf_len = ring_buf_put_claim(buf, &data, buf->size);
+		buf_len = ring_buf_put_ptr(buf, &data, 0);
 
 		if (buf_len > 0) {
 			rx_len = uart_fifo_read(dev, data, buf_len);
-			ring_buf_put_finish(buf, rx_len);
+			ring_buf_commit(buf, rx_len);
 			LOG_DBG("rx buffer put claim %d bytes, finish %d bytes", buf_len, rx_len);
 		} else {
 			uint8_t dummy;
@@ -83,9 +83,9 @@ static void iiod_uart_irq_tx_ready(const struct device *dev, struct ring_buf *bu
 	uint8_t *data;
 
 	do {
-		buf_len = ring_buf_get_claim(buf, &data, buf->size);
+		buf_len = ring_buf_get_ptr(buf, &data, 0);
 		tx_len = uart_fifo_fill(dev, data, buf_len);
-		ring_buf_get_finish(buf, tx_len);
+		ring_buf_consume(buf, tx_len);
 		LOG_DBG("tx buffer get claim %d bytes, finish %d bytes", buf_len, tx_len);
 	} while ((tx_len == buf_len) && !ring_buf_is_empty(&tx_buf));
 
