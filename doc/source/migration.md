@@ -83,6 +83,7 @@ can be set:
   `iio_context_get_xml` to read and serialize current attribute values into the
   XML output (see the section below on `iio_context_get_xml`).
 
+(context-creation)=
 ## Context creation
 
 Libiio context creation is now handled uniquely by the `iio_create_context`
@@ -171,6 +172,7 @@ dynamically loaded plug-in backends:
 - `iio_get_backends_count` was renamed to `iio_get_builtin_backends_count`.
 - `iio_get_backend` was renamed to `iio_get_builtin_backend`.
 
+(attributes)=
 ## Attributes
 
 The various IIO objects still have attributes. However, the API changed
