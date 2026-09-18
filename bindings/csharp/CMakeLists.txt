@@ -15,6 +15,16 @@ find_program(
     DOC "C# compiler")
 mark_as_advanced(MCS_EXECUTABLE)
 
+# NOTE: mcs/csc is still required to build the C# bindings at all (see the
+# outer `if (MCS_EXECUTABLE)` below). This block only adds an *additional*
+# net5.0 target on top of that when the .NET SDK also happens to be present;
+# a dotnet-only machine (no mcs/csc) will build nothing here.
+find_program(
+    DOTNET_EXECUTABLE
+    NAMES dotnet
+    DOC ".NET SDK (optional, for the .NET 5+ build)")
+mark_as_advanced(DOTNET_EXECUTABLE)
+
 if (MCS_EXECUTABLE)
     message(STATUS "Found C#: Building bindings")
     set(LIBIIO_CS_PC_IN "${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp.pc.cmakein")
@@ -90,6 +100,36 @@ if (MCS_EXECUTABLE)
             FILES ${LIBIIO_CS_DLL} ${DEBUG_SYMBOLS_FILE}
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
     endif ()
+    if (DOTNET_EXECUTABLE)
+        message(
+            STATUS "Found .NET SDK: Also building the .NET 5+ bindings variant")
+        set(LIBIIO_CS_NET_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/net5.0")
+        set(LIBIIO_CS_NET_DLL "${LIBIIO_CS_NET_OUT_DIR}/libiio-sharp.dll")
+
+        add_custom_command(
+            OUTPUT ${LIBIIO_CS_NET_DLL}
+            COMMAND
+                ${DOTNET_EXECUTABLE} build
+                ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
+                -o ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
+            DEPENDS ${LIBIIO_CS_SOURCES}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+        add_custom_target(libiio-sharp-net5 ALL DEPENDS ${LIBIIO_CS_NET_DLL})
+
+        if (NOT SKIP_INSTALL_ALL)
+            install(
+                FILES ${LIBIIO_CS_NET_DLL}
+                DESTINATION
+                    ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION}/net5.0
+            )
+        endif ()
+    else ()
+        message(
+            STATUS ".NET SDK not found: skipping the .NET 5+ bindings variant "
+                   "(existing Mono/.NET Framework build is unaffected)")
+    endif ()
+
     add_subdirectory(examples)
     add_subdirectory(tests)
 else ()
