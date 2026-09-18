@@ -54,6 +54,7 @@ if (MCS_EXECUTABLE)
         ${CMAKE_CURRENT_SOURCE_DIR}/IIOEvent.cs
         ${CMAKE_CURRENT_SOURCE_DIR}/Trigger.cs
         ${CMAKE_CURRENT_SOURCE_DIR}/IioLib.cs
+        ${CMAKE_CURRENT_SOURCE_DIR}/NativeLibraryResolver.cs
         ${CMAKE_CURRENT_SOURCE_DIR}/Scan.cs
         ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cs
         ${CMAKE_CURRENT_SOURCE_DIR}/UTF8Marshaler.cs
