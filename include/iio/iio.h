@@ -378,7 +378,7 @@ enum iio_event_direction {
 
 /* ---------------------------------------------------------------------------*/
 /* ---------------------------- Error handling -------------------------------*/
-/** @defgroup Functions for handling pointer-encoded errors
+/** @defgroup ErrorHandling Functions for handling pointer-encoded errors
  * @{ */
 /**
  * @brief Encode an error code into a pointer
@@ -1168,6 +1168,7 @@ __api void iio_buffer_set_data(struct iio_buffer *buf, void *data);
  * @return The pointer previously associated if present, or NULL */
 __api void *iio_buffer_get_data(const struct iio_buffer *buf);
 
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Buffer Stream functions -------------------------*/
 /** @defgroup BufferStream Buffer Stream
  * @{
