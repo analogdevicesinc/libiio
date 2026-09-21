@@ -5,6 +5,10 @@ Buffer Functions
     :content-only:
     :members:
 
+.. doxygengroup:: BufferStream
+    :content-only:
+    :members:
+
 .. doxygengroup:: Block
     :content-only:
     :members:

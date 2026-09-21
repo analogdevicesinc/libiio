@@ -102,6 +102,9 @@
 <li><a class="reference internal" href="#_CPPv415iio_has_backendPK18iio_context_paramsPKc"><code class="docutils literal notranslate"><span class="pre">iio_has_backend()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv430iio_get_builtin_backends_countv"><code class="docutils literal notranslate"><span class="pre">iio_get_builtin_backends_count()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv423iio_get_builtin_backendj"><code class="docutils literal notranslate"><span class="pre">iio_get_builtin_backend()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv47iio_ptri"><code class="docutils literal notranslate"><span class="pre">iio_ptr()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv47iio_errPKv"><code class="docutils literal notranslate"><span class="pre">iio_err()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv412iio_err_castPKv"><code class="docutils literal notranslate"><span class="pre">iio_err_cast()</span></code></a></li>
 </ul>
 </li>
 </ul>
@@ -297,6 +300,48 @@ Content on this topic
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>If the index is invalid, NULL is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv47iio_ptri">
+<span id="_CPPv37iio_ptri"></span><span id="_CPPv27iio_ptri"></span><span id="iio_ptr__i"></span><span class="target" id="group__ErrorHandling_1gaf4ddb76ccdd5445b27dfff10fd6de4a2"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_ptr</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">err</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv47iio_ptri" title="Link to this definition"></a><br /></dt>
+<dd><p>Encode an error code into a pointer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>err</strong> – The error code to be encoded. Must be negative. </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The error-encoding pointer. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv47iio_errPKv">
+<span id="_CPPv37iio_errPKv"></span><span id="_CPPv27iio_errPKv"></span><span id="iio_err__voidCP"></span><span class="target" id="group__ErrorHandling_1ga5245eadee93a9dab6994cae422cca3c8"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_err</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv47iio_errPKv" title="Link to this definition"></a><br /></dt>
+<dd><p>Returns the encoded error code if present, otherwise zero. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ptr</strong> – Pointer that is either valid or error-encoding </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The error code if present, otherwise zero. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv412iio_err_castPKv">
+<span id="_CPPv312iio_err_castPKv"></span><span id="_CPPv212iio_err_castPKv"></span><span id="iio_err_cast__voidCP"></span><span class="target" id="group__ErrorHandling_1ga3153b3e9426793bcf1a52b0eee1cdce6"></span><span class="k"><span class="pre">static</span></span><span class="w"> </span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="sig-name descname"><span class="n"><span class="pre">iio_err_cast</span></span></span><span class="sig-paren">(</span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv412iio_err_castPKv" title="Link to this definition"></a><br /></dt>
+<dd><p>Type-cast an error-encoding pointer. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ptr</strong> – Error-encoding pointer </p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>An error-encoding pointer that can be used as a different type. </p>
 </dd>
 </dl>
 </dd></dl>
