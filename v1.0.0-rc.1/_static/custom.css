@@ -1,0 +1,76 @@
+/* Custom CSS for libiio documentation */
+
+/* Responsive content width on larger screens */
+@media (min-width: 56em) {
+    .content {
+        width: 52em;
+    }
+}
+
+/* Ensure figures scale properly */
+figure > object {
+    max-width: 100%;
+}
+
+/* Image styling with subtle background and padding */
+img {
+    background: #fff;
+    border-radius: .25em;
+    padding: .5em 0;
+}
+
+/* WaveDrom diagram styling (if used) */
+.WaveDrom {
+    background: #fff;
+    border-radius: .25em;
+    padding: .5em 0;
+}
+
+/* Table improvements */
+th {
+    white-space: nowrap;
+}
+
+.table-wrapper {
+    overflow: visible;
+}
+
+table.align-left {
+    margin-left: 0;
+    margin-right: auto;
+}
+
+/* App logo and name container - display image and text inline */
+.app-logo-name {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    text-decoration: none;
+    color: inherit;
+}
+
+.app-logo-name:hover {
+    text-decoration: none;
+}
+
+.app-logo-name img {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0;
+    padding: 0;
+}
+
+.app-logo-name strong {
+    display: inline-block;
+    vertical-align: middle;
+    margin: 0;
+    margin-left: 0;
+    padding: 0;
+    padding-left: 0;
+}
+
+.app-logo-name p {
+    margin: 0;
+    padding: 0;
+}
