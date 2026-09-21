@@ -19,11 +19,14 @@ release_artifacts() {
         for i in $pkg_assets; do
                 cd "${i}"
 		
-		# change artifact name
-		old_name=$(find . -name '*.pkg' | cut -b 3-26)
-		name=$(echo "${old_name}" | cut -b 1-20)
-		new_name="${name}-${i}.pkg"
-		mv ./"${old_name}" ./"${new_name}"
+		# All three macOS jobs produce an identically named .pkg, so tag
+		# each one with its artifact name before they are moved into a
+		# shared directory. Derive the new name from the file itself: byte
+		# offsets silently break whenever the version or the abbreviated
+		# git hash changes length.
+		find . -name '*.pkg' | while IFS= read -r pkg; do
+			mv "${pkg}" "${pkg%.pkg}-${i}.pkg"
+		done
 
                 find . -name '*.pkg' -exec mv {} ../ ";"
 		find . -name '*.tar.gz' -exec mv {} ../ ";"
@@ -37,16 +40,18 @@ release_artifacts() {
 	cd Windows
 	mkdir include
 	cd ..
-	cp ./Windows-VS-2022-x64/iio.h ./Windows/include
+	# The public headers are installed under iio/, so ship the whole
+	# directory and keep the <iio/iio.h> include layout inside the zip.
+	cp -r ./Windows-VS-2022-x64/iio ./Windows/include/
         cp ./Windows-VS-2022-x64/Windows-msvc-deps.zip ./
         for i in $zip_assets; do
                 if [ "${i}" != "MinGW-W64" ]; then
                         rm ./"Windows-${i}"/Windows-msvc-deps.zip
                 fi
-		rm ./"Windows-${i}"/iio.h
+		rm -r ./"Windows-${i}"/iio
 		mv ./"Windows-${i}" Windows
         done
-	cp /home/vsts/work/1/s/CI/azure/README.txt ./Windows
+	cp "${BUILD_SOURCESDIRECTORY}"/CI/azure/README.txt ./Windows
 	cd Windows
 	zip -r Windows.zip ./*
 	cp ./Windows.zip ../
