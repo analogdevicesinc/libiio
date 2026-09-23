@@ -122,6 +122,11 @@ struct iio_usb_pipe {
 	 */
 	struct k_sem rx_credit;
 	struct k_sem tx_sem;
+	/* Signalled to hand this pipe's thread a session. It latches, so a reopen
+	 * that arrives while the previous interpreter is still unwinding is served
+	 * when the thread parks rather than being lost.
+	 */
+	struct k_sem start_sem;
 	/* The session this pipe is serving. Bumped at each session start, leaving
 	 * anything already queued for the previous one with an older stamp.
 	 */
@@ -132,9 +137,11 @@ struct iio_usb_pipe {
 	 */
 	int rx_err;
 	atomic_t rx_err_epoch;
-	/* The buffer the reader is part-way through, and how far in. Touched only
-	 * by this pipe's interpreter thread.
+	/* The session this pipe's reader is serving, taken from epoch when it
+	 * starts, and the buffer it is part-way through. Touched only by this
+	 * pipe's interpreter thread.
 	 */
+	uint32_t rx_epoch;
 	struct net_buf *rx_cur;
 	uint16_t rx_cur_off;
 	int tx_err;
@@ -148,11 +155,10 @@ struct iio_usb_data {
 	const struct usb_desc_header *const *const hs_desc;
 	struct usbd_desc_node *const iface_str_desc;
 	struct usbd_class_data *c_data;
-	/* Statically initialised in the instance definition: the server thread
-	 * waits on this from boot, which is long before .init runs when the
-	 * application supplies its own USB device and calls usbd_init() itself.
+	/* Given when .init sets up per-pipe state; statically initialised because
+	 * .init may run long after boot (app-supplied USB device case).
 	 */
-	struct k_sem enabled_sem;
+	struct k_sem init_sem;
 	uint8_t num_pipes;
 	uint16_t rx_buf_size;
 	uint16_t tx_buf_size;
@@ -450,6 +456,7 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 		k_sem_init(&pipe->rx_sem, 0, K_SEM_MAX_LIMIT);
 		k_sem_init(&pipe->rx_credit, data->rx_depth, data->rx_depth);
 		k_sem_init(&pipe->tx_sem, 0, 1);
+		k_sem_init(&pipe->start_sem, 0, 1);
 		pipe->rx_err = 0;
 		atomic_set(&pipe->rx_err_epoch, 0);
 		/* Sessions are numbered from one so that zero can mean "no error
@@ -471,6 +478,12 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 		}
 	}
 
+	/* The pipes are usable now, so release the server thread. This runs once
+	 * per registered speed and the semaphore caps at one, so a second call is
+	 * harmless.
+	 */
+	k_sem_give(&data->init_sem);
+
 	return 0;
 }
 
@@ -490,9 +503,17 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 	LOG_DBG("Pipe %u: read %zu bytes requested", pipe->idx, size);
 
 	while (bytes_read < size) {
-		uint32_t epoch = (uint32_t)atomic_get(&pipe->epoch);
 		struct net_buf *done;
 		size_t avail;
+
+		if ((uint32_t)atomic_get(&pipe->epoch) != pipe->rx_epoch) {
+			/*
+			 * Another session has started, so this read must end rather
+			 * than consume the successor's bytes.
+			 */
+			LOG_DBG("Pipe %u: session %u superseded", pipe->idx, pipe->rx_epoch);
+			return -ESHUTDOWN;
+		}
 
 		if (pipe->rx_cur == NULL) {
 			pipe->rx_cur = k_fifo_get(&pipe->rx_fifo, K_NO_WAIT);
@@ -500,7 +521,8 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 		}
 
 		if (pipe->rx_cur == NULL) {
-			if (pipe->rx_err && (uint32_t)atomic_get(&pipe->rx_err_epoch) == epoch) {
+			if (pipe->rx_err &&
+			    (uint32_t)atomic_get(&pipe->rx_err_epoch) == pipe->rx_epoch) {
 				/*
 				 * Only log as an error while the pipe is open.
 				 * Teardown cancels the armed transfer, and that
@@ -521,7 +543,7 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 			continue;
 		}
 
-		if (iio_usb_buf_epoch(pipe->rx_cur) != epoch) {
+		if (iio_usb_buf_epoch(pipe->rx_cur) != pipe->rx_epoch) {
 			done = pipe->rx_cur;
 			pipe->rx_cur = NULL;
 			iio_usb_release_rx(c_data, pipe, done);
@@ -601,22 +623,59 @@ static ssize_t iiod_usb_pipe_write(struct iiod_pdata *pdata, const void *buf, si
 }
 
 /*
- * Thread entry for data pipe interpreters (pipes 1..N-1).
- * Each runs its own iiod_interpreter using the pipe's endpoints.
+ * Serve one session on a pipe, then park until the host opens it again.
+ *
+ * Every pipe's thread, including the command channel's, is created once at
+ * startup and never joined: the control handler runs on the USB device
+ * stack's thread and must not wait on a pipe thread, which may itself be
+ * blocked on a completion only that same stack thread can deliver.
+ *
+ * A reopen arriving while this interpreter is still unwinding is safe: the
+ * start semaphore latches, and the reader leaves once it sees the session
+ * number has moved on.
  */
-static void pipe_interpreter_thread(void *p1, void *p2, void *p3)
+static void iio_usb_pipe_thread(void *p1, void *p2, void *p3)
 {
-	struct iio_usb_pipe *pipe = (struct iio_usb_pipe *)p1;
-	struct iio_usb_data *data = (struct iio_usb_data *)p2;
-	int pipe_idx = (int)(intptr_t)p3;
+	struct iio_usb_pipe *pipe = p1;
+	struct iio_usb_data *data = pipe->data;
 
-	LOG_INF("Pipe %d: interpreter thread started", pipe_idx);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
 
-	iiod_interpreter(data->ctx, (struct iiod_pdata *)pipe, iiod_usb_pipe_read,
-			 iiod_usb_pipe_write, data->xml, data->xml_len);
+	while (true) {
+		k_sem_take(&pipe->start_sem, K_FOREVER);
 
-	LOG_INF("Pipe %d: interpreter thread exiting", pipe_idx);
-	pipe->open = false;
+		if (!pipe->open) {
+			/* Closed again before this thread reached it. */
+			continue;
+		}
+
+		/*
+		 * Adopt the epoch the control handler set; stale buffers drop
+		 * as they're popped. The in-progress buffer is released here
+		 * to reclaim its credit.
+		 */
+		pipe->rx_epoch = (uint32_t)atomic_get(&pipe->epoch);
+
+		if (pipe->rx_cur != NULL) {
+			struct net_buf *stale = pipe->rx_cur;
+
+			pipe->rx_cur = NULL;
+			iio_usb_release_rx(data->c_data, pipe, stale);
+		}
+
+		LOG_INF("Pipe %u: serving session %u", pipe->idx, pipe->rx_epoch);
+
+		iiod_interpreter(data->ctx, (struct iiod_pdata *)pipe, iiod_usb_pipe_read,
+				 iiod_usb_pipe_write, data->xml, data->xml_len);
+
+		/*
+		 * pipe->open belongs to the control handler, which has already
+		 * cleared it to get this interpreter here. Clearing it again
+		 * would race a reopen that has just set it.
+		 */
+		LOG_INF("Pipe %u: session %u done", pipe->idx, pipe->rx_epoch);
+	}
 }
 
 /*
@@ -640,19 +699,17 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 	switch (request) {
 	case IIO_USD_CMD_RESET_PIPES:
 		LOG_INF("RESET_PIPES");
-		for (int i = 1; i < data->num_pipes; i++) {
+		/*
+		 * Pipe 0 never gets CLOSE_PIPE, so this is its only teardown
+		 * signal. An abandoned client can leave the interpreter mid-command,
+		 * and a fresh one expects its first eight bytes read as a header.
+		 */
+		for (int i = 0; i < data->num_pipes; i++) {
 			if (data->pipes[i].open) {
 				data->pipes[i].open = false;
 				iio_usb_pipe_fail_rx(&data->pipes[i], -ESHUTDOWN);
 			}
 		}
-		/*
-		 * Pipe 0 stays alive across RESET_PIPES, so give it a new session
-		 * rather than an error: an abandoned connection can leave packets
-		 * queued that the next client's first read would parse as a command
-		 * header, and the bump makes the reader drop them.
-		 */
-		iio_usb_pipe_new_session(&data->pipes[0]);
 		break;
 
 	case IIO_USD_CMD_OPEN_PIPE:
@@ -665,9 +722,21 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 			LOG_WRN("Pipe %u already open", pipe_id);
 			return 0;
 		}
+		if (data->ctx == NULL) {
+			/*
+			 * The shared context failed to come up, so no pipe can be
+			 * served. Stall rather than report a pipe open that will never
+			 * answer.
+			 */
+			LOG_ERR("Pipe %u: no IIO context", pipe_id);
+			return -EIO;
+		}
+
 		/*
-		 * Number the new session before arming, so the buffer armed for it
-		 * is stamped with it and anything left from the previous one is not.
+		 * Number the new session before anything else. A previous
+		 * interpreter that has not finished unwinding leaves on its next
+		 * read once it sees this, and everything it left behind is stamped
+		 * with the old number.
 		 */
 		iio_usb_pipe_new_session(&data->pipes[pipe_id]);
 
@@ -683,36 +752,14 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 			return err;
 		}
 
+		/* The receive side is carried by the session number, so only the
+		 * transmit side needs clearing.
+		 */
+		data->pipes[pipe_id].tx_err = 0;
+		k_sem_reset(&data->pipes[pipe_id].tx_sem);
+
 		data->pipes[pipe_id].open = true;
-
-		/* Spawn interpreter thread for data pipes (not pipe 0) */
-		if (pipe_id > 0 && data->ctx != NULL && data->pipe_threads != NULL) {
-			struct iio_usb_pipe *pipe = &data->pipes[pipe_id];
-			int idx = pipe_id - 1;
-
-			/* The receive side is carried by the session number, so only
-			 * the transmit side needs clearing here.
-			 */
-			pipe->tx_err = 0;
-			k_sem_reset(&pipe->tx_sem);
-
-			k_thread_create(&data->pipe_threads[idx],
-					data->pipe_stacks +
-						idx * CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE,
-					CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE,
-					pipe_interpreter_thread, pipe, data,
-					(void *)(intptr_t)pipe_id,
-					CONFIG_LIBIIO_IIOD_USB_THREAD_PRIORITY, 0, K_NO_WAIT);
-#ifdef CONFIG_THREAD_NAME
-			{
-				char name[CONFIG_THREAD_MAX_NAME_LEN];
-
-				snprintf(name, sizeof(name), "iiod_usb_pipe%u", pipe_id);
-				k_thread_name_set(&data->pipe_threads[idx], name);
-			}
-#endif
-			LOG_INF("Pipe %u: interpreter thread spawned", pipe_id);
-		}
+		k_sem_give(&data->pipes[pipe_id].start_sem);
 		break;
 
 	case IIO_USD_CMD_CLOSE_PIPE:
@@ -800,7 +847,6 @@ static void iio_usb_enable(struct usbd_class_data *const c_data)
 	 * never release one. Credit is reconciled first, since in-flight
 	 * completions from before this event may still return some.
 	 */
-	data->pipes[0].open = true;
 	for (int i = 0; i < data->num_pipes; i++) {
 		struct iio_usb_pipe *pipe = &data->pipes[i];
 
@@ -816,10 +862,6 @@ static void iio_usb_enable(struct usbd_class_data *const c_data)
 			}
 		}
 	}
-
-	/* Signal that USB is ready for IIOD interpreter */
-	k_sem_give(&data->enabled_sem);
-	LOG_INF("USB ready - signaled iiod_interpreter to start");
 }
 
 static void iio_usb_disable(struct usbd_class_data *const c_data)
@@ -854,75 +896,69 @@ static const struct usbd_class_api iio_usb_api = {
 };
 
 /*
- * Main IIOD interpreter thread. Runs the command-channel interpreter
- * on pipe 0, restarting on USB disconnect/reconnect.
+ * Bring up the resources every pipe shares, start a thread for each data pipe,
+ * then serve the command channel in this thread.
+ *
+ * The context is created once and kept forever - nothing to refresh on
+ * reconnect. Pipe threads start only once the context exists.
  */
 static void iiod_usb_thread_fn(struct iio_usb_data *data)
 {
 	struct iio_context_params ctx_params = {0};
 
-	while (true) {
-		LOG_INF("Initializing tinyiiod resources...");
-		if (iiod_init() < 0) {
-			LOG_ERR("Failed to initialize tinyiiod resources");
-			return;
-		}
+	/* Nothing below may run before .init has set the pipes up. */
+	k_sem_take(&data->init_sem, K_FOREVER);
 
-		LOG_INF("Creating shared IIO context...");
-		data->ctx = iio_create_context(&ctx_params, "zephyr:");
-		if (iio_err(data->ctx)) {
-			LOG_ERR("Context creation failed");
-			iiod_cleanup();
-			return;
-		}
+	LOG_INF("Initializing tinyiiod resources...");
+	if (iiod_init() < 0) {
+		LOG_ERR("Failed to initialize tinyiiod resources");
+		return;
+	}
 
-		LOG_INF("Getting xml data");
-		data->xml = iio_context_get_xml(data->ctx);
-		if (iio_err(data->xml)) {
-			LOG_ERR("Error getting context XML");
-			iio_context_destroy(data->ctx);
-			iiod_cleanup();
-			return;
-		}
-
-		data->xml_len = strlen(data->xml) + 1;
-		LOG_INF("XML ready, length: %zu bytes", data->xml_len);
-
-		/* Wait for USB to be enabled before starting interpreter */
-		LOG_INF("Waiting for USB enumeration and configuration...");
-		k_sem_take(&data->enabled_sem, K_FOREVER);
-		LOG_INF("USB is ready!");
-
-		/* Give pipe 0 a fresh session so the interpreter cannot inherit
-		 * anything queued before the bus came up.
-		 */
-		iio_usb_pipe_new_session(&data->pipes[0]);
-		data->pipes[0].tx_err = 0;
-		k_sem_reset(&data->pipes[0].tx_sem);
-
-		LOG_INF("Starting IIOD interpreter on pipe 0");
-
-		/* Pipe 0 runs the command-channel interpreter in this thread */
-		iiod_interpreter(data->ctx, (struct iiod_pdata *)&data->pipes[0],
-				 iiod_usb_pipe_read, iiod_usb_pipe_write, data->xml,
-				 data->xml_len);
-
-		LOG_INF("IIOD interpreter exited, cleaning up...");
-
-		if (data->pipe_threads != NULL) {
-			for (int i = 0; i < data->num_pipes - 1; i++) {
-				k_thread_join(&data->pipe_threads[i], K_MSEC(1000));
-			}
-		}
-
-		free((void *)data->xml);
-		data->xml = NULL;
-		iio_context_destroy(data->ctx);
+	LOG_INF("Creating shared IIO context...");
+	data->ctx = iio_create_context(&ctx_params, "zephyr:");
+	if (iio_err(data->ctx)) {
+		LOG_ERR("Context creation failed");
 		data->ctx = NULL;
 		iiod_cleanup();
-
-		LOG_INF("Waiting for USB reconnect...");
+		return;
 	}
+
+	LOG_INF("Getting xml data");
+	data->xml = iio_context_get_xml(data->ctx);
+	if (iio_err(data->xml)) {
+		LOG_ERR("Error getting context XML");
+		iio_context_destroy(data->ctx);
+		data->ctx = NULL;
+		data->xml = NULL;
+		iiod_cleanup();
+		return;
+	}
+
+	data->xml_len = strlen(data->xml) + 1;
+	LOG_INF("XML ready, length: %zu bytes", data->xml_len);
+
+	for (int i = 1; i < data->num_pipes; i++) {
+		int idx = i - 1;
+
+		k_thread_create(&data->pipe_threads[idx],
+				data->pipe_stacks +
+					idx * CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE,
+				CONFIG_LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE,
+				iio_usb_pipe_thread, &data->pipes[i], NULL, NULL,
+				CONFIG_LIBIIO_IIOD_USB_THREAD_PRIORITY, 0, K_NO_WAIT);
+#ifdef CONFIG_THREAD_NAME
+		{
+			char name[CONFIG_THREAD_MAX_NAME_LEN];
+
+			snprintf(name, sizeof(name), "iiod_usb_pipe%d", i);
+			k_thread_name_set(&data->pipe_threads[idx], name);
+		}
+#endif
+	}
+
+	/* This thread serves pipe 0, and never returns. */
+	iio_usb_pipe_thread(&data->pipes[0], NULL, NULL);
 }
 
 /*
@@ -1013,7 +1049,7 @@ static struct iio_usb_data iio_usb_data_##inst = {                              
 	.fs_desc = iio_fs_desc_##inst,                                                             \
 	.hs_desc = iio_hs_desc_##inst,                                                             \
 	.iface_str_desc = &iio_iface_str_desc_##inst,                                              \
-	.enabled_sem = Z_SEM_INITIALIZER(iio_usb_data_##inst.enabled_sem, 0, 1),                   \
+	.init_sem = Z_SEM_INITIALIZER(iio_usb_data_##inst.init_sem, 0, 1),                         \
 	.num_pipes = DT_INST_PROP(inst, num_pipes),                                                \
 	.rx_buf_size = DT_INST_PROP(inst, rx_buf_size),                                            \
 	.tx_buf_size = DT_INST_PROP(inst, tx_buf_size),                                            \
