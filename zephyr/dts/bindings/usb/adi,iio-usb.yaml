@@ -13,6 +13,7 @@ properties:
   num-pipes:
     type: int
     default: 3
+    min: 1
     description: |
       Number of USB bulk endpoint pairs (pipes). Pipe 0 is the IIOD
       command channel. Additional pipes are used for data streaming
@@ -41,8 +42,13 @@ properties:
 
   tx-buf-size:
     type: int
-    default: 64
+    default: 512
+    min: 8
     description: |
-      Size in bytes of each TX chunk when transmitting data over USB.
-      Smaller values reduce peak buffer pool usage at the cost of
-      more USB transactions.
+      Size in bytes of each chunk when transmitting over USB. Every
+      chunk costs a transfer and a completion, so a response larger
+      than this pays for one round trip per chunk; smaller values
+      trade throughput for a smaller buffer pool. Must be a multiple
+      of the bulk endpoint max packet size, so that a chunk ends on a
+      packet boundary rather than a short packet that ends the host's
+      read early.

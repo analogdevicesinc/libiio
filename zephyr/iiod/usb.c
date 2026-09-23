@@ -1023,9 +1023,17 @@ static const struct usb_desc_header *const iio_hs_desc_##inst[] = {             
 	(struct usb_desc_header *)&iio_usb_desc_##inst.nil_desc,                                   \
 };                                                                                                 \
                                                                                                    \
+BUILD_ASSERT(DT_INST_PROP(inst, num_pipes) <= IIO_USB_MAX_PIPES,                                   \
+	"node " DT_NODE_PATH(DT_DRV_INST(inst))                                                    \
+	" num-pipes exceeds IIO_USB_MAX_PIPES");                                                   \
+                                                                                                   \
 BUILD_ASSERT(DT_INST_PROP(inst, rx_buf_size) % USBD_MAX_BULK_MPS == 0,                             \
 	"node " DT_NODE_PATH(DT_DRV_INST(inst))                                                    \
 	" rx-buf-size is not a multiple of the bulk endpoint max packet size");                    \
+                                                                                                   \
+BUILD_ASSERT(DT_INST_PROP(inst, tx_buf_size) % USBD_MAX_BULK_MPS == 0,                             \
+	"node " DT_NODE_PATH(DT_DRV_INST(inst))                                                    \
+	" tx-buf-size is not a multiple of the bulk endpoint max packet size");                    \
                                                                                                    \
 UDC_BUF_POOL_DEFINE(iio_usb_rx_pool_##inst,                                                        \
 		    DT_INST_PROP(inst, num_pipes) * DT_INST_PROP(inst, rx_depth),                  \
