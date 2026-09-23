@@ -604,10 +604,15 @@ static ssize_t iiod_usb_pipe_write(struct iiod_pdata *pdata, const void *buf, si
 			return bytes_sent > 0 ? bytes_sent : err;
 		}
 
-		err = k_sem_take(&pipe->tx_sem, K_FOREVER);
-		if (err) {
-			LOG_ERR("Pipe %u: TX semaphore error: %d", pipe->idx, err);
-			return bytes_sent > 0 ? bytes_sent : err;
+		/*
+		 * A transmit can't be dequeued safely, so it must be waited out.
+		 * It always completes via a host read or the stack's teardown; warn
+		 * if it's taking long enough to suggest the host stopped reading.
+		 */
+		if (k_sem_take(&pipe->tx_sem, K_MSEC(CONFIG_LIBIIO_IIOD_USB_TX_WARN_MS))) {
+			LOG_WRN("Pipe %u: transmit outstanding after %u ms, host not reading",
+				pipe->idx, CONFIG_LIBIIO_IIOD_USB_TX_WARN_MS);
+			k_sem_take(&pipe->tx_sem, K_FOREVER);
 		}
 
 		if (pipe->tx_err) {
@@ -752,12 +757,6 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 			return err;
 		}
 
-		/* The receive side is carried by the session number, so only the
-		 * transmit side needs clearing.
-		 */
-		data->pipes[pipe_id].tx_err = 0;
-		k_sem_reset(&data->pipes[pipe_id].tx_sem);
-
 		data->pipes[pipe_id].open = true;
 		k_sem_give(&data->pipes[pipe_id].start_sem);
 		break;
@@ -874,14 +873,12 @@ static void iio_usb_disable(struct usbd_class_data *const c_data)
 	/* Signal all open pipes to exit their interpreter loops */
 	for (int i = 0; i < data->num_pipes; i++) {
 		/*
-		 * The stack disabled and dequeued the endpoints before calling this,
-		 * so every buffer returns on its own completion, queued behind this
-		 * event. Credit is restored there and reconciled at the next enable.
+		 * Buffers and writers are released by their own queued completions,
+		 * not here - giving tx_sem here would double-count.
 		 */
 		if (data->pipes[i].open) {
 			data->pipes[i].open = false;
 			iio_usb_pipe_fail_rx(&data->pipes[i], -ESHUTDOWN);
-			k_sem_give(&data->pipes[i].tx_sem);
 		}
 	}
 }
