@@ -10,7 +10,6 @@
 #include <zephyr/device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/drivers/usb/udc.h>
-#include <zephyr/sys/ring_buffer.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -25,6 +24,17 @@ LOG_MODULE_REGISTER(iiod_usb, CONFIG_LIBIIO_LOG_LEVEL);
 #define IIO_USD_CMD_RESET_PIPES 0
 #define IIO_USD_CMD_OPEN_PIPE   1
 #define IIO_USD_CMD_CLOSE_PIPE  2
+
+/*
+ * UDC buffer metadata, extended with the session the buffer belongs to.
+ *
+ * The udc_buf_info has to come first so the buffer can still be handed to the
+ * stack unchanged; usbd_uvc.c extends it the same way.
+ */
+struct iio_usb_buf_info {
+	struct udc_buf_info udc;
+	uint32_t epoch;
+} __packed;
 
 /*
  * IIO USB class descriptor structure.
@@ -93,26 +103,42 @@ struct iio_usb_desc {
 #define DECLARE_EP_HS_PAIR(n, _) EP_HS_PAIR(n)
 
 /*
- * Per-pipe state. Each pipe has its own RX FIFO and TX semaphore,
- * and its own endpoint addresses.
+ * Per-pipe state.
  *
- * The RX path uses a ring buffer (byte-stream FIFO) so that multiple USB
- * packets arriving while the interpreter is busy are queued rather
- * than overwritten.
+ * Received packets reach the interpreter as whole net_bufs, each carrying the
+ * session it arrived for, so staleness is decided per buffer where it is popped.
  */
 struct iio_usb_pipe {
 	/* Assigned once; the endpoint addresses themselves are resolved per use. */
 	uint8_t idx;
-	struct ring_buf rx_ringbuf;
-	struct k_sem rx_sem; /* signaled when data is added to ring buffer */
+	/* Receive buffers handed over by the completion handler, oldest first. */
+	struct k_fifo rx_fifo;
+	/* Signalled whenever rx_fifo or rx_err changed. Never reset: the reader
+	 * re-checks both, so a spurious count costs it one extra turn of its loop.
+	 */
+	struct k_sem rx_sem;
+	/* Credit for receive buffers, taken before arming one and given back when
+	 * it is released, so a pipe cannot hold more than rx-depth of them.
+	 */
+	struct k_sem rx_credit;
 	struct k_sem tx_sem;
+	/* The session this pipe is serving. Bumped at each session start, leaving
+	 * anything already queued for the previous one with an older stamp.
+	 */
+	atomic_t epoch;
+	/* rx_err applies only to the session named by rx_err_epoch, so a shutdown
+	 * cannot outlive the session it ended. Written by the device stack's
+	 * thread, read by the reader.
+	 */
 	int rx_err;
+	atomic_t rx_err_epoch;
+	/* The buffer the reader is part-way through, and how far in. Touched only
+	 * by this pipe's interpreter thread.
+	 */
+	struct net_buf *rx_cur;
+	uint16_t rx_cur_off;
 	int tx_err;
 	bool open; /* Whether this pipe has been opened by host */
-	/* Set by RESET_PIPES for pipe 0: discard stale ring-buffer bytes on
-	 * the next read instead of touching it from another thread.
-	 */
-	atomic_t reset_pending;
 	struct iio_usb_data *data; /* back-pointer to parent */
 };
 
@@ -126,8 +152,7 @@ struct iio_usb_data {
 	uint8_t num_pipes;
 	uint16_t rx_buf_size;
 	uint16_t tx_buf_size;
-	uint16_t rx_fifo_size;
-	uint8_t *rx_fifo_data;
+	uint8_t rx_depth;
 	struct net_buf_pool *rx_pool;
 	struct net_buf_pool *tx_pool;
 	struct iio_usb_pipe pipes[IIO_USB_MAX_PIPES];
@@ -178,6 +203,15 @@ static uint8_t iio_usb_get_bulk_out(struct usbd_class_data *const c_data,
 }
 
 /*
+ * The live max packet size. The stack writes the value it settled on back into
+ * the descriptor, so take it from there rather than assuming 64 or 512.
+ */
+static uint16_t iio_usb_get_bulk_mps(struct usbd_class_data *const c_data)
+{
+	return sys_le16_to_cpu(iio_usb_ep_desc(c_data, 0)->wMaxPacketSize);
+}
+
+/*
  * Find the pipe that owns a given endpoint address.
  * Returns the pipe index or -1 if not found.
  */
@@ -202,26 +236,34 @@ static int find_pipe_by_ep(struct usbd_class_data *const c_data, const uint8_t e
 static struct net_buf *iio_usb_buf_alloc(struct net_buf_pool *pool, const uint8_t ep)
 {
 	struct net_buf *buf;
-	struct udc_buf_info *bi;
+	struct iio_usb_buf_info *bi;
 
 	buf = net_buf_alloc(pool, K_NO_WAIT);
 	if (buf == NULL) {
 		return NULL;
 	}
 
-	bi = udc_get_buf_info(buf);
+	bi = (struct iio_usb_buf_info *)udc_get_buf_info(buf);
 	memset(bi, 0, sizeof(*bi));
-	bi->ep = ep;
+	bi->udc.ep = ep;
 
 	return buf;
 }
 
+static uint32_t iio_usb_buf_epoch(const struct net_buf *const buf)
+{
+	return ((struct iio_usb_buf_info *)udc_get_buf_info(buf))->epoch;
+}
+
 /*
- * Queue a receive buffer on a specific pipe's OUT endpoint. Exactly one is
- * outstanding per pipe at a time: the completion handler unrefs the buffer it was
- * handed before asking for the next.
+ * The credit bounds what the two racing callers - the completion handler and
+ * a reader that just released a buffer - can arm between them to rx-depth.
+ *
+ * Nothing ever dequeues a bulk OUT: on MAX32 that wedges the endpoint without
+ * aborting the read already in progress, so an armed buffer stays armed until
+ * it completes or the stack tears the configuration down.
  */
-static int iio_usb_queue_rx_pipe(struct usbd_class_data *const c_data, struct iio_usb_pipe *pipe)
+static int iio_usb_arm_rx(struct usbd_class_data *const c_data, struct iio_usb_pipe *pipe)
 {
 	struct iio_usb_data *data = usbd_class_get_private(c_data);
 	struct net_buf *buf;
@@ -231,21 +273,80 @@ static int iio_usb_queue_rx_pipe(struct usbd_class_data *const c_data, struct ii
 		return -ENODEV;
 	}
 
+	if (k_sem_take(&pipe->rx_credit, K_NO_WAIT)) {
+		return 0;
+	}
+
 	buf = iio_usb_buf_alloc(data->rx_pool, iio_usb_get_bulk_out(c_data, pipe->idx));
 	if (buf == NULL) {
-		LOG_ERR("Pipe %u: Failed to allocate RX buffer", pipe->idx);
+		/*
+		 * The pool holds every pipe's full depth, so holding credit and
+		 * finding it empty means the accounting is wrong.
+		 */
+		LOG_ERR("Pipe %u: RX pool empty while holding credit", pipe->idx);
+		k_sem_give(&pipe->rx_credit);
 		return -ENOMEM;
 	}
+
+	/*
+	 * Cap the transfer at the live max packet size. MAX32 completes a bulk
+	 * OUT after a single packet whatever the buffer size, so a larger one
+	 * only makes the completion granularity differ between controllers.
+	 */
+	buf->size = MIN(iio_usb_get_bulk_mps(c_data), buf->size);
 
 	err = usbd_ep_enqueue(c_data, buf);
 	if (err) {
 		LOG_ERR("Pipe %u: Failed to enqueue RX buffer: %d", pipe->idx, err);
 		net_buf_unref(buf);
+		k_sem_give(&pipe->rx_credit);
 		return err;
 	}
 
-	LOG_DBG("Pipe %u: RX buffer queued", pipe->idx);
+	LOG_DBG("Pipe %u: RX buffer armed", pipe->idx);
 	return 0;
+}
+
+/*
+ * Release a receive buffer and arm a replacement. The credit goes back first,
+ * since the completion handler may be arming the same pipe concurrently.
+ */
+static void iio_usb_release_rx(struct usbd_class_data *const c_data, struct iio_usb_pipe *pipe,
+			       struct net_buf *buf)
+{
+	net_buf_unref(buf);
+	k_sem_give(&pipe->rx_credit);
+	iio_usb_arm_rx(c_data, pipe);
+}
+
+/*
+ * Start a new session on a pipe, from the device stack's thread.
+ *
+ * Bumping the epoch is the whole of it: buffers already queued or armed for the
+ * previous session carry an older stamp and are dropped as they are popped, and
+ * an error published for it no longer applies.
+ */
+static void iio_usb_pipe_new_session(struct iio_usb_pipe *pipe)
+{
+	pipe->rx_err = 0;
+	atomic_set(&pipe->rx_err_epoch, 0);
+	atomic_inc(&pipe->epoch);
+
+	/* Wake a reader so it discards anything stale promptly rather than on
+	 * its next packet.
+	 */
+	k_sem_give(&pipe->rx_sem);
+}
+
+/*
+ * Report a receive error against the current session and wake its reader.
+ * Stamping it stops a shutdown outliving the session it ended.
+ */
+static void iio_usb_pipe_fail_rx(struct iio_usb_pipe *pipe, const int err)
+{
+	pipe->rx_err = err;
+	atomic_set(&pipe->rx_err_epoch, atomic_get(&pipe->epoch));
+	k_sem_give(&pipe->rx_sem);
 }
 
 static const void *iio_usb_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
@@ -277,32 +378,38 @@ static int iio_usb_request_handler(struct usbd_class_data *const c_data, struct 
 	pipe = &data->pipes[pipe_idx];
 
 	if (ep == iio_usb_get_bulk_out(c_data, pipe_idx)) {
-		/* Received data from host (RX) — append to FIFO */
 		LOG_DBG("Pipe %d RX complete: err=%d, len=%u", pipe_idx, err, buf->len);
-		if (atomic_cas(&pipe->reset_pending, 1, 0)) {
-			ring_buf_reset(&pipe->rx_ringbuf);
+
+		if (err == 0 && buf->len > 0 && pipe->open) {
+			/*
+			 * Stamp the session the data arrived for, not the one the
+			 * buffer was armed for, since a buffer outlives its arming
+			 * session. Arm a replacement now so the endpoint does not go
+			 * bare while the reader copies out of this one.
+			 */
+			((struct iio_usb_buf_info *)bi)->epoch =
+				(uint32_t)atomic_get(&pipe->epoch);
+			k_fifo_put(&pipe->rx_fifo, buf);
+			k_sem_give(&pipe->rx_sem);
+			iio_usb_arm_rx(c_data, pipe);
+			return 0;
 		}
 
-		if (err == 0 && buf->len > 0) {
-			uint32_t written = ring_buf_put(&pipe->rx_ringbuf, buf->data, buf->len);
-
-			if (written < buf->len) {
-				pipe->rx_err = -EIO;
-				LOG_ERR("Pipe %d: RX FIFO overflow, lost %u bytes", pipe_idx,
-					buf->len - written);
-			} else {
-				pipe->rx_err = 0;
-			}
-			k_sem_give(&pipe->rx_sem);
-			net_buf_unref(buf);
-
-			/* Re-queue another receive buffer */
-			iio_usb_queue_rx_pipe(c_data, pipe);
-		} else {
-			pipe->rx_err = err ? err : -EIO;
-			k_sem_give(&pipe->rx_sem);
-			net_buf_unref(buf);
+		if (err) {
+			/*
+			 * The value is not portable - a dequeue gives -ECONNABORTED,
+			 * MAX32 reports hardware errors as a raw -1 - so report it
+			 * rather than matching on it.
+			 */
+			iio_usb_pipe_fail_rx(pipe, err);
 		}
+
+		/*
+		 * Otherwise a zero-length packet, or one for a session the pipe has
+		 * left. Drop it without touching rx_err: overwriting the shutdown
+		 * that ended a session would leave its reader waiting forever.
+		 */
+		iio_usb_release_rx(c_data, pipe, buf);
 
 	} else if (ep == iio_usb_get_bulk_in(c_data, pipe_idx)) {
 		/* Sent data to host (TX) */
@@ -335,14 +442,20 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 
 		pipe->idx = i;
 		pipe->data = data;
-		ring_buf_init(&pipe->rx_ringbuf, data->rx_fifo_size,
-			      data->rx_fifo_data + i * data->rx_fifo_size);
+		k_fifo_init(&pipe->rx_fifo);
 		k_sem_init(&pipe->rx_sem, 0, K_SEM_MAX_LIMIT);
+		k_sem_init(&pipe->rx_credit, data->rx_depth, data->rx_depth);
 		k_sem_init(&pipe->tx_sem, 0, 1);
 		pipe->rx_err = 0;
+		atomic_set(&pipe->rx_err_epoch, 0);
+		/* Sessions are numbered from one so that zero can mean "no error
+		 * has been published for any session".
+		 */
+		atomic_set(&pipe->epoch, 1);
+		pipe->rx_cur = NULL;
+		pipe->rx_cur_off = 0;
 		pipe->tx_err = 0;
 		pipe->open = false;
-		atomic_clear(&pipe->reset_pending);
 	}
 
 	k_sem_init(&data->enabled_sem, 0, 1);
@@ -360,35 +473,36 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 }
 
 /*
- * Read/write callbacks for pipe interpreter threads.
- * The pdata pointer is the iio_usb_pipe struct for the pipe.
+ * Reads exactly size bytes: iiod frames are length-prefixed and the host sizes
+ * each read to match, so a short read would desynchronise the stream. Buffers
+ * stamped for a session this pipe has left are dropped here, the only place
+ * staleness is handled.
  */
 static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t size)
 {
 	struct iio_usb_pipe *pipe = (struct iio_usb_pipe *)pdata;
+	struct usbd_class_data *c_data = pipe->data->c_data;
+	uint8_t *dest = buf;
 	size_t bytes_read = 0;
-	uint8_t *dest = (uint8_t *)buf;
-
-	/* Discard bytes left over from before a RESET_PIPES request. */
-	if (atomic_cas(&pipe->reset_pending, 1, 0)) {
-		ring_buf_reset(&pipe->rx_ringbuf);
-	}
 
 	LOG_DBG("Pipe %u: read %zu bytes requested", pipe->idx, size);
 
 	while (bytes_read < size) {
-		uint32_t got =
-			ring_buf_get(&pipe->rx_ringbuf, dest + bytes_read, size - bytes_read);
-		bytes_read += got;
+		uint32_t epoch = (uint32_t)atomic_get(&pipe->epoch);
+		struct net_buf *done;
+		size_t avail;
 
-		if (bytes_read < size) {
-			/* Ring buffer empty — wait for more data */
-			k_sem_take(&pipe->rx_sem, K_FOREVER);
+		if (pipe->rx_cur == NULL) {
+			pipe->rx_cur = k_fifo_get(&pipe->rx_fifo, K_NO_WAIT);
+			pipe->rx_cur_off = 0;
+		}
 
-			if (pipe->rx_err) {
-				/* Only log as error if pipe is still open.
-				 * During pipe closure, pending USB transfers are cancelled
-				 * and return -ETIMEDOUT, which is expected behavior.
+		if (pipe->rx_cur == NULL) {
+			if (pipe->rx_err && (uint32_t)atomic_get(&pipe->rx_err_epoch) == epoch) {
+				/*
+				 * Only log as an error while the pipe is open.
+				 * Teardown cancels the armed transfer, and that
+				 * completion arriving is expected.
 				 */
 				if (pipe->open) {
 					LOG_ERR("Pipe %u: USB RX error: %d", pipe->idx,
@@ -399,6 +513,28 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 				}
 				return pipe->rx_err;
 			}
+
+			/* Nothing buffered and nothing wrong with this session. */
+			k_sem_take(&pipe->rx_sem, K_FOREVER);
+			continue;
+		}
+
+		if (iio_usb_buf_epoch(pipe->rx_cur) != epoch) {
+			done = pipe->rx_cur;
+			pipe->rx_cur = NULL;
+			iio_usb_release_rx(c_data, pipe, done);
+			continue;
+		}
+
+		avail = MIN(pipe->rx_cur->len - pipe->rx_cur_off, size - bytes_read);
+		memcpy(dest + bytes_read, pipe->rx_cur->data + pipe->rx_cur_off, avail);
+		bytes_read += avail;
+		pipe->rx_cur_off += avail;
+
+		if (pipe->rx_cur_off >= pipe->rx_cur->len) {
+			done = pipe->rx_cur;
+			pipe->rx_cur = NULL;
+			iio_usb_release_rx(c_data, pipe, done);
 		}
 	}
 
@@ -494,6 +630,7 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 	struct iio_usb_data *data = usbd_class_get_private(c_data);
 	uint8_t request = setup->bRequest;
 	uint16_t pipe_id = setup->wValue;
+	int err;
 
 	LOG_INF("Control to dev: bRequest=0x%02x, wValue=0x%04x, wIndex=0x%04x", request, pipe_id,
 		setup->wIndex);
@@ -504,16 +641,16 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 		for (int i = 1; i < data->num_pipes; i++) {
 			if (data->pipes[i].open) {
 				data->pipes[i].open = false;
-				data->pipes[i].rx_err = -ESHUTDOWN;
-				k_sem_give(&data->pipes[i].rx_sem);
+				iio_usb_pipe_fail_rx(&data->pipes[i], -ESHUTDOWN);
 			}
 		}
 		/*
-		 * Pipe 0 stays alive across RESET_PIPES, but flag it so its
-		 * reader thread discards any stale bytes from an abandoned
-		 * connection on its next read.
+		 * Pipe 0 stays alive across RESET_PIPES, so give it a new session
+		 * rather than an error: an abandoned connection can leave packets
+		 * queued that the next client's first read would parse as a command
+		 * header, and the bump makes the reader drop them.
 		 */
-		atomic_set(&data->pipes[0].reset_pending, 1);
+		iio_usb_pipe_new_session(&data->pipes[0]);
 		break;
 
 	case IIO_USD_CMD_OPEN_PIPE:
@@ -526,20 +663,34 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 			LOG_WRN("Pipe %u already open", pipe_id);
 			return 0;
 		}
-		data->pipes[pipe_id].open = true;
+		/*
+		 * Number the new session before arming, so the buffer armed for it
+		 * is stamped with it and anything left from the previous one is not.
+		 */
+		iio_usb_pipe_new_session(&data->pipes[pipe_id]);
 
-		/* Queue initial RX buffer for this pipe */
-		iio_usb_queue_rx_pipe(c_data, &data->pipes[pipe_id]);
+		/*
+		 * Usually a no-op: buffers aren't released on close, so the pipe is
+		 * already full. A failed arm must be refused rather than reported as
+		 * open - an unarmed bulk OUT NAKs every packet, stalling the host on
+		 * an unbounded connect timeout.
+		 */
+		err = iio_usb_arm_rx(c_data, &data->pipes[pipe_id]);
+		if (err) {
+			LOG_ERR("Pipe %u: cannot arm receive endpoint: %d", pipe_id, err);
+			return err;
+		}
+
+		data->pipes[pipe_id].open = true;
 
 		/* Spawn interpreter thread for data pipes (not pipe 0) */
 		if (pipe_id > 0 && data->ctx != NULL && data->pipe_threads != NULL) {
 			struct iio_usb_pipe *pipe = &data->pipes[pipe_id];
 			int idx = pipe_id - 1;
 
-			/* Reset pipe state for clean start */
-			ring_buf_reset(&pipe->rx_ringbuf);
-			k_sem_reset(&pipe->rx_sem);
-			pipe->rx_err = 0;
+			/* The receive side is carried by the session number, so only
+			 * the transmit side needs clearing here.
+			 */
 			pipe->tx_err = 0;
 			k_sem_reset(&pipe->tx_sem);
 
@@ -567,10 +718,13 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 		if (pipe_id >= data->num_pipes) {
 			return -EINVAL;
 		}
+		/*
+		 * The buffer stays armed: dequeuing a bulk OUT wedges the controller.
+		 * It keeps its credit too, so reopen doesn't double-arm.
+		 */
 		if (data->pipes[pipe_id].open) {
 			data->pipes[pipe_id].open = false;
-			data->pipes[pipe_id].rx_err = -ESHUTDOWN;
-			k_sem_give(&data->pipes[pipe_id].rx_sem);
+			iio_usb_pipe_fail_rx(&data->pipes[pipe_id], -ESHUTDOWN);
 		}
 		break;
 
@@ -639,10 +793,26 @@ static void iio_usb_enable(struct usbd_class_data *const c_data)
 
 	data->enabled = true;
 
-	/* Queue initial receive buffer for pipe 0 (command channel) */
+	/*
+	 * Buffers claimed here live for the whole configuration - open and close
+	 * never release one. Credit is reconciled first, since in-flight
+	 * completions from before this event may still return some.
+	 */
 	data->pipes[0].open = true;
-	if (iio_usb_queue_rx_pipe(c_data, &data->pipes[0])) {
-		LOG_ERR("Failed to queue initial RX buffer for pipe 0");
+	for (int i = 0; i < data->num_pipes; i++) {
+		struct iio_usb_pipe *pipe = &data->pipes[i];
+
+		k_sem_reset(&pipe->rx_credit);
+		for (int n = 0; n < data->rx_depth; n++) {
+			k_sem_give(&pipe->rx_credit);
+		}
+
+		for (int n = 0; n < data->rx_depth; n++) {
+			if (iio_usb_arm_rx(c_data, pipe)) {
+				LOG_ERR("Pipe %d: failed to arm receive endpoint", i);
+				break;
+			}
+		}
 	}
 
 	/* Signal that USB is ready for IIOD interpreter */
@@ -659,10 +829,14 @@ static void iio_usb_disable(struct usbd_class_data *const c_data)
 
 	/* Signal all open pipes to exit their interpreter loops */
 	for (int i = 0; i < data->num_pipes; i++) {
+		/*
+		 * The stack disabled and dequeued the endpoints before calling this,
+		 * so every buffer returns on its own completion, queued behind this
+		 * event. Credit is restored there and reconciled at the next enable.
+		 */
 		if (data->pipes[i].open) {
 			data->pipes[i].open = false;
-			data->pipes[i].rx_err = -ESHUTDOWN;
-			k_sem_give(&data->pipes[i].rx_sem);
+			iio_usb_pipe_fail_rx(&data->pipes[i], -ESHUTDOWN);
 			k_sem_give(&data->pipes[i].tx_sem);
 		}
 	}
@@ -717,10 +891,10 @@ static void iiod_usb_thread_fn(struct iio_usb_data *data)
 		k_sem_take(&data->enabled_sem, K_FOREVER);
 		LOG_INF("USB is ready!");
 
-		/* Reset pipe 0 state for clean interpreter start */
-		ring_buf_reset(&data->pipes[0].rx_ringbuf);
-		k_sem_reset(&data->pipes[0].rx_sem);
-		data->pipes[0].rx_err = 0;
+		/* Give pipe 0 a fresh session so the interpreter cannot inherit
+		 * anything queued before the bus came up.
+		 */
+		iio_usb_pipe_new_session(&data->pipes[0]);
 		data->pipes[0].tx_err = 0;
 		k_sem_reset(&data->pipes[0].tx_sem);
 
@@ -813,18 +987,16 @@ static const struct usb_desc_header *const iio_hs_desc_##inst[] = {             
 	(struct usb_desc_header *)&iio_usb_desc_##inst.nil_desc,                                   \
 };                                                                                                 \
                                                                                                    \
-static uint8_t iio_usb_rx_fifo_data_##inst                                                         \
-	[DT_INST_PROP(inst, num_pipes)][DT_INST_PROP(inst, rx_fifo_size)];                         \
-                                                                                                   \
 BUILD_ASSERT(DT_INST_PROP(inst, rx_buf_size) % USBD_MAX_BULK_MPS == 0,                             \
 	"node " DT_NODE_PATH(DT_DRV_INST(inst))                                                    \
 	" rx-buf-size is not a multiple of the bulk endpoint max packet size");                    \
                                                                                                    \
-UDC_BUF_POOL_DEFINE(iio_usb_rx_pool_##inst, DT_INST_PROP(inst, num_pipes),                         \
-		    DT_INST_PROP(inst, rx_buf_size), sizeof(struct udc_buf_info), NULL);           \
+UDC_BUF_POOL_DEFINE(iio_usb_rx_pool_##inst,                                                        \
+		    DT_INST_PROP(inst, num_pipes) * DT_INST_PROP(inst, rx_depth),                  \
+		    DT_INST_PROP(inst, rx_buf_size), sizeof(struct iio_usb_buf_info), NULL);       \
                                                                                                    \
 UDC_BUF_POOL_DEFINE(iio_usb_tx_pool_##inst, DT_INST_PROP(inst, num_pipes),                         \
-		    DT_INST_PROP(inst, tx_buf_size), sizeof(struct udc_buf_info), NULL);           \
+		    DT_INST_PROP(inst, tx_buf_size), sizeof(struct iio_usb_buf_info), NULL);       \
                                                                                                    \
 COND_CODE_1(UTIL_BOOL(DT_INST_PROP(inst, num_pipes) - 1), (                                        \
 	static K_THREAD_STACK_ARRAY_DEFINE(iio_usb_pipe_stacks_##inst,                             \
@@ -842,8 +1014,7 @@ static struct iio_usb_data iio_usb_data_##inst = {                              
 	.num_pipes = DT_INST_PROP(inst, num_pipes),                                                \
 	.rx_buf_size = DT_INST_PROP(inst, rx_buf_size),                                            \
 	.tx_buf_size = DT_INST_PROP(inst, tx_buf_size),                                            \
-	.rx_fifo_size = DT_INST_PROP(inst, rx_fifo_size),                                          \
-	.rx_fifo_data = (uint8_t *)iio_usb_rx_fifo_data_##inst,                                    \
+	.rx_depth = DT_INST_PROP(inst, rx_depth),                                                  \
 	.rx_pool = &iio_usb_rx_pool_##inst,                                                        \
 	.tx_pool = &iio_usb_tx_pool_##inst,                                                        \
 	.c_data = NULL,                                                                            \
