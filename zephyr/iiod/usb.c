@@ -101,8 +101,8 @@ struct iio_usb_desc {
  * than overwritten.
  */
 struct iio_usb_pipe {
-	uint8_t ep_in;  /* IN endpoint address (e.g., 0x81) */
-	uint8_t ep_out; /* OUT endpoint address (e.g., 0x01) */
+	/* Assigned once; the endpoint addresses themselves are resolved per use. */
+	uint8_t idx;
 	struct ring_buf rx_ringbuf;
 	struct k_sem rx_sem; /* signaled when data is added to ring buffer */
 	struct k_sem tx_sem;
@@ -144,33 +144,55 @@ struct iio_usb_data {
 };
 
 /*
- * Find the pipe that owns a given endpoint address.
- * Returns the pipe index or -1 if not found.
+ * Resolve a pipe's endpoint descriptor for the speed the bus is running at.
+ *
+ * These cannot be cached: the first .init sees the not-yet-assigned speed's
+ * array still holding placeholder addresses. The two speed arrays can also
+ * legitimately disagree, since each is assigned against its own endpoint
+ * bitmap.
  */
-static int find_pipe_by_ep(struct iio_usb_data *data, uint8_t ep_addr)
+static const struct usb_ep_descriptor *iio_usb_ep_desc(struct usbd_class_data *const c_data,
+						       const unsigned int desc_idx)
 {
-	for (int i = 0; i < data->num_pipes; i++) {
-		if (data->pipes[i].ep_in == ep_addr || data->pipes[i].ep_out == ep_addr) {
-			return i;
-		}
+	struct iio_usb_data *data = usbd_class_get_private(c_data);
+	struct iio_usb_desc *desc = data->desc;
+
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(usbd_class_get_ctx(c_data)) == USBD_SPEED_HS) {
+		return &desc->if0_hs_ep[desc_idx];
 	}
-	return -1;
+
+	return &desc->if0_ep[desc_idx];
+}
+
+static uint8_t iio_usb_get_bulk_in(struct usbd_class_data *const c_data,
+				   const unsigned int pipe_idx)
+{
+	return iio_usb_ep_desc(c_data, pipe_idx * 2)->bEndpointAddress;
+}
+
+static uint8_t iio_usb_get_bulk_out(struct usbd_class_data *const c_data,
+				    const unsigned int pipe_idx)
+{
+	return iio_usb_ep_desc(c_data, pipe_idx * 2 + 1)->bEndpointAddress;
 }
 
 /*
- * Get the correct IN/OUT endpoint address for a pipe, accounting for
- * bus speed (FS vs HS). Since both FS and HS descriptors use the same
- * endpoint addresses (just different max packet sizes), we can just
- * return the pipe's stored address directly.
+ * Find the pipe that owns a given endpoint address.
+ * Returns the pipe index or -1 if not found.
  */
-static inline uint8_t pipe_get_bulk_in(struct iio_usb_pipe *pipe)
+static int find_pipe_by_ep(struct usbd_class_data *const c_data, const uint8_t ep_addr)
 {
-	return pipe->ep_in;
-}
+	struct iio_usb_data *data = usbd_class_get_private(c_data);
 
-static inline uint8_t pipe_get_bulk_out(struct iio_usb_pipe *pipe)
-{
-	return pipe->ep_out;
+	for (int i = 0; i < data->num_pipes; i++) {
+		if (iio_usb_get_bulk_in(c_data, i) == ep_addr ||
+		    iio_usb_get_bulk_out(c_data, i) == ep_addr) {
+			return i;
+		}
+	}
+
+	return -1;
 }
 
 /*
@@ -209,20 +231,20 @@ static int iio_usb_queue_rx_pipe(struct usbd_class_data *const c_data, struct ii
 		return -ENODEV;
 	}
 
-	buf = iio_usb_buf_alloc(data->rx_pool, pipe_get_bulk_out(pipe));
+	buf = iio_usb_buf_alloc(data->rx_pool, iio_usb_get_bulk_out(c_data, pipe->idx));
 	if (buf == NULL) {
-		LOG_ERR("Pipe 0x%02x: Failed to allocate RX buffer", pipe->ep_out);
+		LOG_ERR("Pipe %u: Failed to allocate RX buffer", pipe->idx);
 		return -ENOMEM;
 	}
 
 	err = usbd_ep_enqueue(c_data, buf);
 	if (err) {
-		LOG_ERR("Pipe 0x%02x: Failed to enqueue RX buffer: %d", pipe->ep_out, err);
+		LOG_ERR("Pipe %u: Failed to enqueue RX buffer: %d", pipe->idx, err);
 		net_buf_unref(buf);
 		return err;
 	}
 
-	LOG_DBG("Pipe 0x%02x: RX buffer queued", pipe->ep_out);
+	LOG_DBG("Pipe %u: RX buffer queued", pipe->idx);
 	return 0;
 }
 
@@ -246,7 +268,7 @@ static int iio_usb_request_handler(struct usbd_class_data *const c_data, struct 
 	int pipe_idx;
 	struct iio_usb_pipe *pipe;
 
-	pipe_idx = find_pipe_by_ep(data, ep);
+	pipe_idx = find_pipe_by_ep(c_data, ep);
 	if (pipe_idx < 0) {
 		LOG_ERR("Unknown endpoint 0x%02x", ep);
 		net_buf_unref(buf);
@@ -254,7 +276,7 @@ static int iio_usb_request_handler(struct usbd_class_data *const c_data, struct 
 	}
 	pipe = &data->pipes[pipe_idx];
 
-	if (ep == pipe->ep_out) {
+	if (ep == iio_usb_get_bulk_out(c_data, pipe_idx)) {
 		/* Received data from host (RX) — append to FIFO */
 		LOG_DBG("Pipe %d RX complete: err=%d, len=%u", pipe_idx, err, buf->len);
 		if (atomic_cas(&pipe->reset_pending, 1, 0)) {
@@ -282,7 +304,7 @@ static int iio_usb_request_handler(struct usbd_class_data *const c_data, struct 
 			net_buf_unref(buf);
 		}
 
-	} else if (ep == pipe->ep_in) {
+	} else if (ep == iio_usb_get_bulk_in(c_data, pipe_idx)) {
 		/* Sent data to host (TX) */
 		LOG_DBG("Pipe %d TX complete: err=%d", pipe_idx, err);
 		pipe->tx_err = err;
@@ -303,18 +325,15 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 	data->c_data = c_data;
 
 	/*
-	 * Initialize per-pipe state.
-	 * Read the actual endpoint addresses from the descriptor struct —
-	 * the Zephyr USB stack remaps bEndpointAddress during class
-	 * registration (usbd_register_all_classes), so the addresses in
-	 * the struct now reflect the real UDC endpoint addresses, not
-	 * the placeholder values we put in the initializer.
+	 * Endpoint addresses are deliberately not read here: this runs once per
+	 * registered speed, before the other speed's array is assigned, so
+	 * anything cached now would be a placeholder. iio_usb_validate_eps()
+	 * reports the resolved map from .enable instead, once the speed is known.
 	 */
 	for (int i = 0; i < data->num_pipes; i++) {
 		struct iio_usb_pipe *pipe = &data->pipes[i];
 
-		pipe->ep_in = desc->if0_ep[i * 2].bEndpointAddress;
-		pipe->ep_out = desc->if0_ep[i * 2 + 1].bEndpointAddress;
+		pipe->idx = i;
 		pipe->data = data;
 		ring_buf_init(&pipe->rx_ringbuf, data->rx_fifo_size,
 			      data->rx_fifo_data + i * data->rx_fifo_size);
@@ -324,8 +343,6 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 		pipe->tx_err = 0;
 		pipe->open = false;
 		atomic_clear(&pipe->reset_pending);
-
-		LOG_INF("Pipe %d: IN=0x%02x OUT=0x%02x", i, pipe->ep_in, pipe->ep_out);
 	}
 
 	k_sem_init(&data->enabled_sem, 0, 1);
@@ -357,7 +374,7 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 		ring_buf_reset(&pipe->rx_ringbuf);
 	}
 
-	LOG_DBG("Pipe 0x%02x: read %zu bytes requested", pipe->ep_out, size);
+	LOG_DBG("Pipe %u: read %zu bytes requested", pipe->idx, size);
 
 	while (bytes_read < size) {
 		uint32_t got =
@@ -374,11 +391,11 @@ static ssize_t iiod_usb_pipe_read(struct iiod_pdata *pdata, void *buf, size_t si
 				 * and return -ETIMEDOUT, which is expected behavior.
 				 */
 				if (pipe->open) {
-					LOG_ERR("Pipe 0x%02x: USB RX error: %d", pipe->ep_out,
+					LOG_ERR("Pipe %u: USB RX error: %d", pipe->idx,
 						pipe->rx_err);
 				} else {
-					LOG_DBG("Pipe 0x%02x: RX error during shutdown: %d",
-						pipe->ep_out, pipe->rx_err);
+					LOG_DBG("Pipe %u: RX error during shutdown: %d",
+						pipe->idx, pipe->rx_err);
 				}
 				return pipe->rx_err;
 			}
@@ -401,18 +418,19 @@ static ssize_t iiod_usb_pipe_write(struct iiod_pdata *pdata, const void *buf, si
 		return -ENODEV;
 	}
 
-	LOG_DBG("Pipe 0x%02x: TX %zu bytes", pipe->ep_in, size);
+	LOG_DBG("Pipe %u: TX %zu bytes", pipe->idx, size);
 
 	size_t bytes_sent = 0;
 
 	while (bytes_sent < size) {
 		size_t chunk_size = MIN(size - bytes_sent, data->tx_buf_size);
 
-		net_buf = iio_usb_buf_alloc(data->tx_pool, pipe_get_bulk_in(pipe));
+		net_buf = iio_usb_buf_alloc(data->tx_pool,
+					    iio_usb_get_bulk_in(c_data, pipe->idx));
 
 		if (net_buf == NULL) {
-			LOG_ERR("Pipe 0x%02x: Failed to allocate TX buffer for %zu bytes",
-				pipe->ep_in, chunk_size);
+			LOG_ERR("Pipe %u: Failed to allocate TX buffer for %zu bytes",
+				pipe->idx, chunk_size);
 			return bytes_sent > 0 ? bytes_sent : -ENOMEM;
 		}
 
@@ -421,19 +439,19 @@ static ssize_t iiod_usb_pipe_write(struct iiod_pdata *pdata, const void *buf, si
 
 		err = usbd_ep_enqueue(c_data, net_buf);
 		if (err) {
-			LOG_ERR("Pipe 0x%02x: Failed to enqueue TX buffer: %d", pipe->ep_in, err);
+			LOG_ERR("Pipe %u: Failed to enqueue TX buffer: %d", pipe->idx, err);
 			net_buf_unref(net_buf);
 			return bytes_sent > 0 ? bytes_sent : err;
 		}
 
 		err = k_sem_take(&pipe->tx_sem, K_FOREVER);
 		if (err) {
-			LOG_ERR("Pipe 0x%02x: TX semaphore error: %d", pipe->ep_in, err);
+			LOG_ERR("Pipe %u: TX semaphore error: %d", pipe->idx, err);
 			return bytes_sent > 0 ? bytes_sent : err;
 		}
 
 		if (pipe->tx_err) {
-			LOG_ERR("Pipe 0x%02x: USB TX transfer failed: %d", pipe->ep_in,
+			LOG_ERR("Pipe %u: USB TX transfer failed: %d", pipe->idx,
 				pipe->tx_err);
 			return bytes_sent > 0 ? bytes_sent : pipe->tx_err;
 		}
@@ -564,11 +582,61 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 	return 0;
 }
 
+/*
+ * Check the endpoint map the stack settled on, and log it.
+ *
+ * This is the first point it can be checked: the bus speed, which decides
+ * the live descriptor array, is only known once the bus has reset. A pipe
+ * whose pair didn't get assigned would otherwise show up only as every
+ * completion silently dropped by find_pipe_by_ep().
+ */
+static int iio_usb_validate_eps(struct usbd_class_data *const c_data)
+{
+	struct iio_usb_data *data = usbd_class_get_private(c_data);
+	int ret = 0;
+
+	for (int i = 0; i < data->num_pipes; i++) {
+		uint8_t ep_in = iio_usb_get_bulk_in(c_data, i);
+		uint8_t ep_out = iio_usb_get_bulk_out(c_data, i);
+
+		LOG_INF("Pipe %d: IN=0x%02x OUT=0x%02x", i, ep_in, ep_out);
+
+		if (!USB_EP_DIR_IS_IN(ep_in) || USB_EP_GET_IDX(ep_in) == 0 ||
+		    !USB_EP_DIR_IS_OUT(ep_out) || USB_EP_GET_IDX(ep_out) == 0) {
+			LOG_ERR("Pipe %d: endpoint pair was not assigned (IN=0x%02x OUT=0x%02x)",
+				i, ep_in, ep_out);
+			ret = -ENODEV;
+			continue;
+		}
+
+		for (int j = 0; j < i; j++) {
+			if (iio_usb_get_bulk_in(c_data, j) == ep_in ||
+			    iio_usb_get_bulk_out(c_data, j) == ep_out) {
+				LOG_ERR("Pipe %d shares an endpoint with pipe %d", i, j);
+				ret = -ENODEV;
+			}
+		}
+	}
+
+	return ret;
+}
+
 static void iio_usb_enable(struct usbd_class_data *const c_data)
 {
 	struct iio_usb_data *data = usbd_class_get_private(c_data);
 
 	LOG_INF("IIO USB class enabled");
+
+	if (iio_usb_validate_eps(c_data)) {
+		/*
+		 * Leave the class disabled rather than arming a map that cannot
+		 * work. Every OPEN_PIPE then stalls, which the host reports at the
+		 * request, instead of the pipes silently never answering.
+		 */
+		LOG_ERR("IIO USB class left disabled: unusable endpoint map");
+		return;
+	}
+
 	data->enabled = true;
 
 	/* Queue initial receive buffer for pipe 0 (command channel) */
