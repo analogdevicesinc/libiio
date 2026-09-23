@@ -723,10 +723,11 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 			LOG_ERR("Invalid pipe_id %u (max %d)", pipe_id, data->num_pipes - 1);
 			return -EINVAL;
 		}
-		if (data->pipes[pipe_id].open) {
-			LOG_WRN("Pipe %u already open", pipe_id);
-			return 0;
-		}
+		/*
+		 * Always start fresh, even if already open: a session can end
+		 * silently (receive error, interface reset), leaving `open` stale.
+		 * The host also sends a redundant OPEN_PIPE 0 on context creation.
+		 */
 		if (data->ctx == NULL) {
 			/*
 			 * The shared context failed to come up, so no pipe can be
