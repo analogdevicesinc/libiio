@@ -148,6 +148,10 @@ struct iio_usb_data {
 	const struct usb_desc_header *const *const hs_desc;
 	struct usbd_desc_node *const iface_str_desc;
 	struct usbd_class_data *c_data;
+	/* Statically initialised in the instance definition: the server thread
+	 * waits on this from boot, which is long before .init runs when the
+	 * application supplies its own USB device and calls usbd_init() itself.
+	 */
 	struct k_sem enabled_sem;
 	uint8_t num_pipes;
 	uint16_t rx_buf_size;
@@ -457,8 +461,6 @@ static int iio_usb_init(struct usbd_class_data *const c_data)
 		pipe->tx_err = 0;
 		pipe->open = false;
 	}
-
-	k_sem_init(&data->enabled_sem, 0, 1);
 
 	if (desc->if0.iInterface == 0) {
 		if (usbd_add_descriptor(usbd_ctx, data->iface_str_desc)) {
@@ -1011,6 +1013,7 @@ static struct iio_usb_data iio_usb_data_##inst = {                              
 	.fs_desc = iio_fs_desc_##inst,                                                             \
 	.hs_desc = iio_hs_desc_##inst,                                                             \
 	.iface_str_desc = &iio_iface_str_desc_##inst,                                              \
+	.enabled_sem = Z_SEM_INITIALIZER(iio_usb_data_##inst.enabled_sem, 0, 1),                   \
 	.num_pipes = DT_INST_PROP(inst, num_pipes),                                                \
 	.rx_buf_size = DT_INST_PROP(inst, rx_buf_size),                                            \
 	.tx_buf_size = DT_INST_PROP(inst, tx_buf_size),                                            \
