@@ -444,6 +444,63 @@ ZTEST(iio_usb_class, test_cycling_one_pipe_leaves_another_usable)
 }
 
 /*
+ * SET_INTERFACE disables, dequeues and re-enables every endpoint, telling the
+ * class only through .update - no disable/enable pair around it, even when
+ * the alternate is already selected. libiio's own backend never triggers this,
+ * but libusb's set_interface_alt_setting and some kernel drivers do.
+ *
+ * Cancelling the queued buffers ends their sessions, which is recoverable -
+ * the host reopens the pipe. Endpoints left bare would not be; that's what
+ * this pins.
+ */
+ZTEST(iio_usb_class, test_pipes_recover_from_set_interface)
+{
+	int err;
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	err = usbh_req_set_alt(udev, IIO_IFACE, 0);
+	zassert_equal(err, 0, "SET_INTERFACE failed (%d)", err);
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	open_pipe(1);
+	expect_handshake(1);
+}
+
+/*
+ * A host may drop the configuration and set it again - what a replug looks
+ * like to the device - and the pipes have to come back. The timing gotcha:
+ * the stack dequeues every endpoint before disabling the class, but those
+ * buffers only return on completions queued behind the set-configuration
+ * event, so they're still allocated when the class is asked to arm again.
+ */
+ZTEST(iio_usb_class, test_pipes_come_back_after_reconfiguration)
+{
+	int err;
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	err = usbh_req_set_cfg(udev, 0);
+	zassert_equal(err, 0, "could not clear the configuration (%d)", err);
+
+	err = usbh_req_set_cfg(udev, 1);
+	zassert_equal(err, 0, "could not set the configuration (%d)", err);
+
+	/* Let the dequeue completions and the class's re-arming settle. */
+	k_msleep(100);
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	open_pipe(1);
+	expect_handshake(1);
+}
+
+/*
  * A reopen can arrive within milliseconds of the close, before the previous
  * interpreter has finished unwinding, so the class must accept the new
  * session without waiting for the old one gone. This does not prove the
