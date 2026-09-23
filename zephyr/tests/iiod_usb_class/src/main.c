@@ -443,6 +443,53 @@ ZTEST(iio_usb_class, test_cycling_one_pipe_leaves_another_usable)
 	expect_handshake(2);
 }
 
+/*
+ * A reopen can arrive within milliseconds of the close, before the previous
+ * interpreter has finished unwinding, so the class must accept the new
+ * session without waiting for the old one gone. This does not prove the
+ * control handler never blocks - that depended on thread scheduling - only
+ * that a pipe closed and immediately reopened still answers.
+ */
+ZTEST(iio_usb_class, test_reopen_without_pause_is_served)
+{
+	open_pipe(1);
+	expect_handshake(1);
+
+	for (unsigned int cycle = 0; cycle < REUSE_CYCLES; cycle++) {
+		close_pipe(1);
+		open_pipe(1);
+	}
+
+	expect_handshake(1);
+}
+
+/*
+ * The host never sends CLOSE_PIPE 0, so RESET_PIPES is the only signal that
+ * returns pipe 0 to a frame boundary. Until it's opened again it must answer
+ * nothing, or the next client's handshake gets read as the remainder of the
+ * last one's command.
+ */
+ZTEST(iio_usb_class, test_reset_closes_the_command_channel)
+{
+	char reply[4] = {0};
+	int err;
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	zassert_equal(vendor_req(IIO_USD_CMD_RESET_PIPES, 0), 0, "RESET_PIPES failed");
+
+	/* Accepted by the endpoint, which stays armed, and dropped by the class. */
+	err = bulk_xfer(ep_out[0], "BINARY\r\n", 8, NULL, PIPE_TIMEOUT);
+	zassert_equal(err, 0, "write to the closed command channel failed (%d)", err);
+
+	err = bulk_xfer(ep_in[0], reply, sizeof(reply) - 1, NULL, K_MSEC(100));
+	zassert_equal(err, -ETIMEDOUT, "closed command channel answered (%d)", err);
+
+	open_pipe(0);
+	expect_handshake(0);
+}
+
 /* On context destroy, RESET_PIPES arrives after the host stops reading. */
 ZTEST(iio_usb_class, test_command_channel_survives_repeated_resets)
 {
