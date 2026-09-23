@@ -656,6 +656,11 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 	uint16_t pipe_id = setup->wValue;
 	int err;
 
+	/* The stack routes every non-standard request for this interface here */
+	if (setup->RequestType.type != USB_REQTYPE_TYPE_VENDOR) {
+		return -ENOTSUP;
+	}
+
 	LOG_INF("Control to dev: bRequest=0x%02x, wValue=0x%04x, wIndex=0x%04x", request, pipe_id,
 		setup->wIndex);
 
@@ -680,10 +685,11 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 			LOG_ERR("Invalid pipe_id %u (max %d)", pipe_id, data->num_pipes - 1);
 			return -EINVAL;
 		}
-		if (atomic_get(&data->pipes[pipe_id].open)) {
-			LOG_WRN("Pipe %u already open", pipe_id);
-			return 0;
-		}
+		/*
+		 * Always start fresh, even if already open: a session can end
+		 * silently (receive error, interface reset), and the host sends
+		 * a redundant OPEN_PIPE 0 on context creation.
+		 */
 		if (data->ctx == NULL) {
 			/* No context means no pipe can ever answer, so refuse */
 			LOG_ERR("Pipe %u: no IIO context", pipe_id);
@@ -728,7 +734,7 @@ static int iio_usb_control_to_dev(struct usbd_class_data *c_data,
 
 	default:
 		LOG_DBG("Unknown vendor request 0x%02x", request);
-		break;
+		return -ENOTSUP;
 	}
 
 	return 0;
