@@ -349,10 +349,10 @@ ZTEST(iio_usb_class, test_closing_a_closed_pipe_is_accepted)
 	expect_handshake(1);
 }
 
-/* An unknown request must be ignored, not wedge the control endpoint */
+/* An unknown request must be stalled, not wedge the control endpoint */
 ZTEST(iio_usb_class, test_unknown_vendor_request_does_not_wedge)
 {
-	(void)vendor_req(0x7fU, 0);
+	zassert_not_ok(vendor_req(0x7fU, 0), "unknown vendor request was accepted");
 
 	open_pipe(0);
 	expect_handshake(0);
@@ -524,6 +524,49 @@ ZTEST(iio_usb_class, test_cycling_one_pipe_leaves_another_usable)
 
 	open_pipe(2);
 	expect_handshake(2);
+}
+
+/*
+ * SET_INTERFACE disables, dequeues and re-enables every endpoint, telling the
+ * class only through .update. libiio's own backend never triggers this, but
+ * libusb's set_interface_alt_setting does. Ending the queued buffers' sessions
+ * is recoverable, since the host reopens the pipe; endpoints left bare are not.
+ */
+ZTEST(iio_usb_class, test_pipes_recover_from_set_interface)
+{
+	open_pipe(0);
+	expect_handshake(0);
+
+	zassert_ok(usbh_req_set_alt(udev, IIO_IFACE, 0), "SET_INTERFACE failed");
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	open_pipe(1);
+	expect_handshake(1);
+}
+
+/*
+ * A host may drop the configuration and set it again - what a replug looks
+ * like to the device - and the pipes have to come back.
+ */
+ZTEST(iio_usb_class, test_pipes_come_back_after_reconfiguration)
+{
+	open_pipe(0);
+	expect_handshake(0);
+
+	zassert_ok(usbh_req_set_cfg(udev, 0), "could not clear the configuration");
+
+	zassert_ok(usbh_req_set_cfg(udev, 1), "could not set the configuration");
+
+	/* Let the dequeue completions and the class's re-arming settle */
+	k_msleep(100);
+
+	open_pipe(0);
+	expect_handshake(0);
+
+	open_pipe(1);
+	expect_handshake(1);
 }
 
 /*
