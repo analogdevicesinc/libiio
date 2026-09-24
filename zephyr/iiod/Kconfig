@@ -113,6 +113,15 @@ config LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE
 	help
 	  Stack size of threads running the iiod interpreter on data pipes.
 
+config LIBIIO_IIOD_USB_TX_WARN_MS
+	int "Transmit stall warning threshold (ms)"
+	default 2000
+	help
+	  How long a transmit may stay outstanding before the transport says
+	  so. A transfer cannot be abandoned once the controller has it, so
+	  this only controls when a host that has stopped reading its pipe is
+	  reported; the transport goes on waiting either way.
+
 config LIBIIO_IIOD_USB_INIT
 	bool "Initialize the USB device stack"
 	default y
