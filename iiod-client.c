@@ -727,6 +727,12 @@ ssize_t iiod_client_read_unlocked(struct iiod_client *client,
 			return (ssize_t) to_read;
 		if (!to_read)
 			break;
+		if ((size_t)to_read > len) {
+			IIO_ERROR("READBUF: server sent %d bytes, "
+					"only %lu remaining in buffer\n",
+					to_read, (unsigned long)len);
+			return -EIO;
+		}
 
 		if (mask) {
 			ret = iiod_client_read_mask(client, desc, mask, words);

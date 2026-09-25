@@ -527,6 +527,7 @@ static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 	}
 
 	for (i = 0; len >= 4 && i < nb; i++) {
+		size_t consumed;
 		/* Recursive! */
 		ssize_t ret = local_read_dev_attr(dev, attrs[i],
 				ptr + 4, len - 4, type);
@@ -535,8 +536,13 @@ static ssize_t local_read_all_dev_attrs(const struct iio_device *dev,
 		/* Align the length to 4 bytes */
 		if (ret > 0 && ret & 3)
 			ret = ((ret >> 2) + 1) << 2;
-		ptr += 4 + (ret < 0 ? 0 : ret);
-		len -= 4 + (ret < 0 ? 0 : ret);
+
+		consumed = 4 + (ret < 0 ? 0 : (size_t) ret);
+		if (consumed > len)
+			break;
+
+		ptr += consumed;
+		len -= consumed;
 	}
 
 	return ptr - dst;
@@ -549,6 +555,7 @@ static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
 	char *ptr = dst;
 
 	for (i = 0; len >= 4 && i < chn->nb_attrs; i++) {
+		size_t consumed;
 		/* Recursive! */
 		ssize_t ret = local_read_chn_attr(chn,
 				chn->attrs[i].name, ptr + 4, len - 4);
@@ -557,8 +564,13 @@ static ssize_t local_read_all_chn_attrs(const struct iio_channel *chn,
 		/* Align the length to 4 bytes */
 		if (ret > 0 && ret & 3)
 			ret = ((ret >> 2) + 1) << 2;
-		ptr += 4 + (ret < 0 ? 0 : ret);
-		len -= 4 + (ret < 0 ? 0 : ret);
+
+		consumed = 4 + (ret < 0 ? 0 : (size_t) ret);
+		if (consumed > len)
+			break;
+
+		ptr += consumed;
+		len -= consumed;
 	}
 
 	return ptr - dst;
@@ -577,12 +589,13 @@ static int local_buffer_analyze(unsigned int nb, const char *src, size_t len)
 		len -= 4;
 
 		if (val > 0) {
-			if ((uint32_t) val > len)
-				return -EINVAL;
-
 			/* Align the length to 4 bytes */
 			if (val & 3)
 				val = ((val >> 2) + 1) << 2;
+
+			if ((uint32_t) val > len)
+				return -EINVAL;
+
 			len -= val;
 			src += val;
 		}
