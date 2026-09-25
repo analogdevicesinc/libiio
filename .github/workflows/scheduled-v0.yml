@@ -1,0 +1,17 @@
+name: Scheduled v0 Build
+
+on:
+  schedule:
+    - cron: '0 6 * * 6'    # Weekly Saturday 6am UTC
+
+permissions:
+  actions: write
+
+jobs:
+  trigger:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch v0 build
+        run: gh workflow run build.yml --ref libiio-v0
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

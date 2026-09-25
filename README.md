@@ -23,6 +23,7 @@ Certain Files License : [![License](https://img.shields.io/badge/license-MIT-blu
 Latest Release : [![GitHub release](https://img.shields.io/github/release/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 Downloads :  [![Github All Releases](https://img.shields.io/github/downloads/analogdevicesinc/libiio/total.svg)](https://github.com/analogdevicesinc/libiio/releases/latest)
 
+Build : [![Build and Deploy](https://github.com/analogdevicesinc/libiio/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/analogdevicesinc/libiio/actions/workflows/build.yml)
 Scans : [![Coverity Scan Build Status](https://img.shields.io/coverity/scan/4796.svg)](https://scan.coverity.com/projects/analogdevicesinc-libiio)
 Release docs: [![Documentation](https://codedocs.xyz/analogdevicesinc/libiio.svg)](http://analogdevicesinc.github.io/libiio/)
 Issues : [![open bugs](https://img.shields.io/github/issues/analogdevicesinc/libiio.svg)](https://github.com/analogdevicesinc/libiio/issues)
@@ -31,7 +32,7 @@ Issues : [![open bugs](https://img.shields.io/github/issues/analogdevicesinc/lib
 Support:<br>
 If you have a question about libiio and an Analog Devices IIO kernel driver please ask on : [![EngineerZone](https://img.shields.io/badge/chat-on%20EngineerZone-blue.svg)](https://ez.analog.com/linux-device-drivers/linux-software-drivers). If you have a question about a non-ADI devices, please ask it on [github](https://github.com/analogdevicesinc/libiio/issues).
 
-As with many open source packages, we use [GitHub](https://github.com/analogdevicesinc/libiio) to do develop and maintain the source, and [Azure Pipelines](https://azure.microsoft.com/en-gb/services/devops/pipelines/) for continuous integration.
+As with many open source packages, we use [GitHub](https://github.com/analogdevicesinc/libiio) to do develop and maintain the source, and [GitHub Actions](https://github.com/analogdevicesinc/libiio/actions) for continuous integration.
   - If you want to just use libiio, we suggest using the [latest release](https://github.com/analogdevicesinc/libiio/releases/latest).
   - If you think you have found a bug in the release, or need a feature which isn't in the release, try the [latest **untested** binaries](README_DEVELOPERS.md) from the main branch and check out the [documentation](https://codedocs.xyz/analogdevicesinc/libiio/) based on the main branch. We provide builds for a few operating systems. If you need something else, we can most likely add that -- just ask.
 
