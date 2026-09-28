@@ -55,7 +55,7 @@ jobs:
           if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
             echo "build-type=Release" >> "${GITHUB_OUTPUT}"
             echo "is-release=true" >> "${GITHUB_OUTPUT}"
-            echo "cloudsmith-version=${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
+            echo "cloudsmith-version=libiio-${GITHUB_REF#refs/tags/}" >> "${GITHUB_OUTPUT}"
           else
             echo "build-type=RelWithDebInfo" >> "${GITHUB_OUTPUT}"
             echo "is-release=false" >> "${GITHUB_OUTPUT}"
