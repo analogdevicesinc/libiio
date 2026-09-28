@@ -126,6 +126,7 @@ jobs:
         with:
           cmake-options: '-DPYTHON_BINDINGS=ON -DHAVE_DNS_SD=OFF -DWITH_AIO=OFF -DWITH_IIOD=OFF'
           apt-packages: 'cmake libxml2-dev libusb-1.0-0-dev'
+          bindings-path: ../bindings/python
           artifact-name: pylibiio-dist
 
   #############################################
