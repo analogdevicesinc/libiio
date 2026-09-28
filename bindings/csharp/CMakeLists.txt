@@ -134,6 +134,7 @@ if (DOTNET_EXECUTABLE)
             ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
             -o ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
         DEPENDS ${LIBIIO_CS_SOURCES}
+                ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_custom_target(libiio-sharp-net5 ALL DEPENDS ${LIBIIO_CS_NET_DLL})
