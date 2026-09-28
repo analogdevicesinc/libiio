@@ -25,6 +25,34 @@ find_program(
     DOC ".NET SDK (optional, for the .NET 5+ build)")
 mark_as_advanced(DOTNET_EXECUTABLE)
 
+if (NOT MCS_EXECUTABLE AND NOT DOTNET_EXECUTABLE)
+    message(
+        FATAL_ERROR
+            "Neither a C# compiler (mcs/csc) nor the .NET SDK (dotnet) was found: cannot build C# bindings"
+    )
+endif ()
+
+set(LIBIIO_CS_VERSION ${VERSION}.0)
+set(LIBIIO_CS_SOURCES
+    ${CMAKE_CURRENT_SOURCE_DIR}/Attr.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Block.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Channel.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/ChannelsMask.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Context.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Device.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/EventStream.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/IOBuffer.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/IIOEvent.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Trigger.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/IioLib.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/NativeLibraryResolver.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Scan.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cs
+    ${CMAKE_CURRENT_SOURCE_DIR}/UTF8Marshaler.cs)
+
+# Legacy Mono / .NET Framework build (mcs/csc). Also builds the C# examples
+# and tests, which reference the mcs-built libiio-sharp.dll directly and are
+# not (yet) ported to dotnet.
 if (MCS_EXECUTABLE)
     message(STATUS "Found C#: Building bindings")
     set(LIBIIO_CS_PC_IN "${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp.pc.cmakein")
@@ -46,31 +74,14 @@ if (MCS_EXECUTABLE)
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
     endif ()
 
-    set(LIBIIO_CS_VERSION ${VERSION}.0)
     set(LIBIIO_CS_INFO_IN ${CMAKE_CURRENT_SOURCE_DIR}/AssemblyInfo.cs.in)
     set(LIBIIO_CS_INFO ${CMAKE_CURRENT_BINARY_DIR}/AssemblyInfo.cs)
     configure_file(${LIBIIO_CS_INFO_IN} ${LIBIIO_CS_INFO} @ONLY)
 
     set(LIBIIO_CS_DLL "${CMAKE_CURRENT_BINARY_DIR}/libiio-sharp.dll")
-    set(LIBIIO_CS_SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/Attr.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Block.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Channel.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/ChannelsMask.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Context.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Device.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/EventStream.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/IOBuffer.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/IIOEvent.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Trigger.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/IioLib.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/NativeLibraryResolver.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Scan.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cs
-        ${CMAKE_CURRENT_SOURCE_DIR}/UTF8Marshaler.cs
-        ${LIBIIO_CS_INFO})
+    set(LIBIIO_CS_MCS_SOURCES ${LIBIIO_CS_SOURCES} ${LIBIIO_CS_INFO})
 
-    foreach (SRC ${LIBIIO_CS_SOURCES})
+    foreach (SRC ${LIBIIO_CS_MCS_SOURCES})
         file(TO_NATIVE_PATH ${SRC} TMP)
         set(LIBIIO_CS_SOURCES_REALPATH ${LIBIIO_CS_SOURCES_REALPATH} ${TMP})
     endforeach (SRC)
@@ -84,7 +95,7 @@ if (MCS_EXECUTABLE)
             ${MCS_EXECUTABLE} /target:library /langversion:5
             /out:${LIBIIO_CS_DLL_OUT} /debug /keyfile:${SIGN_KEY}
             ${LIBIIO_CS_SOURCES_REALPATH}
-        DEPENDS ${LIBIIO_CS_SOURCES})
+        DEPENDS ${LIBIIO_CS_MCS_SOURCES})
 
     add_custom_target(libiio-sharp ALL DEPENDS ${LIBIIO_CS_DLL})
 
@@ -100,38 +111,40 @@ if (MCS_EXECUTABLE)
             FILES ${LIBIIO_CS_DLL} ${DEBUG_SYMBOLS_FILE}
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
     endif ()
-    if (DOTNET_EXECUTABLE)
-        message(
-            STATUS "Found .NET SDK: Also building the .NET 5+ bindings variant")
-        set(LIBIIO_CS_NET_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/net5.0")
-        set(LIBIIO_CS_NET_DLL "${LIBIIO_CS_NET_OUT_DIR}/libiio-sharp.dll")
-
-        add_custom_command(
-            OUTPUT ${LIBIIO_CS_NET_DLL}
-            COMMAND
-                ${DOTNET_EXECUTABLE} build
-                ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
-                -o ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
-            DEPENDS ${LIBIIO_CS_SOURCES}
-            WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
-
-        add_custom_target(libiio-sharp-net5 ALL DEPENDS ${LIBIIO_CS_NET_DLL})
-
-        if (NOT SKIP_INSTALL_ALL)
-            install(
-                FILES ${LIBIIO_CS_NET_DLL}
-                DESTINATION
-                    ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION}/net5.0
-            )
-        endif ()
-    else ()
-        message(
-            STATUS ".NET SDK not found: skipping the .NET 5+ bindings variant "
-                   "(existing Mono/.NET Framework build is unaffected)")
-    endif ()
 
     add_subdirectory(examples)
     add_subdirectory(tests)
 else ()
-    message(FATAL_ERROR "C# compiler search failed : Can not build C# bindings")
+    message(
+        STATUS
+            "mcs/csc not found: skipping legacy Mono/.NET Framework build (and C# examples/tests, which depend on it)"
+    )
+endif ()
+
+# .NET 5+ build (dotnet), independent of whether mcs/csc is available.
+if (DOTNET_EXECUTABLE)
+    message(STATUS "Found .NET SDK: Building the .NET 5+ bindings variant")
+    set(LIBIIO_CS_NET_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/net5.0")
+    set(LIBIIO_CS_NET_DLL "${LIBIIO_CS_NET_OUT_DIR}/libiio-sharp.dll")
+
+    add_custom_command(
+        OUTPUT ${LIBIIO_CS_NET_DLL}
+        COMMAND
+            ${DOTNET_EXECUTABLE} build
+            ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
+            -o ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
+        DEPENDS ${LIBIIO_CS_SOURCES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
+
+    add_custom_target(libiio-sharp-net5 ALL DEPENDS ${LIBIIO_CS_NET_DLL})
+
+    if (NOT SKIP_INSTALL_ALL)
+        install(
+            FILES ${LIBIIO_CS_NET_DLL}
+            DESTINATION
+                ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION}/net5.0
+        )
+    endif ()
+else ()
+    message(STATUS ".NET SDK not found: skipping the .NET 5+ bindings variant")
 endif ()
