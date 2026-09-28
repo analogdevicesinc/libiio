@@ -174,7 +174,7 @@ jobs:
       - name: Copy DLLs
         run: |
           Copy-Item -Path "build-mingw/libiio.dll" -Destination "staging/" -Force
-          Copy-Item -Path "build-mingw/liblibiio.dll.a" -Destination "staging/" -Force
+          Copy-Item -Path "build-mingw/libiio.dll.a" -Destination "staging/" -Force
           Copy-Item -Path "build-mingw/libiio1.dll" -Destination "staging/" -Force
           Copy-Item -Path "build-mingw/libiio1.dll.a" -Destination "staging/" -Force
         shell: pwsh

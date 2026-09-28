@@ -226,7 +226,8 @@ if (WIN32)
 
     if (IIO_COMPAT_LIB)
         set_target_properties(${IIO_COMPAT_LIB} PROPERTIES OUTPUT_NAME libiio
-                                                           PREFIX "")
+                                                           PREFIX ""
+                                                           IMPORT_PREFIX "")
     endif ()
 endif ()
 
