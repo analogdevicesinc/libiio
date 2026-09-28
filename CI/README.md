@@ -135,9 +135,11 @@ validates them against `artifact_manifest.txt` (generated from
 ### Cloudsmith
 
 Runs on `main`, `libiio-v0`, and tag pushes. Uploads each artifact to the
-`adi/external` Cloudsmith repository using `cloudsmith push raw` with per-file
-platform tags (derived from artifact directory names). The `--version` flag
-is set to `main~latest`, `libiio-v0~latest`, or the release tag.
+[`adi/external` Cloudsmith repository](https://cloudsmith.io/~adi/repos/external/packages/?q=version%3Alibiio)
+using `cloudsmith push raw` with per-file platform tags (derived from artifact
+directory names). The `--version` flag is set to `libiio-main~latest`,
+`libiio-v0~latest`, or `libiio-<tag>`. Filter libiio packages with
+`version:libiio` in the Cloudsmith search bar.
 
 ### GitHub Release
 
