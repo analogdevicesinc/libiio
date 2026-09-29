@@ -90,14 +90,14 @@ else ()
     )
 endif ()
 
-# .NET 5+ examples (dotnet), independent of whether mcs/csc is available.
+# .NET examples (dotnet), independent of whether mcs/csc is available.
 # Each example needs its own csproj (a single project can't have three
 # `Main` methods), referencing the already-built libiio-sharp.dll like the
 # mcs examples do, so the bindings aren't rebuilt by every example.
 if (DOTNET_EXECUTABLE)
-    set(CSHARP_EXAMPLE_NET_DIR "${CSHARP_EXAMPLE_DIR}/net5.0")
+    set(CSHARP_EXAMPLE_NET_DIR "${CSHARP_EXAMPLE_DIR}/${LIBIIO_CS_NET_TFM}")
 
-    # Builds a .NET 5+ C# example executable and creates a custom target
+    # Builds a .NET C# example executable and creates a custom target
     # for it.
     #
     # add_csharp_example_net_target(
@@ -118,19 +118,20 @@ if (DOTNET_EXECUTABLE)
                 ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT} -c Release
                 -o ${CSHARP_EXAMPLE_NET_DIR} -p:Version=${LIBIIO_CS_VERSION}
                 -p:LibiioSharpDll=${LIBIIO_CS_NET_DLL}
+                -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
             DEPENDS ${ARG_SOURCES} ${LIBIIO_CS_SOURCES}
                     ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../libiio-sharp-net.csproj
-                    libiio-sharp-net5
+                    libiio-sharp-dotnet
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-            COMMENT "Building .NET 5+ C# example: ${ARG_PROJECT}")
+            COMMENT "Building .NET C# example: ${ARG_PROJECT}")
 
         add_custom_target(${ARG_TARGET_NAME} ALL DEPENDS ${EXE_PATH})
     endfunction ()
 
     add_csharp_example_net_target(
         TARGET_NAME
-        libiio-csharp-example-program-net5
+        libiio-csharp-example-program-dotnet
         PROJECT
         ExampleProgram.csproj
         SOURCES
@@ -138,7 +139,7 @@ if (DOTNET_EXECUTABLE)
 
     add_csharp_example_net_target(
         TARGET_NAME
-        libiio-csharp-example-pluto-net5
+        libiio-csharp-example-pluto-dotnet
         PROJECT
         PlutoExample.csproj
         SOURCES
@@ -146,21 +147,19 @@ if (DOTNET_EXECUTABLE)
 
     add_csharp_example_net_target(
         TARGET_NAME
-        libiio-csharp-example-event-net5
+        libiio-csharp-example-event-dotnet
         PROJECT
         ExampleIIOEvent.csproj
         SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/ExampleIIOEvent.cs)
 
     add_custom_target(
-        libiio-csharp-examples-net5 ALL
-        DEPENDS libiio-csharp-example-program-net5
-                libiio-csharp-example-pluto-net5
-                libiio-csharp-example-event-net5)
+        libiio-csharp-examples-dotnet ALL
+        DEPENDS libiio-csharp-example-program-dotnet
+                libiio-csharp-example-pluto-dotnet
+                libiio-csharp-example-event-dotnet)
 
-    message(
-        STATUS "C# .NET 5+ examples configured in: ${CSHARP_EXAMPLE_NET_DIR}")
+    message(STATUS "C# .NET examples configured in: ${CSHARP_EXAMPLE_NET_DIR}")
 else ()
-    message(
-        STATUS ".NET SDK not found: skipping the .NET 5+ C# examples variant")
+    message(STATUS ".NET SDK not found: skipping the .NET C# examples variant")
 endif ()
