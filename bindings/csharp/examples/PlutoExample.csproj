@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net5.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- PlutoExample.cs declares its own [assembly: AssemblyTitle/Version]
+         attributes; the SDK's own auto-generated ones would collide. -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="PlutoExample.cs" />
+  </ItemGroup>
+
+  <!-- CMake passes the already-built DLL; a plain `dotnet build` builds
+       the bindings project itself instead. -->
+  <ItemGroup Condition="'$(LibiioSharpDll)' != ''">
+    <Reference Include="libiio-sharp">
+      <HintPath>$(LibiioSharpDll)</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(LibiioSharpDll)' == ''">
+    <ProjectReference Include="../libiio-sharp-net.csproj" />
+  </ItemGroup>
+</Project>
