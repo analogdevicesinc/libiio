@@ -50,9 +50,9 @@ set(LIBIIO_CS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Stream.cs
     ${CMAKE_CURRENT_SOURCE_DIR}/UTF8Marshaler.cs)
 
-# Legacy Mono / .NET Framework build (mcs/csc). Also builds the C# examples
-# and tests, which reference the mcs-built libiio-sharp.dll directly and are
-# not (yet) ported to dotnet.
+# Legacy Mono / .NET Framework build (mcs/csc). Also builds the C# tests,
+# which reference the mcs-built libiio-sharp.dll directly and are not (yet)
+# ported to dotnet.
 if (MCS_EXECUTABLE)
     message(STATUS "Found C#: Building bindings")
     set(LIBIIO_CS_PC_IN "${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp.pc.cmakein")
@@ -112,12 +112,11 @@ if (MCS_EXECUTABLE)
             DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
     endif ()
 
-    add_subdirectory(examples)
     add_subdirectory(tests)
 else ()
     message(
         STATUS
-            "mcs/csc not found: skipping legacy Mono/.NET Framework build (and C# examples/tests, which depend on it)"
+            "mcs/csc not found: skipping legacy Mono/.NET Framework build (and C# tests, which depend on it)"
     )
 endif ()
 
@@ -149,3 +148,5 @@ if (DOTNET_EXECUTABLE)
 else ()
     message(STATUS ".NET SDK not found: skipping the .NET 5+ bindings variant")
 endif ()
+
+add_subdirectory(examples)
