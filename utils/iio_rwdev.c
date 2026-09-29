@@ -288,6 +288,7 @@ int main(int argc, char **argv)
 	const struct iio_channel *ch;
 	ssize_t sample_size, hw_sample_size;
 	bool hit, mib, is_write = false, cyclic_buffer = false, benchmark = false, do_write = false;
+	bool tx_pending = false;
 	struct iio_buffer *buffer;
 	const struct iio_block *block;
 	struct iio_channels_mask *mask;
@@ -574,6 +575,9 @@ int main(int argc, char **argv)
 			break;
 		}
 
+		/* Requesting a block enqueues the previously filled one */
+		tx_pending = false;
+
 		if (benchmark && is_write == do_write) {
 			after = get_time_us();
 			total += after - before;
@@ -622,6 +626,8 @@ int main(int argc, char **argv)
 				start = (void *)((intptr_t)start + nb);
 			}
 
+			tx_pending = is_write;
+
 			if (num_samples) {
 				num_samples -= rw_len / sample_size;
 				if (!num_samples)
@@ -632,7 +638,21 @@ int main(int argc, char **argv)
 					block, mask, transfer_sample, &is_write);
 			if (ret < 0)
 				dev_perror(dev, ret, "Buffer processing failed");
+			else
+				tx_pending = is_write;
 		}
+	}
+
+	/*
+	 * A TX block is only enqueued when the next one is requested, so the
+	 * last block filled would otherwise be dropped. Submit it; destroying
+	 * the stream then waits for it to complete.
+	 */
+	if (tx_pending && exit_code == EXIT_SUCCESS) {
+		block = iio_stream_get_next_block(stream);
+		ret = iio_err(block);
+		if (ret)
+			dev_perror(dev, ret, "Unable to submit the last block");
 	}
 
 err_destroy_stream:
