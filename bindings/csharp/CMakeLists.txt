@@ -15,15 +15,61 @@ find_program(
     DOC "C# compiler")
 mark_as_advanced(MCS_EXECUTABLE)
 
-# NOTE: mcs/csc is still required to build the C# bindings at all (see the
-# outer `if (MCS_EXECUTABLE)` below). This block only adds an *additional*
-# net5.0 target on top of that when the .NET SDK also happens to be present;
-# a dotnet-only machine (no mcs/csc) will build nothing here.
+# NOTE: this only finds dotnet; whether it's actually used depends on the
+# `if (DOTNET_EXECUTABLE)` block further down, which builds the .NET
+# bindings variant independently of whether mcs/csc is also available.
 find_program(
     DOTNET_EXECUTABLE
     NAMES dotnet
     DOC ".NET SDK (optional, for the .NET 5+ build)")
 mark_as_advanced(DOTNET_EXECUTABLE)
+
+set(CSHARP_DOTNET_TFM
+    ""
+    CACHE
+        STRING
+        "Target framework for the .NET build, e.g. net8.0 (default: newest the installed SDK supports)"
+)
+
+# SDK N builds up to netN.0, so target that unless pinned. Anything older
+# than SDK 5, a runtime-only install, or an SDK that can't start MSBuild
+# (e.g. SDK 5 without OpenSSL 1.1) can't build the bindings, so skip the
+# .NET variant like when not found.
+if (DOTNET_EXECUTABLE)
+    execute_process(
+        COMMAND ${DOTNET_EXECUTABLE} --version
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        OUTPUT_VARIABLE DOTNET_SDK_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        RESULT_VARIABLE DOTNET_SDK_RESULT
+        ERROR_QUIET)
+    execute_process(
+        COMMAND ${DOTNET_EXECUTABLE} msbuild -version -nologo
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        RESULT_VARIABLE DOTNET_MSBUILD_RESULT
+        OUTPUT_QUIET ERROR_QUIET)
+
+    if (DOTNET_SDK_RESULT EQUAL 0
+        AND DOTNET_MSBUILD_RESULT EQUAL 0
+        AND DOTNET_SDK_VERSION MATCHES "^([0-9]+)\\.")
+        set(DOTNET_SDK_MAJOR ${CMAKE_MATCH_1})
+    endif ()
+
+    if (NOT DOTNET_SDK_MAJOR)
+        message(STATUS "No usable .NET SDK found: skipping the .NET build")
+        set(DOTNET_EXECUTABLE "")
+    elseif (DOTNET_SDK_MAJOR LESS 5)
+        message(
+            STATUS
+                ".NET SDK ${DOTNET_SDK_VERSION} is older than 5.0: skipping the .NET build"
+        )
+        set(DOTNET_EXECUTABLE "")
+    elseif (CSHARP_DOTNET_TFM)
+        set(LIBIIO_CS_NET_TFM ${CSHARP_DOTNET_TFM})
+    else ()
+        set(LIBIIO_CS_NET_TFM net${DOTNET_SDK_MAJOR}.0)
+    endif ()
+endif ()
 
 if (NOT MCS_EXECUTABLE AND NOT DOTNET_EXECUTABLE)
     message(
@@ -120,10 +166,14 @@ else ()
     )
 endif ()
 
-# .NET 5+ build (dotnet), independent of whether mcs/csc is available.
+# .NET build (dotnet), independent of whether mcs/csc is available.
 if (DOTNET_EXECUTABLE)
-    message(STATUS "Found .NET SDK: Building the .NET 5+ bindings variant")
-    set(LIBIIO_CS_NET_OUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/net5.0")
+    message(
+        STATUS
+            "Found .NET SDK ${DOTNET_SDK_VERSION}: Building the ${LIBIIO_CS_NET_TFM} bindings variant"
+    )
+    set(LIBIIO_CS_NET_OUT_DIR
+        "${CMAKE_CURRENT_BINARY_DIR}/${LIBIIO_CS_NET_TFM}")
     set(LIBIIO_CS_NET_DLL "${LIBIIO_CS_NET_OUT_DIR}/libiio-sharp.dll")
 
     add_custom_command(
@@ -132,21 +182,22 @@ if (DOTNET_EXECUTABLE)
             ${DOTNET_EXECUTABLE} build
             ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
             -o ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
+            -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
         DEPENDS ${LIBIIO_CS_SOURCES}
                 ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
-    add_custom_target(libiio-sharp-net5 ALL DEPENDS ${LIBIIO_CS_NET_DLL})
+    add_custom_target(libiio-sharp-dotnet ALL DEPENDS ${LIBIIO_CS_NET_DLL})
 
     if (NOT SKIP_INSTALL_ALL)
         install(
             FILES ${LIBIIO_CS_NET_DLL}
             DESTINATION
-                ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION}/net5.0
+                ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION}/${LIBIIO_CS_NET_TFM}
         )
     endif ()
 else ()
-    message(STATUS ".NET SDK not found: skipping the .NET 5+ bindings variant")
+    message(STATUS ".NET SDK not found: skipping the .NET bindings variant")
 endif ()
 
 add_subdirectory(examples)

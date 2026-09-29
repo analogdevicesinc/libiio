@@ -1,7 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net5.0</TargetFramework>
+    <!-- The newest framework the installed SDK supports, unless CMake
+         passes LibiioSharpTfm (see CSHARP_DOTNET_TFM). A global
+         TargetFramework would be ignored by restore, hence the indirection. -->
+    <LibiioSharpTfm Condition="'$(LibiioSharpTfm)' == ''">net$(BundledNETCoreAppTargetFrameworkVersion)</LibiioSharpTfm>
+    <TargetFramework>$(LibiioSharpTfm)</TargetFramework>
     <LangVersion>9</LangVersion>
     <Nullable>disable</Nullable>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
