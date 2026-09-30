@@ -13,6 +13,23 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
+  <!-- NuGet package metadata, used by `dotnet pack`. -->
+  <PropertyGroup>
+    <PackageId>libiio</PackageId>
+    <Authors>Analog Devices, Inc.</Authors>
+    <Company>Analog Devices, Inc.</Company>
+    <Copyright>Copyright (C) Analog Devices, Inc.</Copyright>
+    <Description>C# bindings for libiio, the library for interfacing with Linux Industrial I/O (IIO) devices. Requires the native libiio 1.x library to be installed.</Description>
+    <PackageTags>libiio;iio;industrial-io;sdr;adc;dac;analog-devices</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/analogdevicesinc/libiio</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/analogdevicesinc/libiio</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Attr.cs" />
     <Compile Include="Block.cs" />
@@ -29,5 +46,9 @@
     <Compile Include="Scan.cs" />
     <Compile Include="Stream.cs" />
     <Compile Include="UTF8Marshaler.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 </Project>
