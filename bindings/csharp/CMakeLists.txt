@@ -189,6 +189,21 @@ if (DOTNET_EXECUTABLE)
 
     add_custom_target(libiio-sharp-dotnet ALL DEPENDS ${LIBIIO_CS_NET_DLL})
 
+    # NuGet package, only built on request (`make libiio-sharp-nupkg`).
+    # It shares the source tree's obj/ with the build above, so run after it.
+    set(LIBIIO_CS_NUPKG_DIR "${CMAKE_CURRENT_BINARY_DIR}/nupkg")
+    add_custom_target(
+        libiio-sharp-nupkg
+        COMMAND
+            ${DOTNET_EXECUTABLE} pack
+            ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
+            -o ${LIBIIO_CS_NUPKG_DIR} -p:Version=${LIBIIO_CS_VERSION}
+            -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
+            -p:OutputPath=${CMAKE_CURRENT_BINARY_DIR}/nupkg-bin/
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Packing libiio NuGet package into ${LIBIIO_CS_NUPKG_DIR}")
+    add_dependencies(libiio-sharp-nupkg libiio-sharp-dotnet)
+
     if (NOT SKIP_INSTALL_ALL)
         install(
             FILES ${LIBIIO_CS_NET_DLL}
