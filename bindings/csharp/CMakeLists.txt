@@ -79,6 +79,14 @@ if (NOT MCS_EXECUTABLE AND NOT DOTNET_EXECUTABLE)
 endif ()
 
 set(LIBIIO_CS_VERSION ${VERSION}.0)
+
+# Same scheme as LIBIIO_VERSION (top-level CMakeLists.txt), with the "-"
+# SemVer needs before a prerelease identifier instead of CPack's ".".
+set(LIBIIO_CS_PACKAGE_VERSION ${VERSION})
+if (NOT LIBIIO_VERSION_GIT STREQUAL "v${VERSION}")
+    set(LIBIIO_CS_PACKAGE_VERSION ${LIBIIO_CS_PACKAGE_VERSION}-g${LIBIIO_VERSION_GIT})
+endif ()
+
 set(LIBIIO_CS_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/Attr.cs
     ${CMAKE_CURRENT_SOURCE_DIR}/Block.cs
@@ -198,6 +206,7 @@ if (DOTNET_EXECUTABLE)
             ${DOTNET_EXECUTABLE} pack
             ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
             -o ${LIBIIO_CS_NUPKG_DIR} -p:Version=${LIBIIO_CS_VERSION}
+            -p:PackageVersion=${LIBIIO_CS_PACKAGE_VERSION}
             -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
             -p:OutputPath=${CMAKE_CURRENT_BINARY_DIR}/nupkg-bin/
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
