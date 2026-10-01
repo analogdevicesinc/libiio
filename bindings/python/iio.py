@@ -671,12 +671,20 @@ _buffer_set_blocking_mode.argtypes = (_BufferPtr, c_bool)
 # pylint: enable=invalid-name
 
 
+def _decode_text(value):
+    try:
+        return value.decode("utf-8")
+    except UnicodeDecodeError:
+        encoding = "mbcs" if "Windows" in _system() else "latin-1"
+        return value.decode(encoding, errors="replace")
+
+
 def _get_lib_version():
     major = c_uint()
     minor = c_uint()
     buf = create_string_buffer(8)
     _get_library_version(_byref(major), _byref(minor), buf)
-    return (major.value, minor.value, buf.value.decode("ascii"))
+    return (major.value, minor.value, buf.value.decode("utf-8"))
 
 
 def _has_backend(backend):
@@ -691,7 +699,7 @@ def iio_strerror(err, buf, length):
 
 
 version = _get_lib_version()
-backends = [_get_backend(b).decode("ascii") for b in range(0, _get_backends_count())]
+backends = [_get_backend(b).decode("utf-8") for b in range(0, _get_backends_count())]
 
 
 class _Attr(object):
@@ -751,10 +759,10 @@ class ChannelAttr(_Attr):
     def _read(self):
         buf = create_string_buffer(1024)
         _c_read_attr(self._channel, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
+        return _decode_text(buf.value)
 
     def _write(self, value):
-        _c_write_attr(self._channel, self._name_ascii, value.encode("ascii"))
+        _c_write_attr(self._channel, self._name_ascii, value.encode("utf-8"))
 
 
 class DeviceAttr(_Attr):
@@ -778,10 +786,10 @@ class DeviceAttr(_Attr):
     def _read(self):
         buf = create_string_buffer(1024)
         _d_read_attr(self._device, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
+        return _decode_text(buf.value)
 
     def _write(self, value):
-        _d_write_attr(self._device, self._name_ascii, value.encode("ascii"))
+        _d_write_attr(self._device, self._name_ascii, value.encode("utf-8"))
 
 
 class DeviceDebugAttr(DeviceAttr):
@@ -804,10 +812,10 @@ class DeviceDebugAttr(DeviceAttr):
     def _read(self):
         buf = create_string_buffer(1024)
         _d_read_debug_attr(self._device, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
+        return _decode_text(buf.value)
 
     def _write(self, value):
-        _d_write_debug_attr(self._device, self._name_ascii, value.encode("ascii"))
+        _d_write_debug_attr(self._device, self._name_ascii, value.encode("utf-8"))
 
 
 class DeviceBufferAttr(DeviceAttr):
@@ -830,10 +838,10 @@ class DeviceBufferAttr(DeviceAttr):
     def _read(self):
         buf = create_string_buffer(1024)
         _d_read_buffer_attr(self._device, self._name_ascii, buf, len(buf))
-        return buf.value.decode("ascii")
+        return _decode_text(buf.value)
 
     def _write(self, value):
-        _d_write_buffer_attr(self._device, self._name_ascii, value.encode("ascii"))
+        _d_write_buffer_attr(self._device, self._name_ascii, value.encode("utf-8"))
 
 
 class Channel(object):
@@ -861,7 +869,7 @@ class Channel(object):
         self._id = _c_get_id(self._channel).decode("ascii")
 
         name_raw = _c_get_name(self._channel)
-        self._name = name_raw.decode("ascii") if name_raw is not None else None
+        self._name = _decode_text(name_raw) if name_raw is not None else None
         self._output = _c_is_output(self._channel)
         self._scan_element = _c_is_scan_element(self._channel)
 
@@ -1138,10 +1146,10 @@ class _DeviceOrTrigger(object):
         self._id = _d_get_id(self._device).decode("ascii")
 
         name_raw = _d_get_name(self._device)
-        self._name = name_raw.decode("ascii") if name_raw is not None else None
+        self._name = _decode_text(name_raw) if name_raw is not None else None
 
         label_raw = _d_get_label(self._device)
-        self._label = label_raw.decode("ascii") if label_raw is not None else None
+        self._label = _decode_text(label_raw) if label_raw is not None else None
 
     def reg_write(self, reg, value):
         """
@@ -1181,7 +1189,7 @@ class _DeviceOrTrigger(object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        chn = _d_find_channel(self._device, name_or_id.encode("ascii"), is_output)
+        chn = _d_find_channel(self._device, name_or_id.encode("utf-8"), is_output)
         return None if bool(chn) is False else Channel(self, chn)
 
     def set_kernel_buffers_count(self, count):
@@ -1355,17 +1363,17 @@ class Context(object):
             str1 = c_char_p()
             str2 = c_char_p()
             _get_attr(self._context, index, _byref(str1), _byref(str2))
-            self._attrs[str1.value.decode("ascii")] = str2.value.decode("ascii")
+            self._attrs[str1.value.decode("ascii")] = _decode_text(str2.value)
 
-        self._name = _get_name(self._context).decode("ascii")
-        self._description = _get_description(self._context).decode("ascii")
-        self._xml = _get_xml(self._context).decode("ascii")
+        self._name = _decode_text(_get_name(self._context))
+        self._description = _decode_text(_get_description(self._context))
+        self._xml = _decode_text(_get_xml(self._context))
 
         major = c_uint()
         minor = c_uint()
         buf = create_string_buffer(8)
         _get_version(self._context, _byref(major), _byref(minor), buf)
-        self._version = (major.value, minor.value, buf.value.decode("ascii"))
+        self._version = (major.value, minor.value, buf.value.decode("utf-8"))
 
     def __del__(self):
         """Destroy this context."""
@@ -1401,7 +1409,7 @@ class Context(object):
         returns: type=iio.Device or type=iio.Trigger
             The IIO Device
         """
-        dev = _find_device(self._context, name_or_id_or_label.encode("ascii"))
+        dev = _find_device(self._context, name_or_id_or_label.encode("utf-8"))
         return None if bool(dev) is False else Trigger(self, dev) if _d_is_trigger(dev) else Device(self, dev)
 
     name = property(
@@ -1503,8 +1511,8 @@ def scan_contexts():
 
     for i in range(0, ctx_nb):
         scan_ctx[
-            _context_info_get_uri(ptr[i]).decode("ascii")
-        ] = _context_info_get_description(ptr[i]).decode("ascii")
+            _context_info_get_uri(ptr[i]).decode("utf-8")
+        ] = _decode_text(_context_info_get_description(ptr[i]))
 
     _context_info_list_free(ptr)
     _destroy_scan_context(ctx)
