@@ -25,10 +25,10 @@ namespace iio
             private IntPtr chn;
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_channel_attr_read(IntPtr chn, [In()] string name, [Out()] StringBuilder val, uint len);
+            private static extern int iio_channel_attr_read(IntPtr chn, [In()] string name, [Out()] byte[] val, uint len);
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_channel_attr_write(IntPtr chn, [In()] string name, string val);
+            private static extern int iio_channel_attr_write(IntPtr chn, [In()] string name, IntPtr val);
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
             private static extern IntPtr iio_channel_attr_get_filename(IntPtr chn, [In()] string attr);
@@ -40,21 +40,34 @@ namespace iio
 
             public override string read()
             {
-                StringBuilder builder = new StringBuilder(1024);
-                int err = iio_channel_attr_read(chn, name, builder, (uint) builder.Capacity);
+                byte[] buffer = new byte[1024];
+                int err = iio_channel_attr_read(chn, name, buffer, (uint) buffer.Length);
                 if (err < 0)
                 {
                     throw new Exception("Unable to read channel attribute " + err);
                 }
-                return builder.ToString();
+
+                int length = Array.IndexOf(buffer, (byte) 0);
+                if (length < 0)
+                    length = err > 0 ? err : 0;
+
+                return UTF8Marshaler.DecodeText(buffer, length);
             }
 
             public override void write(string str)
             {
-                int err = iio_channel_attr_write(chn, name, str);
-                if (err < 0)
+                IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(str);
+                try
                 {
-                    throw new Exception("Unable to write channel attribute " + err);
+                    int err = iio_channel_attr_write(chn, name, valptr);
+                    if (err < 0)
+                    {
+                        throw new Exception("Unable to write channel attribute " + err);
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(valptr);
                 }
             }
         }
@@ -329,7 +342,7 @@ namespace iio
             }
             else
             {
-                name = Marshal.PtrToStringAnsi(name_ptr);
+                name = UTF8Marshaler.PtrToStringUTF8(name_ptr);
             }
 
             id = Marshal.PtrToStringAnsi(iio_channel_get_id(this.chn));

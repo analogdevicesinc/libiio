@@ -24,10 +24,10 @@ namespace iio
             internal IntPtr dev;
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
+            private static extern int iio_device_attr_read(IntPtr dev, [In()] string name, [Out()] byte[] val, uint len);
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_attr_write(IntPtr dev, [In()] string name, [In()] string val);
+            private static extern int iio_device_attr_write(IntPtr dev, [In()] string name, IntPtr val);
 
             public DeviceAttr(IntPtr dev, string name) : base(name)
             {
@@ -36,21 +36,34 @@ namespace iio
 
             public override string read()
             {
-                StringBuilder builder = new StringBuilder(1024);
-                int err = iio_device_attr_read(dev, name, builder, 1024);
+                byte[] buffer = new byte[1024];
+                int err = iio_device_attr_read(dev, name, buffer, (uint) buffer.Length);
                 if (err < 0)
                 {
                     throw new Exception("Unable to read device attribute " + err);
                 }
-                return builder.ToString();
+
+                int length = Array.IndexOf(buffer, (byte) 0);
+                if (length < 0)
+                    length = err > 0 ? err : 0;
+
+                return UTF8Marshaler.DecodeText(buffer, length);
             }
 
             public override void write(string str)
             {
-                int err = iio_device_attr_write(dev, name, str);
-                if (err < 0)
+                IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(str);
+                try
                 {
-                    throw new Exception("Unable to write device attribute " + err);
+                    int err = iio_device_attr_write(dev, name, valptr);
+                    if (err < 0)
+                    {
+                        throw new Exception("Unable to write device attribute " + err);
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(valptr);
                 }
             }
         }
@@ -60,10 +73,10 @@ namespace iio
             private IntPtr dev;
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_debug_attr_read(IntPtr dev, [In()] string name, [Out()] StringBuilder val, uint len);
+            private static extern int iio_device_debug_attr_read(IntPtr dev, [In()] string name, [Out()] byte[] val, uint len);
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_debug_attr_write(IntPtr dev, [In()] string name, [In()] string val);
+            private static extern int iio_device_debug_attr_write(IntPtr dev, [In()] string name, IntPtr val);
 
             public DeviceDebugAttr(IntPtr dev, string name) : base(name)
             {
@@ -72,21 +85,34 @@ namespace iio
 
             public override string read()
             {
-                StringBuilder builder = new StringBuilder(1024);
-                int err = iio_device_debug_attr_read(dev, name, builder, 1024);
+                byte[] buffer = new byte[1024];
+                int err = iio_device_debug_attr_read(dev, name, buffer, (uint) buffer.Length);
                 if (err < 0)
                 {
                     throw new Exception("Unable to read debug attribute " + err);
                 }
-                return builder.ToString();
+
+                int length = Array.IndexOf(buffer, (byte) 0);
+                if (length < 0)
+                    length = err > 0 ? err : 0;
+
+                return UTF8Marshaler.DecodeText(buffer, length);
             }
 
             public override void write(string str)
             {
-                int err = iio_device_debug_attr_write(dev, name, str);
-                if (err < 0)
+                IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(str);
+                try
                 {
-                    throw new Exception("Unable to write debug attribute " + err);
+                    int err = iio_device_debug_attr_write(dev, name, valptr);
+                    if (err < 0)
+                    {
+                        throw new Exception("Unable to write debug attribute " + err);
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(valptr);
                 }
             }
         }
@@ -96,10 +122,10 @@ namespace iio
             private IntPtr dev;
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_buffer_attr_read(IntPtr dev, [In] string name, [Out] StringBuilder val, uint len);
+            private static extern int iio_device_buffer_attr_read(IntPtr dev, [In] string name, [Out] byte[] val, uint len);
 
             [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-            private static extern int iio_device_buffer_attr_write(IntPtr dev, [In] string name, [In] string val);
+            private static extern int iio_device_buffer_attr_write(IntPtr dev, [In] string name, IntPtr val);
 
             public DeviceBufferAttr(IntPtr dev, string name) : base(name)
             {
@@ -108,21 +134,34 @@ namespace iio
 
             public override string read()
             {
-                StringBuilder builder = new StringBuilder(16384);
-                int err = iio_device_buffer_attr_read(dev, name, builder, 16384);
+                byte[] buffer = new byte[16384];
+                int err = iio_device_buffer_attr_read(dev, name, buffer, (uint) buffer.Length);
                 if (err < 0)
                 {
                     throw new Exception("Unable to read buffer attribute " + err);
                 }
-                return builder.ToString();
+
+                int length = Array.IndexOf(buffer, (byte) 0);
+                if (length < 0)
+                    length = err > 0 ? err : 0;
+
+                return UTF8Marshaler.DecodeText(buffer, length);
             }
 
             public override void write(string str)
             {
-                int err = iio_device_buffer_attr_write(dev, name, str);
-                if (err < 0)
+                IntPtr valptr = UTF8Marshaler.StringToHGlobalUTF8(str);
+                try
                 {
-                    throw new Exception("Unable to write buffer attribute " + err);
+                    int err = iio_device_buffer_attr_write(dev, name, valptr);
+                    if (err < 0)
+                    {
+                        throw new Exception("Unable to write buffer attribute " + err);
+                    }
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(valptr);
                 }
             }
         }
@@ -268,12 +307,12 @@ namespace iio
             }
             else
             {
-                name = Marshal.PtrToStringAnsi(name_ptr);
+                name = UTF8Marshaler.PtrToStringUTF8(name_ptr);
             }
 
             IntPtr label_ptr = iio_device_get_label(dev);
 
-            label = label_ptr == IntPtr.Zero ? "" : Marshal.PtrToStringAnsi(label_ptr);
+            label = label_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(label_ptr);
             hwmon = id[0] == 'h';
         }
 

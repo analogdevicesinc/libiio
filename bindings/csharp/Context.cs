@@ -64,10 +64,10 @@ namespace iio
         private static extern IntPtr iio_context_get_xml(IntPtr ctx);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_library_get_version(ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
+        private static extern void iio_library_get_version(ref uint major, ref uint minor, [Out()] byte[] git_tag);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_context_get_version(IntPtr ctx, ref uint major, ref uint minor, [Out()] StringBuilder git_tag);
+        private static extern int iio_context_get_version(IntPtr ctx, ref uint major, ref uint minor, [Out()] byte[] git_tag);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_devices_count(IntPtr ctx);
@@ -168,25 +168,24 @@ namespace iio
                 }
             }
 
-            xml = Marshal.PtrToStringAnsi(iio_context_get_xml(ctx));
-            name = Marshal.PtrToStringAnsi(iio_context_get_name(ctx));
-            description = Marshal.PtrToStringAnsi(iio_context_get_description(ctx));
+            xml = UTF8Marshaler.PtrToStringUTF8(iio_context_get_xml(ctx));
+            name = UTF8Marshaler.PtrToStringUTF8(iio_context_get_name(ctx));
+            description = UTF8Marshaler.PtrToStringUTF8(iio_context_get_description(ctx));
 
             uint major = 0;
             uint minor = 0;
-            StringBuilder builder = new StringBuilder(8);
-            iio_library_get_version(ref major, ref minor, builder);
-            library_version = new Version(major, minor, builder.ToString());
+            byte[] git_tag = new byte[8];
+            iio_library_get_version(ref major, ref minor, git_tag);
+            library_version = new Version(major, minor, DecodeGitTag(git_tag));
 
             major = 0;
             minor = 0;
-            builder.Clear();
-            int err = iio_context_get_version(ctx, ref major, ref minor, builder);
+            int err = iio_context_get_version(ctx, ref major, ref minor, git_tag);
             if (err < 0)
             {
                 throw new Exception("Unable to read backend version");
             }
-            backend_version = new Version(major, minor, builder.ToString());
+            backend_version = new Version(major, minor, DecodeGitTag(git_tag));
 
             attrs = new Dictionary<string, string>();
             uint nbAttrs = iio_context_get_attrs_count(ctx);
@@ -198,10 +197,19 @@ namespace iio
 
                 iio_context_get_attr(ctx, i, out name_ptr, out value_ptr);
                 string attr_name = Marshal.PtrToStringAnsi(name_ptr);
-                string attr_value = Marshal.PtrToStringAnsi(value_ptr);
+                string attr_value = UTF8Marshaler.PtrToStringUTF8(value_ptr);
 
                 attrs[attr_name] = attr_value;
             }
+        }
+
+        private static string DecodeGitTag(byte[] git_tag)
+        {
+            int length = Array.IndexOf(git_tag, (byte) 0);
+            if (length < 0)
+                length = git_tag.Length;
+
+            return Encoding.UTF8.GetString(git_tag, 0, length);
         }
 
         ~Context()

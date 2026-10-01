@@ -72,8 +72,8 @@ namespace iio
             for (uint i = 0; i < contexts_count; i++)
             {
                 IntPtr info = iio_scan_block_get_info(this.scan_block, i);
-                string uri = Marshal.PtrToStringAnsi(iio_context_info_get_uri(info));
-                string description = Marshal.PtrToStringAnsi(iio_context_info_get_description(info));
+                string uri = Marshal.PtrToStringAnsi(iio_context_info_get_uri(info)); // URIs are ASCII (RFC-compliant)
+                string description = UTF8Marshaler.PtrToStringUTF8(iio_context_info_get_description(info));
                 contexts_info[uri] = description;
             }
 
