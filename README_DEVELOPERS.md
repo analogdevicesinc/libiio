@@ -4,7 +4,7 @@
 
 ## Nightly Builds (Developer Use Only)
 
-To support developers contributing to or testing the experimental features of libiio v1.0 (which encompasses all code on the `main` branch at present), we provide **nightly builds**. These are automated, pre-release versions generated daily from the latest changes in the repository.
+To support developers contributing to or testing the latest, unreleased changes on the `main` branch, we provide **nightly builds**. These are automated, pre-release versions generated daily from the latest changes in the repository.
 
 These nightly builds are intended **exclusively for development and testing purposes**.
 **End users should avoid using nightly builds in production**, as they may include unstable, incomplete, or breaking changes that could negatively impact performance or functionality.
@@ -15,7 +15,7 @@ Using nightly builds allows developers to:
 
 - Test and verify new features before they are officially released.
 - Identify bugs and regressions early in the development cycle.
-- Provide feedback to help shape the final release of libiio v1.0.
+- Provide feedback to help shape future libiio releases.
 
 ### Reporting Issues
 
