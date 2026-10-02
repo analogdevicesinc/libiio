@@ -6,10 +6,12 @@ remotely over the network, USB or serial.
 
 ## Requirements
 
-This package contains only the managed bindings. The native libiio 1.x library
-must be installed separately:
+On **Windows (win-x64)**, the native `libiio1.dll` and its dependencies are
+bundled in the package — no extra install needed.
 
-- **Windows**: `libiio1.dll`, e.g. from the libiio installer.
+On every other platform, the native libiio 1.x library must be installed
+separately:
+
 - **Linux**: `libiio.so.1`, e.g. from your distribution or the libiio `.deb`/`.rpm` packages.
 - **macOS**: `libiio.1.dylib` or `iio.framework`, e.g. from the libiio `.pkg`.
 
@@ -33,4 +35,5 @@ using (Context ctx = new Context("ip:192.168.2.1"))
 ## License
 
 The C# bindings are released under the MIT License. The native libiio library
-is licensed separately, under the LGPL-2.1-or-later.
+is licensed separately, under the LGPL-2.1-or-later — including the copy of
+`libiio1.dll` bundled for Windows.
