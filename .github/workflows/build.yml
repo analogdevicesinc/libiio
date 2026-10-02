@@ -112,6 +112,12 @@ jobs:
     with:
       build-type: ${{ needs.config.outputs.build-type }}
 
+  csharp-nuget:
+    needs: config
+    uses: ./.github/workflows/_csharp-nuget.yml
+    with:
+      build-type: ${{ needs.config.outputs.build-type }}
+
   build-pypi:
     if: needs.config.outputs.is-main == 'true' || needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true'
     needs: [config]
@@ -138,7 +144,7 @@ jobs:
       !cancelled() &&
       !contains(needs.*.result, 'failure') &&
       (needs.config.outputs.is-main == 'true' || needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true')
-    needs: [config, linux, windows, macos, arm, build-pypi]
+    needs: [config, linux, windows, macos, arm, build-pypi, csharp-nuget]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:
@@ -208,6 +214,8 @@ jobs:
           for dir in "${ARTIFACTS}"/*/; do
             tag=$(basename "${dir}")
             [[ "${tag}" == "Artifact manifest" ]] && continue
+            # Not a usable NuGet feed, see .github/workflows/_csharp-nuget.yml
+            [[ "${tag}" == "libiio-sharp-nupkg" ]] && continue
             if [[ "${tag}" == Windows-* ]]; then
               cd "${ARTIFACTS}"
               zip -r "${tag}.zip" "${tag}"
