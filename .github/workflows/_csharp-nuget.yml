@@ -33,13 +33,27 @@ jobs:
           git clone --depth 1 https://github.com/pcercuei/libini.git
           cd libini && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
 
+      - name: Download Windows native binaries
+        uses: actions/download-artifact@v8
+        with:
+          name: Windows-VS-2022-x64
+          path: windows-native
+
       - name: Build
         run: |
           set -e
           mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCSHARP_BINDINGS=ON -DCSHARP_DOTNET_TFM=net8.0 -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCSHARP_BINDINGS=ON -DCSHARP_DOTNET_TFM=net8.0 -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DLIBIIO_CS_WINDOWS_NATIVE_DIR="${{ github.workspace }}/windows-native/${{ inputs.build-type }}"
           make -j$(nproc)
           make libiio-sharp-nupkg
+
+      - name: Verify Windows native assets were bundled
+        run: |
+          set -e
+          NUPKG=$(ls build/bindings/csharp/nupkg/*.nupkg)
+          unzip -l "${NUPKG}" | grep -q 'runtimes/win-x64/native/libiio1\.dll' \
+            && echo "libiio1.dll bundled: OK" \
+            || { echo "libiio1.dll missing from runtimes/win-x64/native"; exit 1; }
 
       - name: Smoke test the package
         run: |

@@ -200,6 +200,12 @@ if (DOTNET_EXECUTABLE)
     # NuGet package, only built on request (`make libiio-sharp-nupkg`).
     # It shares the source tree's obj/ with the build above, so run after it.
     set(LIBIIO_CS_NUPKG_DIR "${CMAKE_CURRENT_BINARY_DIR}/nupkg")
+
+    # Windows DLLs to bundle into the package, set by CI; empty by default.
+    set(LIBIIO_CS_WINDOWS_NATIVE_DIR
+        ""
+        CACHE PATH "Directory with Windows native DLLs to bundle into the NuGet package")
+
     add_custom_target(
         libiio-sharp-nupkg
         COMMAND
@@ -208,6 +214,7 @@ if (DOTNET_EXECUTABLE)
             -o ${LIBIIO_CS_NUPKG_DIR} -p:Version=${LIBIIO_CS_VERSION}
             -p:PackageVersion=${LIBIIO_CS_PACKAGE_VERSION}
             -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
+            -p:LibiioSharpWindowsNativeDir=${LIBIIO_CS_WINDOWS_NATIVE_DIR}
             -p:OutputPath=${CMAKE_CURRENT_BINARY_DIR}/nupkg-bin/
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         COMMENT "Packing libiio NuGet package into ${LIBIIO_CS_NUPKG_DIR}")
