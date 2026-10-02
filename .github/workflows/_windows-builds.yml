@@ -122,6 +122,14 @@ jobs:
           BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
           cmakeBuildType: ${{ inputs.build-type }}
 
+      - name: Smoke test the NuGet package
+        if: matrix.compiler == 'Visual Studio 17 2022'
+        run: .\CI\run_csharp_nuget_smoke.ps1
+        env:
+          BUILD_SOURCESDIRECTORY: ${{ github.workspace }}
+          BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+          cmakeBuildType: ${{ inputs.build-type }}
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
