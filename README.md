@@ -1,14 +1,3 @@
-## :warning: Important note (2023-08-22)
-
-Since August 22th 2023, the "main" branch of libiio contains what will eventually become libiio v1.0.
-It features a brand new API, which is incompatible with libiio v0.25 and older.
-Have a look at [the wiki](https://github.com/analogdevicesinc/libiio/wiki/libiio_0_to_1) for a description of the API changes.
-
-The old v0.x API can still be found in the [libiio-v0](https://github.com/analogdevicesinc/libiio/tree/libiio-v0) branch.
-Libiio v0.x is now considered legacy, and as such, only important bug fixes will be accepted into this branch.
-
-Old programs compiled against libiio v0.x will still be able to run with libiio v1.0 and newer, as it provides a compatibility layer.
-
 # libiio
 
 Library for interfacing with Linux IIO devices
@@ -35,6 +24,17 @@ If you have a question about libiio and an Analog Devices IIO kernel driver plea
 As with many open source packages, we use [GitHub](https://github.com/analogdevicesinc/libiio) to do develop and maintain the source, and [GitHub Actions](https://github.com/analogdevicesinc/libiio/actions) for continuous integration.
   - If you want to just use libiio, we suggest using the [latest release](https://github.com/analogdevicesinc/libiio/releases/latest).
   - If you think you have found a bug in the release, or need a feature which isn't in the release, try the [latest **untested** binaries](README_DEVELOPERS.md) from the main branch and check out the [documentation](https://codedocs.xyz/analogdevicesinc/libiio/) based on the main branch. We provide builds for a few operating systems. If you need something else, we can most likely add that -- just ask.
+
+## Important note (2026-09-22)
+
+Since September 22nd 2026, libiio v1.0.0 has been released.
+It features a brand new API, which is incompatible with libiio v0.26 and older.
+Have a look at [the migration guide](https://analogdevicesinc.github.io/libiio/main/migration/) for a description of the API changes.
+
+The old v0.x API can still be found in the [libiio-v0](https://github.com/analogdevicesinc/libiio/tree/libiio-v0) branch.
+Libiio v0.x is now considered legacy, and as such, only important bug fixes will be accepted into this branch.
+
+Old programs compiled against libiio v0.x will still be able to run with libiio v1.0 and newer, as it provides a compatibility layer.
 
 # Latest Release
 
