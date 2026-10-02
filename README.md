@@ -74,7 +74,7 @@ Weblinks:
   * About IIO: https://wiki.analog.com/software/linux/docs/iio/iio
   * API Documentation: http://analogdevicesinc.github.io/libiio/
   * Libiio : http://wiki.analog.com/resources/tools-software/linux-software/libiio
-  * Libiio internals : http://wiki.analog.com/resources/tools-software/linux-software/libiio_internals
+  * Libiio internals : https://analogdevicesinc.github.io/libiio/main/theory
 
 1. The Ubuntu packages are known to work on their Debian counterpart releases.
 
