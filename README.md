@@ -36,7 +36,7 @@ Libiio v0.x is now considered legacy, and as such, only important bug fixes will
 
 Old programs compiled against libiio v0.x will still be able to run with libiio v1.0 and newer, as it provides a compatibility layer.
 
-# Latest Release
+## Latest Release
 
 ### [![](https://img.shields.io/badge/Libiio%20Release-v1.0.0-green)](https://github.com/analogdevicesinc/libiio/releases/tag/v1.0.0)
 
@@ -61,6 +61,16 @@ Old programs compiled against libiio v0.x will still be able to run with libiio 
 | | Debian12-arm | [![Debian12-arm](https://raw.githubusercontent.com/wiki/analogdevicesinc/libiio/img/deb.png)](https://github.com/analogdevicesinc/libiio/releases/download/v1.0.0/libiio-1.0.0.gv1.0.0-Debian12-arm.deb) |
 
 See all releases [here](https://github.com/analogdevicesinc/libiio/releases).
+
+## Language Bindings
+
+In addition to the core C library, libiio provides bindings for a few other languages:
+
+  * **Python** : published on PyPI as [`pylibiio`](https://pypi.org/project/pylibiio/) (`pip install pylibiio`). See [bindings/python](bindings/python) for details.
+  * **C++** : a header-only wrapper. See [bindings/cpp](bindings/cpp).
+  * **C#** : See [bindings/csharp](bindings/csharp).
+
+## Feedback
 
 If you use it, and like it - please let us know. If you use it, and hate it - please let us know that too. The goal of the project is to try to make Linux IIO devices easier to use on a variety of platforms. If we aren't doing that - we will try to make it better.
 
