@@ -39,6 +39,21 @@ if(CONFIG_LIBIIO)
     set(LIBIIO_NO_THREADS 1)
   endif()
 
+  # libiio v0.x (ASCII protocol) compatibility.
+  if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
+    zephyr_library_sources(
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
+    )
+    # flex/bison generate code that trips -Wsign-compare.
+    set_source_files_properties(
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
+      PROPERTIES COMPILE_FLAGS "-Wno-sign-compare"
+    )
+  endif()
+
   zephyr_include_directories(
     ${ZEPHYR_LIBIIO_MODULE_DIR}/zephyr/include
     ${ZEPHYR_LIBIIO_MODULE_DIR}/include
@@ -48,6 +63,15 @@ if(CONFIG_LIBIIO)
   # zephyr log levels (0-4) are offset by 1 from libiio levels (1-5)
   math(EXPR default_log_level "${CONFIG_LIBIIO_LOG_LEVEL} + 1")
 
+  # WITH_IIOD_V0_COMPAT is referenced by files that are always compiled (e.g.
+  # responder.c), so it must always be defined - as 1 or 0 - not just added
+  # when enabled.
+  if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
+    set(with_iiod_v0_compat 1)
+  else()
+    set(with_iiod_v0_compat 0)
+  endif()
+
   zephyr_library_compile_definitions(
     LIBIIO_STATIC=1
     NO_THREADS=${LIBIIO_NO_THREADS}
@@ -56,7 +80,7 @@ if(CONFIG_LIBIIO)
     WITH_EXTERNAL_BACKEND=1
     # Only define the minimal macros actually needed for compilation
     WITH_IIOD_USB_DMABUF=0
-    WITH_IIOD_V0_COMPAT=0
+    WITH_IIOD_V0_COMPAT=${with_iiod_v0_compat}
     WITH_LOCAL_BACKEND=0
     WITH_NETWORK_BACKEND=0
     WITH_SERIAL_BACKEND=0
