@@ -7,7 +7,7 @@ set(IIO_BENCHMARK_TARGETS
     bench_buffer
     bench_streaming)
 
-add_library(iio_bench_common OBJECT bench_common.c)
+add_library(iio_bench_common OBJECT bench_common.c bench_measure.c)
 target_link_libraries(iio_bench_common LINK_PRIVATE iio)
 set_target_properties(
     iio_bench_common
