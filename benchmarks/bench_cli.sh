@@ -78,10 +78,13 @@ while [ $# -gt 0 ]; do
 	esac
 done
 
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$SCRIPT_DIR/bench_shell_common.sh"
+
 TMPFILE=$(mktemp)
 trap 'rm -f "$TMPFILE"' EXIT
 
-SHORTSHA=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+SHORTSHA=$(bench_git_shortsha)
 HOST=$(hostname 2>/dev/null || echo unknown)
 TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 

@@ -52,10 +52,11 @@ while [ $# -gt 0 ]; do
 done
 
 SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+. "$SCRIPT_DIR/bench_shell_common.sh"
 RESULTS_DIR="$SCRIPT_DIR/results"
 mkdir -p "$RESULTS_DIR"
 
-SHORTSHA=$(git -C "$SCRIPT_DIR" rev-parse --short HEAD 2>/dev/null || echo unknown)
+SHORTSHA=$(bench_git_shortsha "$SCRIPT_DIR")
 TIMESTAMP=$(date -u +%Y%m%dT%H%M%SZ)
 
 # Collect into a temp file first; board name (for the final filename) isn't
