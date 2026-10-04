@@ -11,86 +11,75 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static void bench_create_destroy(const struct bench_opts *opts)
+struct create_destroy_ctx {
+	const struct bench_opts *opts;
+	struct iio_context *ctx;
+};
+
+static int do_context_create(void *arg, unsigned int i)
 {
-	double *create_samples = calloc(opts->iterations, sizeof(*create_samples));
-	double *destroy_samples = calloc(opts->iterations, sizeof(*destroy_samples));
-	struct bench_stats stats;
-	unsigned int i;
+	struct create_destroy_ctx *c = arg;
 
-	if (!create_samples || !destroy_samples) {
-		fprintf(stderr, "Out of memory\n");
-		free(create_samples);
-		free(destroy_samples);
-		exit(EXIT_FAILURE);
+	(void)i;
+
+	c->ctx = iio_create_context(NULL, c->opts->uri);
+	if (iio_err(c->ctx)) {
+		fprintf(stderr, "iio_create_context failed: %d\n", iio_err(c->ctx));
+		return -1;
 	}
 
-	for (i = 0; i < opts->iterations; i++) {
-		double t0 = bench_now_us();
-		struct iio_context *ctx = iio_create_context(NULL, opts->uri);
-		double t1;
-
-		create_samples[i] = bench_now_us() - t0;
-		if (iio_err(ctx)) {
-			fprintf(stderr, "iio_create_context failed: %d\n", iio_err(ctx));
-			free(create_samples);
-			free(destroy_samples);
-			exit(EXIT_FAILURE);
-		}
-
-		t1 = bench_now_us();
-		iio_context_destroy(ctx);
-		destroy_samples[i] = bench_now_us() - t1;
-	}
-
-	bench_compute_stats(create_samples, opts->iterations, &stats);
-	bench_report(opts, "context_create", "us", &stats);
-
-	bench_compute_stats(destroy_samples, opts->iterations, &stats);
-	bench_report(opts, "context_destroy", "us", &stats);
-
-	free(create_samples);
-	free(destroy_samples);
+	return 0;
 }
 
-static void bench_device_enum(const struct bench_opts *opts, struct iio_context *ctx)
+static int do_context_destroy(void *arg, unsigned int i)
 {
-	double *samples = calloc(opts->iterations, sizeof(*samples));
-	struct bench_stats stats;
-	unsigned int i;
+	struct create_destroy_ctx *c = arg;
 
-	if (!samples) {
-		fprintf(stderr, "Out of memory\n");
-		exit(EXIT_FAILURE);
+	(void)i;
+
+	iio_context_destroy(c->ctx);
+
+	return 0;
+}
+
+static int bench_create_destroy(const struct bench_opts *opts)
+{
+	struct create_destroy_ctx c = { .opts = opts };
+
+	return bench_run_paired(opts, "context_create", "context_destroy", "us",
+				 opts->iterations, do_context_create, do_context_destroy, &c);
+}
+
+static int do_device_enum(void *arg, unsigned int i)
+{
+	struct iio_context *ctx = arg;
+	unsigned int nb_dev = iio_context_get_devices_count(ctx);
+	unsigned int nb_attrs = iio_context_get_attrs_count(ctx);
+	unsigned int d;
+
+	(void)i;
+	(void)nb_attrs;
+
+	for (d = 0; d < nb_dev; d++) {
+		struct iio_device *dev = iio_context_get_device(ctx, d);
+
+		iio_device_get_channels_count(dev);
 	}
 
-	for (i = 0; i < opts->iterations; i++) {
-		double t0 = bench_now_us();
-		unsigned int nb_dev = iio_context_get_devices_count(ctx);
-		unsigned int nb_attrs = iio_context_get_attrs_count(ctx);
-		unsigned int d;
-		double t1;
+	return 0;
+}
 
-		for (d = 0; d < nb_dev; d++) {
-			struct iio_device *dev = iio_context_get_device(ctx, d);
-
-			iio_device_get_channels_count(dev);
-		}
-		(void)nb_attrs;
-
-		t1 = bench_now_us();
-		samples[i] = t1 - t0;
-	}
-
-	bench_compute_stats(samples, opts->iterations, &stats);
-	bench_report(opts, "context_device_enum", "us", &stats);
-	free(samples);
+static int bench_device_enum(const struct bench_opts *opts, struct iio_context *ctx)
+{
+	return bench_run_timed(opts, "context_device_enum", "us",
+				opts->iterations, do_device_enum, ctx);
 }
 
 int main(int argc, char *argv[])
 {
 	struct bench_opts opts;
 	struct iio_context *ctx;
+	int exit_code = EXIT_FAILURE;
 
 	bench_parse_opts(argc, argv, &opts);
 
@@ -102,7 +91,8 @@ int main(int argc, char *argv[])
 	bench_detect_board(ctx, &opts);
 	iio_context_destroy(ctx);
 
-	bench_create_destroy(&opts);
+	if (bench_create_destroy(&opts) < 0)
+		return EXIT_FAILURE;
 
 	ctx = iio_create_context(NULL, opts.uri);
 	if (iio_err(ctx)) {
@@ -110,9 +100,13 @@ int main(int argc, char *argv[])
 		return EXIT_FAILURE;
 	}
 
-	bench_device_enum(&opts, ctx);
+	if (bench_device_enum(&opts, ctx) < 0)
+		goto out_destroy_ctx;
 
+	exit_code = EXIT_SUCCESS;
+
+out_destroy_ctx:
 	iio_context_destroy(ctx);
 
-	return EXIT_SUCCESS;
+	return exit_code;
 }

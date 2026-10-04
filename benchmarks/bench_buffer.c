@@ -25,50 +25,45 @@ static const struct {
 	{ 1048576, "1MiB" },
 };
 
-static int bench_open_close(struct iio_buffer *buffer, struct iio_channels_mask *mask,
-			     const struct bench_opts *opts)
-{
-	double *open_samples, *close_samples;
-	struct bench_stats stats;
-	unsigned int i;
+struct open_close_ctx {
+	struct iio_buffer *buffer;
+	struct iio_channels_mask *mask;
+	struct iio_buffer_stream *bs;
+};
 
-	open_samples = calloc(opts->iterations, sizeof(*open_samples));
-	close_samples = calloc(opts->iterations, sizeof(*close_samples));
-	if (!open_samples || !close_samples) {
-		fprintf(stderr, "Out of memory\n");
-		free(open_samples);
-		free(close_samples);
+static int do_buffer_open(void *arg, unsigned int i)
+{
+	struct open_close_ctx *c = arg;
+
+	(void)i;
+
+	c->bs = iio_buffer_open(c->buffer, c->mask);
+	if (iio_err(c->bs)) {
+		fprintf(stderr, "buffer_open failed at iteration %u: %d\n", i, iio_err(c->bs));
 		return -1;
 	}
 
-	for (i = 0; i < opts->iterations; i++) {
-		double t0 = bench_now_us();
-		struct iio_buffer_stream *bs = iio_buffer_open(buffer, mask);
-		double t1;
+	return 0;
+}
 
-		if (iio_err(bs)) {
-			fprintf(stderr, "buffer_open failed at iteration %u: %d\n",
-				i, iio_err(bs));
-			break;
-		}
-		open_samples[i] = bench_now_us() - t0;
+static int do_buffer_close(void *arg, unsigned int i)
+{
+	struct open_close_ctx *c = arg;
 
-		t1 = bench_now_us();
-		iio_buffer_close(bs);
-		close_samples[i] = bench_now_us() - t1;
-	}
+	(void)i;
 
-	if (i > 0) {
-		bench_compute_stats(open_samples, i, &stats);
-		bench_report(opts, "buffer_open", "us", &stats);
+	iio_buffer_close(c->bs);
 
-		bench_compute_stats(close_samples, i, &stats);
-		bench_report(opts, "buffer_close", "us", &stats);
-	}
+	return 0;
+}
 
-	free(open_samples);
-	free(close_samples);
-	return i > 0 ? 0 : -1;
+static int bench_open_close(struct iio_buffer *buffer, struct iio_channels_mask *mask,
+			     const struct bench_opts *opts)
+{
+	struct open_close_ctx c = { .buffer = buffer, .mask = mask };
+
+	return bench_run_paired(opts, "buffer_open", "buffer_close", "us",
+				 opts->iterations, do_buffer_open, do_buffer_close, &c);
 }
 
 static int bench_create_block(struct iio_buffer *buffer, struct iio_channels_mask *mask,

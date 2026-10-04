@@ -17,13 +17,17 @@
  * warm-up) don't skew the result. */
 #define WARMUP_MS 1000
 
-/* Same "first sampling_frequency attr found" heuristic as bench_attr.c, so
- * we can report the device's configured rate alongside the measured one. */
+/* Scoped to 'dev' specifically (already known from bench_find_input_device()),
+ * unlike bench_find_attr_by_name()'s context-wide search - on multi-device
+ * hardware (e.g. separate rx/tx phy paths) a context-wide search could
+ * silently report another device's rate instead of this one's. */
 static double read_configured_sample_rate(struct iio_context *ctx, struct iio_device *dev)
 {
 	const struct iio_attr *attr;
 	char buf[128];
 	unsigned int nb_chn, c;
+
+	(void)ctx;
 
 	attr = iio_device_find_attr(dev, "sampling_frequency");
 	if (!attr) {
