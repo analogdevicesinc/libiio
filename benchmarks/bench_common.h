@@ -13,6 +13,7 @@
 struct iio_context;
 struct iio_device;
 struct iio_channels_mask;
+struct iio_attr;
 
 #define BENCH_MAX_TAGS 8
 
@@ -91,5 +92,34 @@ void bench_detect_board(struct iio_context *ctx, struct bench_opts *opts);
  * against whatever board is plugged in. */
 struct iio_device *bench_find_input_device(struct iio_context *ctx,
 					    struct iio_channels_mask **mask_out);
+
+/* Finds the first attribute named 'name', checking each device's own attrs
+ * before its channels' attrs. Returns NULL if none found. Centralizes the
+ * "search everything for a name" heuristic previously duplicated across
+ * bench_attr.c and bench_streaming.c. */
+const struct iio_attr *bench_find_attr_by_name(struct iio_context *ctx, const char *name);
+
+/* Callback for bench_run_timed()/bench_run_paired(): perform iteration 'i'
+ * of whatever is being measured, using 'arg' for per-benchmark state.
+ * Returns 0 on success; a nonzero return stops the loop, and the iteration
+ * that failed is not counted in the reported stats. */
+typedef int (*bench_op_fn)(void *arg, unsigned int i);
+
+/* Times up to 'iterations' calls to 'fn', computes stats over the per-call
+ * latencies of the calls that succeeded, and reports them as 'name'/'unit'
+ * via bench_report(). Stops early if 'fn' returns nonzero. Returns 0 if at
+ * least one iteration succeeded (and was reported), -1 otherwise (OOM, or
+ * every iteration failed). */
+int bench_run_timed(const struct bench_opts *opts, const char *name, const char *unit,
+		     unsigned int iterations, bench_op_fn fn, void *arg);
+
+/* Like bench_run_timed(), but times two operations per iteration ('op_a'
+ * then 'op_b') and reports them as two separate metrics sharing the same
+ * set of iterations - e.g. create-then-destroy, or dequeue-then-enqueue. An
+ * iteration only counts (and is reported) if both ops succeed. */
+int bench_run_paired(const struct bench_opts *opts,
+		      const char *name_a, const char *name_b, const char *unit,
+		      unsigned int iterations, bench_op_fn op_a, bench_op_fn op_b,
+		      void *arg);
 
 #endif /* BENCH_COMMON_H */

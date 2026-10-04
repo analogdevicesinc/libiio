@@ -110,6 +110,8 @@ void bench_parse_opts(int argc, char *argv[], struct bench_opts *opts)
 	};
 	int c;
 
+	/* Kept in sync by hand with the same default in run_all.sh and
+	 * bench_cli.sh - see benchmarks/SCHEMA.md. */
 	opts->uri = "ip:192.168.2.1";
 	opts->output = NULL;
 	opts->iterations = 1000;
@@ -187,6 +189,13 @@ static int file_is_empty(FILE *out)
 	return pos == 0;
 }
 
+/* Bumped whenever the shape of the meta/record JSON changes (a field is
+ * added, removed, or renamed) so consumers can tell old result files apart
+ * from new ones instead of silently misparsing them. See benchmarks/SCHEMA.md.
+ * bench_cli.sh's write_meta_header_if_needed() writes the same shape
+ * independently in shell and must be kept in sync by hand if this changes. */
+#define BENCH_SCHEMA_VERSION 2
+
 static void write_meta_header(FILE *out, const struct bench_opts *opts)
 {
 	char sha[64], host[256], ts[32];
@@ -202,9 +211,10 @@ static void write_meta_header(FILE *out, const struct bench_opts *opts)
 	strftime(ts, sizeof(ts), "%Y-%m-%dT%H:%M:%SZ", &tm_now);
 
 	fprintf(out,
-		"{\"type\":\"meta\",\"timestamp\":\"%s\",\"git_sha\":\"%s\","
-		"\"host\":\"%s\",\"board\":\"%s\",\"uri\":\"%s\"",
-		ts, sha, host, opts->board[0] ? opts->board : "unknown", opts->uri);
+		"{\"type\":\"meta\",\"schema_version\":%d,\"timestamp\":\"%s\","
+		"\"git_sha\":\"%s\",\"host\":\"%s\",\"board\":\"%s\",\"uri\":\"%s\"",
+		BENCH_SCHEMA_VERSION, ts, sha, host,
+		opts->board[0] ? opts->board : "unknown", opts->uri);
 
 	if (opts->num_tags > 0) {
 		unsigned int i;
@@ -337,4 +347,109 @@ struct iio_device *bench_find_input_device(struct iio_context *ctx,
 	}
 
 	return NULL;
+}
+
+const struct iio_attr *bench_find_attr_by_name(struct iio_context *ctx, const char *name)
+{
+	unsigned int nb_dev = iio_context_get_devices_count(ctx);
+	unsigned int d;
+
+	for (d = 0; d < nb_dev; d++) {
+		struct iio_device *dev = iio_context_get_device(ctx, d);
+		const struct iio_attr *attr = iio_device_find_attr(dev, name);
+		unsigned int nb_chn, c;
+
+		if (attr)
+			return attr;
+
+		nb_chn = iio_device_get_channels_count(dev);
+		for (c = 0; c < nb_chn; c++) {
+			struct iio_channel *chn = iio_device_get_channel(dev, c);
+
+			attr = iio_channel_find_attr(chn, name);
+			if (attr)
+				return attr;
+		}
+	}
+
+	return NULL;
+}
+
+int bench_run_timed(const struct bench_opts *opts, const char *name, const char *unit,
+		     unsigned int iterations, bench_op_fn fn, void *arg)
+{
+	double *samples = calloc(iterations, sizeof(*samples));
+	struct bench_stats stats;
+	unsigned int i;
+
+	if (!samples) {
+		fprintf(stderr, "Out of memory\n");
+		return -1;
+	}
+
+	for (i = 0; i < iterations; i++) {
+		double t0 = bench_now_us();
+		int ret = fn(arg, i);
+		double dt = bench_now_us() - t0;
+
+		if (ret)
+			break;
+
+		samples[i] = dt;
+	}
+
+	if (i > 0) {
+		bench_compute_stats(samples, i, &stats);
+		bench_report(opts, name, unit, &stats);
+	}
+
+	free(samples);
+	return i > 0 ? 0 : -1;
+}
+
+int bench_run_paired(const struct bench_opts *opts,
+		      const char *name_a, const char *name_b, const char *unit,
+		      unsigned int iterations, bench_op_fn op_a, bench_op_fn op_b,
+		      void *arg)
+{
+	double *samples_a = calloc(iterations, sizeof(*samples_a));
+	double *samples_b = calloc(iterations, sizeof(*samples_b));
+	struct bench_stats stats;
+	unsigned int i;
+
+	if (!samples_a || !samples_b) {
+		fprintf(stderr, "Out of memory\n");
+		free(samples_a);
+		free(samples_b);
+		return -1;
+	}
+
+	for (i = 0; i < iterations; i++) {
+		double t0 = bench_now_us();
+		int ret = op_a(arg, i);
+		double dt_a = bench_now_us() - t0;
+
+		if (ret)
+			break;
+
+		t0 = bench_now_us();
+		ret = op_b(arg, i);
+		if (ret)
+			break;
+
+		samples_a[i] = dt_a;
+		samples_b[i] = bench_now_us() - t0;
+	}
+
+	if (i > 0) {
+		bench_compute_stats(samples_a, i, &stats);
+		bench_report(opts, name_a, unit, &stats);
+
+		bench_compute_stats(samples_b, i, &stats);
+		bench_report(opts, name_b, unit, &stats);
+	}
+
+	free(samples_a);
+	free(samples_b);
+	return i > 0 ? 0 : -1;
 }
