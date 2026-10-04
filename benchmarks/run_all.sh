@@ -86,7 +86,7 @@ fi
 
 if [ -n "$UTILS_BIN_DIR" ]; then
 	echo "Running bench_cli (iio_info/iio_attr wall-clock time)..." >&2
-	"$SCRIPT_DIR/bench_cli.sh" --bin-dir "$UTILS_BIN_DIR" --uri "$URI" --output "$TMP_OUTPUT"
+	"$SCRIPT_DIR/bench_cli.sh" --bin-dir "$UTILS_BIN_DIR" --uri "$URI" --output "$TMP_OUTPUT" $EXTRA_ARGS
 fi
 
 if [ -z "$BOARD" ] && [ -f "$TMP_OUTPUT" ]; then

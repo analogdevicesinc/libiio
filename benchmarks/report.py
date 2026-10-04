@@ -134,8 +134,12 @@ def main():
     headers = [label for _, label in COLUMNS]
     widths = [max(len(headers[i]), *(len(row[i]) for row in rows)) for i in range(len(COLUMNS))]
 
-    print(f"host: {meta.get('host', '?')}   uri: {meta.get('uri', '?')}   "
-          f"git_sha: {meta.get('git_sha', '?')}   timestamp: {meta.get('timestamp', '?')}")
+    header = (f"host: {meta.get('host', '?')}   uri: {meta.get('uri', '?')}   "
+              f"git_sha: {meta.get('git_sha', '?')}   timestamp: {meta.get('timestamp', '?')}")
+    tags = meta.get("tags")
+    if tags:
+        header += "   tags: " + ", ".join(f"{k}={v}" for k, v in tags.items())
+    print(header)
     print()
 
     def print_row(cells):

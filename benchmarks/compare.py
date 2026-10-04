@@ -27,7 +27,8 @@ def display_name(rec):
     return rec["name"]
 
 
-def load_records(path):
+def load_run(path):
+    meta = {}
     records = {}
     with open(path) as f:
         for line in f:
@@ -36,9 +37,15 @@ def load_records(path):
                 continue
             rec = json.loads(line)
             if rec.get("type") == "meta":
+                meta = rec
                 continue
             records[metric_key(rec)] = rec
-    return records
+    return meta, records
+
+
+def tags_str(meta):
+    tags = meta.get("tags")
+    return ", ".join(f"{k}={v}" for k, v in tags.items()) if tags else "none"
 
 
 def main():
@@ -49,11 +56,14 @@ def main():
                          help="Percent delta considered a regression (default: 10)")
     args = parser.parse_args()
 
-    before = load_records(args.before)
-    after = load_records(args.after)
+    before_meta, before = load_run(args.before)
+    after_meta, after = load_run(args.after)
 
     keys = sorted(set(before) | set(after))
     any_regression = False
+
+    print(f"before tags: {tags_str(before_meta)}   after tags: {tags_str(after_meta)}")
+    print()
 
     header = f"{'metric':<30}{'unit':<8}{'before':>12}{'after':>12}{'delta %':>10}"
     print(header)

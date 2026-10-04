@@ -8,7 +8,7 @@
 #
 # Usage:
 #   benchmarks/bench_cli.sh --uri ip:192.168.2.1 --bin-dir build/utils \
-#       [--iterations 20] [--output results.json]
+#       [--iterations 20] [--output results.json] [--tag key=value ...]
 
 set -e
 
@@ -16,6 +16,7 @@ BIN_DIR="."
 URI="ip:192.168.2.1"
 ITERATIONS=20
 OUTPUT=""
+TAGS=""
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -33,6 +34,17 @@ while [ $# -gt 0 ]; do
 		;;
 	--output)
 		OUTPUT="$2"
+		shift 2
+		;;
+	--tag)
+		case "$2" in
+		*=*) ;;
+		*)
+			echo "--tag expects key=value, got '$2'" >&2
+			exit 1
+			;;
+		esac
+		TAGS="$TAGS $2"
 		shift 2
 		;;
 	*)
@@ -60,8 +72,22 @@ write_meta_header_if_needed() {
 		return
 	fi
 
-	header=$(printf '{"type":"meta","timestamp":"%s","git_sha":"%s","host":"%s","board":"unknown","uri":"%s"}' \
+	header=$(printf '{"type":"meta","timestamp":"%s","git_sha":"%s","host":"%s","board":"unknown","uri":"%s"' \
 		"$TIMESTAMP" "$SHORTSHA" "$HOST" "$URI")
+
+	if [ -n "$TAGS" ]; then
+		tags_json=""
+		for kv in $TAGS; do
+			key="${kv%%=*}"
+			value="${kv#*=}"
+			sep=","
+			[ -z "$tags_json" ] && sep=""
+			tags_json="${tags_json}${sep}\"${key}\":\"${value}\""
+		done
+		header="${header},\"tags\":{${tags_json}}"
+	fi
+
+	header="${header}}"
 
 	printf '%s\n' "$header" >> "$OUTPUT"
 }

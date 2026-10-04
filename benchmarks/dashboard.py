@@ -67,10 +67,11 @@ def load_all_records(results_dir):
                 if rec.get("type") == "meta":
                     meta = rec
                     continue
-                # timestamp/git_sha live once per file (in meta); attach
-                # them to each record so per-run trend points still carry
-                # them.
-                rec = dict(rec, timestamp=meta.get("timestamp"), git_sha=meta.get("git_sha"))
+                # timestamp/git_sha/tags live once per file (in meta);
+                # attach them to each record so per-run trend points still
+                # carry them.
+                rec = dict(rec, timestamp=meta.get("timestamp"),
+                           git_sha=meta.get("git_sha"), tags=meta.get("tags"))
                 metrics.setdefault(metric_key(rec), []).append(rec)
 
     for key in metrics:
@@ -399,7 +400,11 @@ function buildCard(name, points) {
     tooltip.appendChild(meta);
 
     const info = document.createElement('div');
-    info.textContent = `${p.timestamp || ''}  ${p.git_sha || ''}`;
+    let infoText = `${p.timestamp || ''}  ${p.git_sha || ''}`;
+    if (p.tags) {
+      infoText += '  ' + Object.entries(p.tags).map(([k, v]) => `${k}=${v}`).join(' ');
+    }
+    info.textContent = infoText;
     tooltip.appendChild(info);
 
     tooltip.style.display = 'block';

@@ -14,6 +14,13 @@ struct iio_context;
 struct iio_device;
 struct iio_channels_mask;
 
+#define BENCH_MAX_TAGS 8
+
+struct bench_tag {
+	char key[32];
+	char value[64];
+};
+
 struct bench_opts {
 	const char *uri;
 	const char *output;
@@ -22,6 +29,8 @@ struct bench_opts {
 	size_t block_size;
 	unsigned int num_blocks;
 	char board[128];
+	struct bench_tag tags[BENCH_MAX_TAGS];
+	unsigned int num_tags;
 };
 
 struct bench_stats {
@@ -41,9 +50,11 @@ struct bench_extra {
 };
 
 /* Parses the common "-u/--uri -n/--iterations -d/--duration-ms
- * -b/--block-size -c/--num-blocks -o/--output" options. argv[0] is used as
- * the program name in usage/error messages. Exits the process on -h/--help
- * or a parsing error. */
+ * -b/--block-size -c/--num-blocks -o/--output --tag key=value" options.
+ * --tag is repeatable (up to BENCH_MAX_TAGS) and is folded into the run's
+ * meta header, e.g. --tag protocol=v0. argv[0] is used as the program name
+ * in usage/error messages. Exits the process on -h/--help or a parsing
+ * error. */
 void bench_parse_opts(int argc, char *argv[], struct bench_opts *opts);
 
 /* Monotonic clock timestamp in microseconds, suitable for delta timing. */

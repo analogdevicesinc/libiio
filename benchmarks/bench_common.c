@@ -68,8 +68,31 @@ static void print_usage(const char *prog)
 		"  -b, --block-size <N>     Block size in bytes, for buffer benchmarks (default: 4096)\n"
 		"  -c, --num-blocks <N>     Ring buffer depth, for pipelined benchmarks (default: 4)\n"
 		"  -o, --output <path>      Append JSON result to this file (default: stdout)\n"
+		"  --tag <key>=<value>      Tag this run in the meta header (repeatable, e.g. --tag protocol=v0)\n"
 		"  -h, --help                Show this help\n",
 		prog);
+}
+
+#define OPT_TAG 256
+
+static void bench_add_tag(struct bench_opts *opts, char *arg, const char *prog)
+{
+	char *eq = strchr(arg, '=');
+
+	if (opts->num_tags >= BENCH_MAX_TAGS) {
+		fprintf(stderr, "%s: too many --tag options (max %d)\n", prog, BENCH_MAX_TAGS);
+		exit(EXIT_FAILURE);
+	}
+
+	if (!eq || eq == arg || !eq[1]) {
+		fprintf(stderr, "%s: --tag expects key=value, got '%s'\n", prog, arg);
+		exit(EXIT_FAILURE);
+	}
+
+	*eq = 0;
+	strncpy(opts->tags[opts->num_tags].key, arg, sizeof(opts->tags[0].key) - 1);
+	strncpy(opts->tags[opts->num_tags].value, eq + 1, sizeof(opts->tags[0].value) - 1);
+	opts->num_tags++;
 }
 
 void bench_parse_opts(int argc, char *argv[], struct bench_opts *opts)
@@ -81,6 +104,7 @@ void bench_parse_opts(int argc, char *argv[], struct bench_opts *opts)
 		{ "block-size",		required_argument, 0, 'b' },
 		{ "num-blocks",		required_argument, 0, 'c' },
 		{ "output",		required_argument, 0, 'o' },
+		{ "tag",		required_argument, 0, OPT_TAG },
 		{ "help",		no_argument,       0, 'h' },
 		{ 0, 0, 0, 0 },
 	};
@@ -92,6 +116,7 @@ void bench_parse_opts(int argc, char *argv[], struct bench_opts *opts)
 	opts->duration_ms = 5000;
 	opts->block_size = 4096;
 	opts->num_blocks = 4;
+	opts->num_tags = 0;
 
 	while ((c = getopt_long(argc, argv, "u:n:d:b:c:o:h", longopts, NULL)) != -1) {
 		switch (c) {
@@ -112,6 +137,9 @@ void bench_parse_opts(int argc, char *argv[], struct bench_opts *opts)
 			break;
 		case 'o':
 			opts->output = optarg;
+			break;
+		case OPT_TAG:
+			bench_add_tag(opts, optarg, argv[0]);
 			break;
 		case 'h':
 			print_usage(argv[0]);
@@ -175,8 +203,21 @@ static void write_meta_header(FILE *out, const struct bench_opts *opts)
 
 	fprintf(out,
 		"{\"type\":\"meta\",\"timestamp\":\"%s\",\"git_sha\":\"%s\","
-		"\"host\":\"%s\",\"board\":\"%s\",\"uri\":\"%s\"}\n",
+		"\"host\":\"%s\",\"board\":\"%s\",\"uri\":\"%s\"",
 		ts, sha, host, opts->board[0] ? opts->board : "unknown", opts->uri);
+
+	if (opts->num_tags > 0) {
+		unsigned int i;
+
+		fprintf(out, ",\"tags\":{");
+		for (i = 0; i < opts->num_tags; i++) {
+			fprintf(out, "%s\"%s\":\"%s\"", i ? "," : "",
+				opts->tags[i].key, opts->tags[i].value);
+		}
+		fprintf(out, "}");
+	}
+
+	fprintf(out, "}\n");
 }
 
 void bench_report_ex(const struct bench_opts *opts, const char *name,
