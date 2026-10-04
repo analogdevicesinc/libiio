@@ -8,44 +8,14 @@ Usage:
 """
 
 import argparse
-import json
 import sys
 
-
-def metric_key(rec):
-    """Identifies a metric within a run: 'name' alone, or 'name' plus
-    block_size/ring_depth for the block-sweep benchmarks, or 'name' plus
-    samples for the cli_iio_rwdev_read size sweep (all of which reuse the
-    same name across several sizes/ring depths per run)."""
-    if "block_size" in rec:
-        return (rec["name"], rec["block_size"], rec.get("ring_depth"))
-    if "samples" in rec:
-        return (rec["name"], rec["samples"])
-    return (rec["name"],)
+from bench_results import display_name, load_run, metric_key
 
 
-def display_name(rec):
-    if "block_size" in rec:
-        return f"{rec['name']} ({rec['block_size']}B, ring{rec.get('ring_depth', '?')})"
-    if "samples" in rec:
-        return f"{rec['name']} ({rec['samples']} samples)"
-    return rec["name"]
-
-
-def load_run(path):
-    meta = {}
-    records = {}
-    with open(path) as f:
-        for line in f:
-            line = line.strip()
-            if not line:
-                continue
-            rec = json.loads(line)
-            if rec.get("type") == "meta":
-                meta = rec
-                continue
-            records[metric_key(rec)] = rec
-    return meta, records
+def load_run_dict(path):
+    meta, records = load_run(path)
+    return meta, {metric_key(rec): rec for rec in records}
 
 
 def tags_str(meta):
@@ -61,8 +31,8 @@ def main():
                          help="Percent delta considered a regression (default: 10)")
     args = parser.parse_args()
 
-    before_meta, before = load_run(args.before)
-    after_meta, after = load_run(args.after)
+    before_meta, before = load_run_dict(args.before)
+    after_meta, after = load_run_dict(args.after)
 
     keys = sorted(set(before) | set(after))
     any_regression = False

@@ -15,40 +15,8 @@ import glob
 import json
 import os
 
-
-STAT_KEYS = ("min", "mean", "median", "p95", "max")
-
-# (threshold in microseconds, divisor, display unit)
-US_SCALES = (
-    (60_000_000, 60_000_000, "min"),
-    (1_000_000, 1_000_000, "s"),
-    (1_000, 1_000, "ms"),
-)
-
-
-def metric_key(rec):
-    """Identifies a metric across runs: 'name' alone, or 'name' plus
-    block_size/ring_depth for the block-sweep benchmarks (which reuse the
-    same name across several sizes/ring depths per run)."""
-    if "block_size" in rec:
-        return (rec["name"], rec["block_size"], rec.get("ring_depth"))
-    return (rec["name"],)
-
-
-def display_name(key):
-    if len(key) == 1:
-        return key[0]
-    name, block_size, ring_depth = key
-    return f"{name} ({block_size}B, ring{ring_depth})"
-
-
-def pair_key(key):
-    """enqueue/dequeue counterparts (e.g. "block_enqueue"/"block_dequeue"
-    at the same block_size/ring_depth) map to the same key, so their
-    charts always get scaled to the same unit and stay directly
-    comparable."""
-    name = key[0].replace("enqueue", "\0").replace("dequeue", "\0")
-    return (name,) + key[1:]
+from bench_results import apply_scale, display_name, metric_key, pair_key, \
+    US_SCALES, warn_schema_version
 
 
 def load_all_records(results_dir):
@@ -73,9 +41,10 @@ def load_all_records(results_dir):
                 rec = dict(rec, timestamp=meta.get("timestamp"),
                            git_sha=meta.get("git_sha"), tags=meta.get("tags"))
                 metrics.setdefault(metric_key(rec), []).append(rec)
+        warn_schema_version(meta, path)
 
     for key in metrics:
-        metrics[key].sort(key=lambda r: r.get("timestamp", ""))
+        metrics[key].sort(key=lambda r: r.get("timestamp") or "")
 
     # Group metric keys sharing an enqueue/dequeue pair_key, so a common
     # scale can be picked from the larger of the two series.
@@ -97,18 +66,6 @@ def load_all_records(results_dir):
                 break
 
     return {display_name(key): records for key, records in metrics.items()}
-
-
-def apply_scale(records, divisor, unit):
-    scaled = []
-    for r in records:
-        s = dict(r)
-        for key in STAT_KEYS:
-            if key in s:
-                s[key] = s[key] / divisor
-        s["unit"] = unit
-        scaled.append(s)
-    return scaled
 
 
 PAGE_TEMPLATE = """<!DOCTYPE html>
