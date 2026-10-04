@@ -14,16 +14,21 @@ import sys
 
 def metric_key(rec):
     """Identifies a metric within a run: 'name' alone, or 'name' plus
-    block_size/ring_depth for the block-sweep benchmarks (which reuse the
+    block_size/ring_depth for the block-sweep benchmarks, or 'name' plus
+    samples for the cli_iio_rwdev_read size sweep (all of which reuse the
     same name across several sizes/ring depths per run)."""
     if "block_size" in rec:
         return (rec["name"], rec["block_size"], rec.get("ring_depth"))
+    if "samples" in rec:
+        return (rec["name"], rec["samples"])
     return (rec["name"],)
 
 
 def display_name(rec):
     if "block_size" in rec:
         return f"{rec['name']} ({rec['block_size']}B, ring{rec.get('ring_depth', '?')})"
+    if "samples" in rec:
+        return f"{rec['name']} ({rec['samples']} samples)"
     return rec["name"]
 
 

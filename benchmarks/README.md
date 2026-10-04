@@ -18,7 +18,7 @@ Binaries land in `build/benchmarks/`.
 - **bench_block** — `iio_block_enqueue()`/`iio_block_dequeue()` per-call latency, plus the sustained sample rate that latency implies, on the first input device with a buffer. Keeps a ring of `--num-blocks` (default 4) blocks of `--block-size` bytes (default 4096) in flight so transfers can overlap, like real streaming code does — use `--num-blocks 1` for the (slower) non-pipelined case, where every dequeue absorbs a full round trip. Reports `block_enqueue`, `block_dequeue` (us), and `block_sample_rate` (sps), each record carrying `block_size`/`ring_depth` fields rather than baking them into the name. `run_all.sh` sweeps `--block-size` across 512B/4KiB/64KiB/1MiB by default so the size-vs-latency/rate tradeoff shows up across separate records in the same results file.
 - **bench_buffer** — `iio_buffer_open()` and `iio_buffer_close()` latency, timed and reported separately (`buffer_open`/`buffer_close`), and `iio_buffer_stream_create_block()` latency swept across the same 512B–1MiB sizes (e.g. `block_create_1MiB`).
 - **bench_streaming** — sustained buffer streaming throughput (MiB/s) and achieved sample rate (samples/s, via `iio_device_get_sample_size()`) over a fixed duration, skipping the first second as warm-up. Also reports the device's configured `sampling_frequency` (`streaming_configured_sample_rate`) so the achieved rate can be compared against it.
-- **bench_cli.sh** — how long the `iio_info` and `iio_attr` CLI tools themselves take to run end-to-end (process startup + arg parsing + context creation + the tool's own work), as opposed to bench_context/bench_attr above which time the underlying libiio API calls in-process. Requires `-DWITH_UTILS=ON` so those binaries exist.
+- **bench_cli.sh** — how long the `iio_info` and `iio_attr` CLI tools themselves take to run end-to-end (process startup + arg parsing + context creation + the tool's own work), as opposed to bench_context/bench_attr above which time the underlying libiio API calls in-process. Requires `-DWITH_UTILS=ON` so those binaries exist. With `--rwdev-device <name>` it also times `iio_rwdev -s <N> <device> [<channel>]` — a bounded read capture, swept across `--rwdev-sizes` (default `256 4096 65536 1048576` samples) — reported as `cli_iio_rwdev_read`, one record per size, each carrying a `"samples"` field. Omit `--rwdev-device` to skip this pass (no generic auto-discovery of a device/channel, unlike `iio_info`/`iio_attr` which need none). Read-only by design: write mode (`-w`) actively transmits whatever it's fed out through real hardware, and cyclic/benchmark modes (`-c`/`-B`) don't cleanly start-and-exit, so neither fits a repeated-invocation wall-clock loop.
 
 Each binary/script prints one JSON record per metric (or appends to `--output` if given). The first line written to a given output (file or stdout run) is a one-time run-metadata header, so `timestamp`/`git_sha`/`host`/`board`/`uri` aren't repeated on every record:
 
@@ -59,6 +59,16 @@ Run a single binary/script directly:
 build/benchmarks/bench_block --uri ip:192.168.2.1 --iterations 2000
 benchmarks/bench_cli.sh --bin-dir build/utils --uri ip:192.168.2.1 --iterations 20
 ```
+
+Include `iio_rwdev` capture timing:
+
+```sh
+benchmarks/bench_cli.sh --bin-dir build/utils --uri ip:192.168.2.1 \
+    --rwdev-device cf-ad9361-lpc --rwdev-channel voltage0
+```
+
+Throughput isn't computed inline (would need to know the channel's sample
+size); derive it offline as `samples * sample_size / mean_us * 1e6` if needed.
 
 Common options (see `--help` on any binary): `-u/--uri`, `-n/--iterations`, `-d/--duration-ms` (bench_streaming only), `-b/--block-size` (bench_block/bench_streaming), `-c/--num-blocks` (bench_block only, default 4), `-o/--output`, `--tag key=value` (repeatable).
 

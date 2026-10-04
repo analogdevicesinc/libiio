@@ -8,7 +8,14 @@
 #
 # Usage:
 #   benchmarks/bench_cli.sh --uri ip:192.168.2.1 --bin-dir build/utils \
-#       [--iterations 20] [--output results.json] [--tag key=value ...]
+#       [--iterations 20] [--output results.json] [--tag key=value ...] \
+#       [--rwdev-device <name>] [--rwdev-channel <name>] \
+#       [--rwdev-sizes "256 4096 65536 1048576"]
+#
+# --rwdev-device enables timing 'iio_rwdev -s <N> <device> [<channel>]'
+# (a bounded read capture) swept across --rwdev-sizes sample counts;
+# omit it to skip that pass (no generic auto-discovery of a device/channel,
+# unlike iio_info/iio_attr which need none).
 
 set -e
 
@@ -17,6 +24,9 @@ URI="ip:192.168.2.1"
 ITERATIONS=20
 OUTPUT=""
 TAGS=""
+RWDEV_DEVICE=""
+RWDEV_CHANNEL=""
+RWDEV_SIZES="256 4096 65536 1048576"
 
 while [ $# -gt 0 ]; do
 	case "$1" in
@@ -45,6 +55,18 @@ while [ $# -gt 0 ]; do
 			;;
 		esac
 		TAGS="$TAGS $2"
+		shift 2
+		;;
+	--rwdev-device)
+		RWDEV_DEVICE="$2"
+		shift 2
+		;;
+	--rwdev-channel)
+		RWDEV_CHANNEL="$2"
+		shift 2
+		;;
+	--rwdev-sizes)
+		RWDEV_SIZES="$2"
 		shift 2
 		;;
 	*)
@@ -92,10 +114,12 @@ write_meta_header_if_needed() {
 	printf '%s\n' "$header" >> "$OUTPUT"
 }
 
-# $1 = metric name, remaining args = command to time
+# $1 = metric name, $2 = extra JSON fragment to splice in before the closing
+# '}' (e.g. ',"samples":4096'), or "" for none, remaining args = command to time
 time_command() {
 	name="$1"
-	shift
+	extra="$2"
+	shift 2
 
 	: > "$TMPFILE"
 
@@ -123,8 +147,8 @@ time_command() {
 
 	write_meta_header_if_needed
 
-	record=$(printf '{"name":"%s","unit":"us","count":%d,"min":%s,"max":%s,"mean":%s,"median":%s,"p95":%s}\n' \
-		"$name" "$ITERATIONS" "$min" "$max" "$mean" "$median" "$p95")
+	record=$(printf '{"name":"%s","unit":"us","count":%d,"min":%s,"max":%s,"mean":%s,"median":%s,"p95":%s%s}\n' \
+		"$name" "$ITERATIONS" "$min" "$max" "$mean" "$median" "$p95" "$extra")
 
 	if [ -n "$OUTPUT" ]; then
 		printf '%s\n' "$record" >> "$OUTPUT"
@@ -143,7 +167,24 @@ if [ ! -x "$BIN_DIR/iio_attr" ]; then
 fi
 
 echo "Timing 'iio_info -u $URI' over $ITERATIONS runs..." >&2
-time_command "cli_iio_info" "$BIN_DIR/iio_info" -u "$URI"
+time_command "cli_iio_info" "" "$BIN_DIR/iio_info" -u "$URI"
 
 echo "Timing 'iio_attr -u $URI -C' over $ITERATIONS runs..." >&2
-time_command "cli_iio_attr" "$BIN_DIR/iio_attr" -u "$URI" -C
+time_command "cli_iio_attr" "" "$BIN_DIR/iio_attr" -u "$URI" -C
+
+# iio_rwdev needs a concrete device (no safe generic auto-discovery here,
+# unlike iio_info/iio_attr), so this pass is opt-in via --rwdev-device.
+# Read-only by design: no -w (actively transmits whatever it's fed, real
+# hardware side effect), no -c/-B (cyclic/benchmark modes don't cleanly
+# start-and-exit, so they don't fit time_command's fixed-invocation model).
+if [ -n "$RWDEV_DEVICE" ]; then
+	if [ -x "$BIN_DIR/iio_rwdev" ]; then
+		for size in $RWDEV_SIZES; do
+			echo "Timing 'iio_rwdev -u $URI -s $size $RWDEV_DEVICE $RWDEV_CHANNEL' over $ITERATIONS runs..." >&2
+			time_command "cli_iio_rwdev_read" ",\"samples\":$size" \
+				"$BIN_DIR/iio_rwdev" -u "$URI" -s "$size" "$RWDEV_DEVICE" $RWDEV_CHANNEL
+		done
+	else
+		echo "iio_rwdev not found/executable at $BIN_DIR, skipping --rwdev-device timing" >&2
+	fi
+fi
