@@ -29,6 +29,8 @@ Each binary/script prints one JSON record per metric (or appends to `--output` i
 
 `"board"` is auto-detected from the context (`hw_carrier`/`hw_model`, falling back to `"unknown"`). Records for the block-sweep benchmarks (`bench_block`) additionally carry `"block_size"`/`"ring_depth"` fields.
 
+The meta line's `"schema_version"` tracks the shape of these JSON lines; see [SCHEMA.md](SCHEMA.md) for the full field reference and version history. Bump it (in both `bench_common.c` and `bench_cli.sh` — they write the same shape independently) whenever a field is added, removed, or renamed.
+
 Pass `--tag key=value` (repeatable, supported by every binary and `bench_cli.sh`) to label a run in its meta header, e.g. `--tag protocol=v0` when comparing an old vs. new IIOD build — the protocol itself isn't auto-detected (the client negotiates it silently per-server), so this is a manual label you set to match whichever `iiod` build you pointed `--uri` at:
 
 ```json

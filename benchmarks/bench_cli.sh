@@ -20,6 +20,8 @@
 set -e
 
 BIN_DIR="."
+# Kept in sync by hand with the same default in bench_common.c's
+# bench_parse_opts() and run_all.sh - see benchmarks/SCHEMA.md.
 URI="ip:192.168.2.1"
 ITERATIONS=20
 OUTPUT=""
@@ -89,13 +91,20 @@ TIMESTAMP=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # regardless of which one runs first. No-op when writing to stdout, same
 # as the C side (piped stdout output isn't a shared file to de-duplicate
 # a header in).
+#
+# This writes the same JSON shape as write_meta_header() in
+# bench_common.c, independently (no shared code between C and shell) -
+# keep the two in sync by hand, bumping SCHEMA_VERSION in both places
+# together. See benchmarks/SCHEMA.md.
+SCHEMA_VERSION=2
+
 write_meta_header_if_needed() {
 	if [ -z "$OUTPUT" ] || [ -s "$OUTPUT" ]; then
 		return
 	fi
 
-	header=$(printf '{"type":"meta","timestamp":"%s","git_sha":"%s","host":"%s","board":"unknown","uri":"%s"' \
-		"$TIMESTAMP" "$SHORTSHA" "$HOST" "$URI")
+	header=$(printf '{"type":"meta","schema_version":%d,"timestamp":"%s","git_sha":"%s","host":"%s","board":"unknown","uri":"%s"' \
+		"$SCHEMA_VERSION" "$TIMESTAMP" "$SHORTSHA" "$HOST" "$URI")
 
 	if [ -n "$TAGS" ]; then
 		tags_json=""

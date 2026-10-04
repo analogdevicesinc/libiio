@@ -20,6 +20,8 @@ set -e
 
 BIN_DIR="."
 UTILS_BIN_DIR=""
+# Kept in sync by hand with the same default in bench_common.c's
+# bench_parse_opts() and bench_cli.sh - see benchmarks/SCHEMA.md.
 URI="ip:192.168.2.1"
 BOARD=""
 EXTRA_ARGS=""
@@ -74,6 +76,8 @@ done
 # bench_block reports one (enqueue, dequeue, sample-rate) triple per
 # invocation, named after its --block-size/--num-blocks; sweep the sizes
 # here (ring depth stays at the default of 4, override via $EXTRA_ARGS).
+# Kept in sync by hand with bench_buffer.c's BLOCK_SIZES[] array - see
+# benchmarks/SCHEMA.md.
 BENCH_BLOCK="$BIN_DIR/bench_block"
 if [ -x "$BENCH_BLOCK" ]; then
 	for size in 512 4096 65536 1048576; do

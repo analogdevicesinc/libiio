@@ -14,7 +14,8 @@
 #include <stdlib.h>
 
 /* Block sizes swept for the create_block cost, from a small control-plane
- * sized block up to 1 MiB. */
+ * sized block up to 1 MiB. Kept in sync by hand with run_all.sh's separate
+ * bench_block --block-size sweep loop - see benchmarks/SCHEMA.md. */
 static const struct {
 	size_t size;
 	const char *label;
