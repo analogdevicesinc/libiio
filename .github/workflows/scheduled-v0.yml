@@ -12,6 +12,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Dispatch v0 build
-        run: gh workflow run build.yml --ref libiio-v0
+        run: gh workflow run build.yml --ref libiio-v0 --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
