@@ -20,6 +20,9 @@ static struct max_uart_init_param iiod_uart_extra = {
 };
 #define UART_EXTRA		&iiod_uart_extra
 
+/* ---------- Timers: USB service tick ---------- */
+#include "timers.h"
+
 /* ---------- Network (board wiring; chip binding in NETDEV_HEADER) ---------- */
 #ifdef NO_OS_LWIP_NETWORKING
 

@@ -28,6 +28,15 @@
       }
     },
     {
+      "name": "usb",
+      "displayName": "IIOD over USB (MAXUSB vendor pipes)",
+      "description": "Override the board with -DBOARD=<no-OS board> (use --fresh when the dir already exists)",
+      "inherits": "iiod-base",
+      "cacheVariables": {
+        "IIOD_TRANSPORT": "usb"
+      }
+    },
+    {
       "name": "network",
       "displayName": "IIOD over TCP (lwIP + ADIN1110)",
       "description": "Override the board with -DBOARD=<no-OS board> (use --fresh when the dir already exists)",
@@ -46,6 +55,18 @@
       "name": "flash-uart",
       "displayName": "flash the uart build",
       "configurePreset": "uart",
+      "targets": [
+        "flash"
+      ]
+    },
+    {
+      "name": "usb",
+      "configurePreset": "usb"
+    },
+    {
+      "name": "flash-usb",
+      "displayName": "flash the usb build",
+      "configurePreset": "usb",
       "targets": [
         "flash"
       ]
@@ -91,6 +112,36 @@
         {
           "type": "build",
           "name": "flash-uart"
+        }
+      ]
+    },
+    {
+      "name": "usb",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "usb"
+        },
+        {
+          "type": "build",
+          "name": "usb"
+        }
+      ]
+    },
+    {
+      "name": "flash-usb",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "usb"
+        },
+        {
+          "type": "build",
+          "name": "usb"
+        },
+        {
+          "type": "build",
+          "name": "flash-usb"
         }
       ]
     },

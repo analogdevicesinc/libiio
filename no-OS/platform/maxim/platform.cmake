@@ -57,6 +57,17 @@ elseif(TARGET_NUM STREQUAL "32655")
   set(IIOD_PLATFORM_ADC common_api)
 endif()
 
+# ---------- USB: only the parts with the USB-HS core ----------
+if(IIOD_TRANSPORT STREQUAL "usb")
+  if(NOT EXISTS "${NO_OS_PATH}/drivers/platform/maxim/${TARGET}/maxim_usb_uart.c")
+    message(FATAL_ERROR
+      "${TARGET} has no USB-HS device core in no-OS "
+      "(no drivers/platform/maxim/${TARGET}/maxim_usb_uart.c). "
+      "Pick the uart transport for this board.")
+  endif()
+  list(APPEND IIOD_PLATFORM_SRCS "${CMAKE_CURRENT_LIST_DIR}/iio_usb_backend.c")
+endif()
+
 # ---------- Network: the ADIN1110 is wired as on the AD-APARD32690-SL ----------
 if(IIOD_TRANSPORT STREQUAL "network")
   list(APPEND IIOD_PLATFORM_DEFS NETDEV_HEADER="netdev_adin1110.h")

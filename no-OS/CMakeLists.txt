@@ -41,8 +41,8 @@ set(IIOD_PLATFORM_DIR ${CMAKE_CURRENT_SOURCE_DIR}/platform/${PLATFORM})
 if(NOT EXISTS ${IIOD_PLATFORM_DIR}/parameters.h)
   message(FATAL_ERROR
     "${BOARD} is a PLATFORM=${PLATFORM} board, which has no iiod glue yet: add "
-    "platform/${PLATFORM}/ with parameters.h (UART wiring, see "
-    "platform/maxim/). no-OS itself supports the platform; "
+    "platform/${PLATFORM}/ with parameters.h and timers.h (UART, USB tick "
+    "timer and IRQ wiring, see platform/maxim/). no-OS itself supports the platform; "
     "the port does not.")
 endif()
 
@@ -177,6 +177,14 @@ target_compile_definitions(libiio-noos PRIVATE
   DISABLE_SECURE_SOCKET=1
   ${IIOD_PLATFORM_DEFS}
 )
+
+if(IIOD_TRANSPORT STREQUAL "usb")
+  string(TOUPPER ${BOARD} _board_upper)
+  target_compile_definitions(libiio-noos PRIVATE
+    NO_OS_USB_TRANSPORT
+    NO_OS_USB_PRODUCT="${_board_upper} IIO"
+  )
+endif()
 
 target_link_libraries(libiio-noos PRIVATE no-os)
 
