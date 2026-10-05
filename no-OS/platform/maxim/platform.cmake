@@ -7,7 +7,8 @@
 #
 #   IIOD_PLATFORM_SRCS      MSDK sources the no-os target list leaves out
 #   IIOD_PLATFORM_INCLUDES  their private header dirs
-#   IIOD_PLATFORM_DEFS      part-specific defines
+#   IIOD_PLATFORM_DEFS      part-specific defines (ADC wiring)
+#   IIOD_PLATFORM_ADC       default ADC HAL under drivers/adc/
 #
 # Read after add_subdirectory(no-OS), so the no-os target and MAXIM_LIBRARIES
 # (set by the no-OS toolchain file) are both known.
@@ -15,6 +16,7 @@
 set(IIOD_PLATFORM_SRCS "")
 set(IIOD_PLATFORM_INCLUDES "")
 set(IIOD_PLATFORM_DEFS "")
+set(IIOD_PLATFORM_ADC adc_demo)
 
 set(_msdk "${MAXIM_LIBRARIES}/PeriphDrivers")
 get_target_property(_no_os_srcs no-os SOURCES)
@@ -43,6 +45,17 @@ endfunction()
 # there, as no-OS does itself for aducm3029.
 set(IIOD_STACK_SIZE 0x10000 CACHE STRING "Main stack size (bytes)")
 target_compile_definitions(no-os PRIVATE __STACK_SIZE=${IIOD_STACK_SIZE})
+
+# ---------- ADC: parts the common_api HAL has been brought up on ----------
+if(TARGET_NUM STREQUAL "32690")
+  _maxim_add_msdk(ADC adc_me18 adc_revb)
+  list(APPEND IIOD_PLATFORM_DEFS IIO_ADC_CLOCK=MXC_ADC_CLK_IBRO)
+  set(IIOD_PLATFORM_ADC common_api)
+elseif(TARGET_NUM STREQUAL "32655")
+  _maxim_add_msdk(ADC adc_me17 adc_reva)
+  list(APPEND IIOD_PLATFORM_DEFS IIO_ADC_REF_VOLTAGE_MV=1220)
+  set(IIOD_PLATFORM_ADC common_api)
+endif()
 
 list(REMOVE_DUPLICATES IIOD_PLATFORM_INCLUDES)
 

@@ -117,16 +117,28 @@ set(LIBIIO_SRCS
 # The v0 (ASCII) protocol is not served: only the stub tinyiiod needs.
 list(APPEND LIBIIO_SRCS ${LIBIIO_DIR}/tinyiiod/ops-stubs.c)
 
+# ---------- ADC HAL: the platform's own, else the hardware-free demo ----------
+if(NOT IIOD_PLATFORM_ADC)
+  set(IIOD_PLATFORM_ADC adc_demo)
+endif()
+set(ADC ${IIOD_PLATFORM_ADC} CACHE STRING "ADC HAL under drivers/adc/")
+if(NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/drivers/adc/${ADC}/${ADC}.c)
+  message(FATAL_ERROR "no ADC HAL drivers/adc/${ADC}/${ADC}.c")
+endif()
+
 add_executable(libiio-noos
   ${LIBIIO_SRCS}
   ${CMAKE_CURRENT_SOURCE_DIR}/backend.c
   ${CMAKE_CURRENT_SOURCE_DIR}/iiod/${IIOD_TRANSPORT}.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/drivers/iio_adc.c
+  ${CMAKE_CURRENT_SOURCE_DIR}/drivers/adc/${ADC}/${ADC}.c
   ${CMAKE_CURRENT_SOURCE_DIR}/samples/iiod/main.c
   ${IIOD_PLATFORM_SRCS}
 )
 
 target_include_directories(libiio-noos PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/drivers
   ${CMAKE_CURRENT_SOURCE_DIR}/iiod
   ${IIOD_PLATFORM_DIR}
   ${LIBIIO_DIR}/include
