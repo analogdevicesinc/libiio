@@ -78,6 +78,16 @@ int noos_iio_register_device(const struct noos_iio_device_info *info);
  */
 int noos_iiod_run(void);
 
+/* Used by the transports; cppcheck checks this header on its own. */
+/* cppcheck-suppress-begin unusedStructMember */
+/* Chip-independent network configuration supplied by the platform. */
+struct noos_net_config {
+	const void *lwip_ops;	/* const struct no_os_lwip_ops * */
+	void *mac_param;	/* chip-specific init parameter  */
+	uint8_t mac_addr[6];
+};
+/* cppcheck-suppress-end unusedStructMember */
+
 /* Accessed by the backend – not for direct application use */
 extern struct noos_iio_device_info noos_iio_devices[];
 extern unsigned int noos_iio_device_count;

@@ -20,4 +20,25 @@ static struct max_uart_init_param iiod_uart_extra = {
 };
 #define UART_EXTRA		&iiod_uart_extra
 
+/* ---------- Network (board wiring; chip binding in NETDEV_HEADER) ---------- */
+#ifdef NO_OS_LWIP_NETWORKING
+
+#include "maxim_spi.h"
+#include "maxim_gpio.h"
+
+static struct max_spi_init_param iiod_adin_spi_extra = {
+	.num_slaves = 1,
+	.polarity = SPI_SS_POL_LOW,
+	.vssel = MXC_GPIO_VSSEL_VDDIOH,
+};
+
+static struct max_gpio_init_param iiod_adin_gpio_extra = {
+	.vssel = MXC_GPIO_VSSEL_VDDIOH,
+};
+
+#define NET_MAC_ADDR	{ 0x00, 0x18, 0x80, 0x03, 0x25, 0x60 }
+
+#include NETDEV_HEADER
+
+#endif /* NO_OS_LWIP_NETWORKING */
 #endif /* IIOD_PARAMETERS_H */

@@ -57,6 +57,11 @@ elseif(TARGET_NUM STREQUAL "32655")
   set(IIOD_PLATFORM_ADC common_api)
 endif()
 
+# ---------- Network: the ADIN1110 is wired as on the AD-APARD32690-SL ----------
+if(IIOD_TRANSPORT STREQUAL "network")
+  list(APPEND IIOD_PLATFORM_DEFS NETDEV_HEADER="netdev_adin1110.h")
+endif()
+
 list(REMOVE_DUPLICATES IIOD_PLATFORM_INCLUDES)
 
 unset(_msdk)
