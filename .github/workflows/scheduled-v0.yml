@@ -1,6 +1,7 @@
 name: Scheduled v0 Build
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '0 6 * * 6'    # Weekly Saturday 6am UTC
 
