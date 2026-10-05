@@ -1,0 +1,77 @@
+{
+  "version": 7,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 27,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "iiod-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-${presetName}",
+      "cacheVariables": {
+        "BOARD": "ad-apard32690-sl",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PROBE": "openocd"
+      }
+    },
+    {
+      "name": "uart",
+      "displayName": "IIOD over UART",
+      "description": "Override the board with -DBOARD=<no-OS board> (use --fresh when the dir already exists)",
+      "inherits": "iiod-base",
+      "cacheVariables": {
+        "IIOD_TRANSPORT": "uart"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "uart",
+      "configurePreset": "uart"
+    },
+    {
+      "name": "flash-uart",
+      "displayName": "flash the uart build",
+      "configurePreset": "uart",
+      "targets": [
+        "flash"
+      ]
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "uart",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "uart"
+        },
+        {
+          "type": "build",
+          "name": "uart"
+        }
+      ]
+    },
+    {
+      "name": "flash-uart",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "uart"
+        },
+        {
+          "type": "build",
+          "name": "uart"
+        },
+        {
+          "type": "build",
+          "name": "flash-uart"
+        }
+      ]
+    }
+  ]
+}
