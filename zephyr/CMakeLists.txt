@@ -39,18 +39,11 @@ if(CONFIG_LIBIIO)
     set(LIBIIO_NO_THREADS 1)
   endif()
 
-  # libiio v0.x (ASCII protocol) compatibility.
+  # libiio v0.x (ASCII protocol) compatibility. ascii-ops.c carries its own
+  # hand-written command parser, so no flex/bison generated sources are needed.
   if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
     zephyr_library_sources(
       ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
-    )
-    # flex/bison generate code that trips -Wsign-compare.
-    set_source_files_properties(
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
-      PROPERTIES COMPILE_FLAGS "-Wno-sign-compare"
     )
   endif()
 
