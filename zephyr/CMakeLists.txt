@@ -39,19 +39,27 @@ if(CONFIG_LIBIIO)
     set(LIBIIO_NO_THREADS 1)
   endif()
 
-  # libiio v0.x (ASCII protocol) compatibility.
+  # libiio v0.x (ASCII protocol) compatibility. ascii-ops.c carries the shared
+  # command handlers and the LITE command parser (the default), which needs no
+  # flex/bison generated sources. Selecting the GRAMMAR parser instead builds
+  # the flex/bison scanner/parser from pre-generated static iiod/lexer.c and
+  # iiod/parser.c (which are .gitignore'd and must exist).
   if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
     zephyr_library_sources(
       ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
     )
-    # flex/bison generate code that trips -Wsign-compare.
-    set_source_files_properties(
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
-      PROPERTIES COMPILE_FLAGS "-Wno-sign-compare"
-    )
+    if(CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR)
+      zephyr_library_sources(
+        ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
+        ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
+      )
+      # flex/bison generate code that trips -Wsign-compare.
+      set_source_files_properties(
+        ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.c
+        ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.c
+        PROPERTIES COMPILE_FLAGS "-Wno-sign-compare"
+      )
+    endif()
   endif()
 
   zephyr_include_directories(
@@ -74,6 +82,15 @@ if(CONFIG_LIBIIO)
     set(with_iiod_v0_compat 0)
   endif()
 
+  # Selects the recognize-and-dispatch layer in ascii-ops.c: 1 compiles the
+  # GRAMMAR (flex/bison) front end, 0 the LITE one. Always defined (as 1 or 0),
+  # like WITH_IIOD_V0_COMPAT, so ascii-ops.c can guard with #if.
+  if(CONFIG_LIBIIO_IIOD_V0_COMPAT AND CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR)
+    set(with_iiod_v0_compat_grammar_parser 1)
+  else()
+    set(with_iiod_v0_compat_grammar_parser 0)
+  endif()
+
   zephyr_library_compile_definitions(
     LIBIIO_STATIC=1
     NO_THREADS=${LIBIIO_NO_THREADS}
@@ -84,6 +101,7 @@ if(CONFIG_LIBIIO)
     # Only define the minimal macros actually needed for compilation
     WITH_IIOD_USB_DMABUF=0
     WITH_IIOD_V0_COMPAT=${with_iiod_v0_compat}
+    WITH_IIOD_V0_COMPAT_GRAMMAR_PARSER=${with_iiod_v0_compat_grammar_parser}
     WITH_LOCAL_BACKEND=0
     WITH_NETWORK_BACKEND=0
     WITH_SERIAL_BACKEND=0

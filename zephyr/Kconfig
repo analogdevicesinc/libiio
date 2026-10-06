@@ -98,6 +98,33 @@ config LIBIIO_IIOD_V0_COMPAT
 
 	  Disable this to build a binary-only (v1) server.
 
+choice
+	prompt "v0 ASCII command parser implementation"
+	depends on LIBIIO_IIOD_V0_COMPAT
+	default LIBIIO_IIOD_V0_PARSER_LITE
+	help
+	  Selects how the v0 ASCII protocol front end recognizes commands.
+	  Both implementations recognize the same language and share all
+	  command handlers; only the recognize-and-dispatch layer differs.
+
+config LIBIIO_IIOD_V0_PARSER_LITE
+	bool "Hand-written tokenizer/dispatcher"
+	help
+	  Recognize v0 commands with the hand-written line tokenizer and
+	  positional dispatcher in tinyiiod/ascii-ops.c. No flex/bison build
+	  dependency; smallest footprint. Recommended.
+
+config LIBIIO_IIOD_V0_PARSER_GRAMMAR
+	bool "Generated flex/bison scanner/parser"
+	help
+	  Recognize v0 commands with the flex/bison scanner/parser generated
+	  from iiod/lexer.l and iiod/parser.y. Requires pre-generated
+	  iiod/lexer.c, iiod/parser.c and iiod/parser.h to be present in the
+	  source tree (they are .gitignore'd); generate them with a host iiod
+	  build before selecting this. Larger flash footprint.
+
+endchoice
+
 rsource "drivers/Kconfig"
 rsource "iiod/Kconfig"
 
