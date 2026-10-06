@@ -96,11 +96,33 @@ config LIBIIO_IIOD_V0_COMPAT
 	  a v1 client's first command is "BINARY", which switches the server
 	  to the binary protocol; a v0 client stays on the ASCII protocol.
 
-	  The ASCII command scanner/parser is generated at build time from
-	  iiod/lexer.l and iiod/parser.y. Flex and bison must be installed
-	  on the build host.
-
 	  Disable this to build a binary-only (v1) server.
+
+choice
+	prompt "v0 ASCII command parser implementation"
+	depends on LIBIIO_IIOD_V0_COMPAT
+	default LIBIIO_IIOD_V0_PARSER_LITE
+	help
+	  Selects how the v0 ASCII protocol front end recognizes commands.
+	  Both implementations recognize the same language and share all
+	  command handlers; only the recognize-and-dispatch layer differs.
+
+config LIBIIO_IIOD_V0_PARSER_LITE
+	bool "Hand-written tokenizer/dispatcher"
+	help
+	  Recognize v0 commands with the hand-written line tokenizer and
+	  positional dispatcher in tinyiiod/ascii-ops.c. No flex/bison build
+	  dependency; smallest footprint. Recommended.
+
+config LIBIIO_IIOD_V0_PARSER_GRAMMAR
+	bool "Generated flex/bison scanner/parser"
+	help
+	  Recognize v0 commands with the flex/bison scanner/parser generated
+	  from iiod/lexer.l and iiod/parser.y. They are generated at build
+	  time, so flex and bison must be installed on the build host.
+	  Larger flash footprint.
+
+endchoice
 
 rsource "drivers/Kconfig"
 rsource "iiod/Kconfig"

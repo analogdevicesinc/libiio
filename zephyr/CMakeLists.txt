@@ -39,33 +39,41 @@ if(CONFIG_LIBIIO)
     set(LIBIIO_NO_THREADS 1)
   endif()
 
-  # libiio v0.x (ASCII protocol) compatibility.
+  # libiio v0.x (ASCII protocol) compatibility. ascii-ops.c carries the shared
+  # command handlers and the LITE command parser (the default), which needs no
+  # flex/bison generated sources. Selecting the GRAMMAR parser instead
+  # generates the flex/bison scanner/parser into the build directory.
   if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
-    # Generate the scanner/parser into the build directory
-    find_package(FLEX REQUIRED)
-    find_package(BISON REQUIRED)
-    flex_target(iiod_v0_lexer ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.l
-                ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
-    bison_target(iiod_v0_parser ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.y
-                 ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
-    add_flex_bison_dependency(iiod_v0_lexer iiod_v0_parser)
-
     zephyr_library_sources(
       ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
-      ${FLEX_iiod_v0_lexer_OUTPUTS}
-      ${BISON_iiod_v0_parser_OUTPUTS}
     )
-    set_source_files_properties(
-      ${FLEX_iiod_v0_lexer_OUTPUTS}
-      ${BISON_iiod_v0_parser_OUTPUTS}
-      PROPERTIES COMPILE_OPTIONS "-iquote${ZEPHYR_LIBIIO_MODULE_DIR}/iiod;-Wno-sign-compare"
-    )
-    set_source_files_properties(
-      ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
-      PROPERTIES COMPILE_OPTIONS
-                 "-iquote${CMAKE_CURRENT_BINARY_DIR};-iquote${ZEPHYR_LIBIIO_MODULE_DIR}/iiod"
-                 OBJECT_DEPENDS ${BISON_iiod_v0_parser_OUTPUT_HEADER}
-    )
+    if(CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR)
+      find_package(FLEX REQUIRED)
+      find_package(BISON REQUIRED)
+      flex_target(iiod_v0_lexer ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/lexer.l
+                  ${CMAKE_CURRENT_BINARY_DIR}/lexer.c)
+      bison_target(iiod_v0_parser ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/parser.y
+                   ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
+      add_flex_bison_dependency(iiod_v0_lexer iiod_v0_parser)
+
+      zephyr_library_sources(
+        ${FLEX_iiod_v0_lexer_OUTPUTS}
+        ${BISON_iiod_v0_parser_OUTPUTS}
+      )
+      set_source_files_properties(
+        ${FLEX_iiod_v0_lexer_OUTPUTS}
+        ${BISON_iiod_v0_parser_OUTPUTS}
+        PROPERTIES COMPILE_OPTIONS "-iquote${ZEPHYR_LIBIIO_MODULE_DIR}/iiod;-Wno-sign-compare"
+      )
+      set_property(SOURCE ${FLEX_iiod_v0_lexer_OUTPUTS}
+                   APPEND PROPERTY COMPILE_DEFINITIONS YY_BUF_SIZE=512)
+      set_source_files_properties(
+        ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
+        PROPERTIES COMPILE_OPTIONS
+                   "-iquote${CMAKE_CURRENT_BINARY_DIR};-iquote${ZEPHYR_LIBIIO_MODULE_DIR}/iiod"
+                   OBJECT_DEPENDS ${BISON_iiod_v0_parser_OUTPUT_HEADER}
+      )
+    endif()
   endif()
 
   zephyr_include_directories(
@@ -88,6 +96,15 @@ if(CONFIG_LIBIIO)
     set(with_iiod_v0_compat 0)
   endif()
 
+  # Selects the recognize-and-dispatch layer in ascii-ops.c: 1 compiles the
+  # GRAMMAR (flex/bison) front end, 0 the LITE one. Always defined (as 1 or 0),
+  # like WITH_IIOD_V0_COMPAT, so ascii-ops.c can guard with #if.
+  if(CONFIG_LIBIIO_IIOD_V0_COMPAT AND CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR)
+    set(with_iiod_v0_compat_grammar_parser 1)
+  else()
+    set(with_iiod_v0_compat_grammar_parser 0)
+  endif()
+
   zephyr_library_compile_definitions(
     LIBIIO_STATIC=1
     NO_THREADS=${LIBIIO_NO_THREADS}
@@ -98,6 +115,7 @@ if(CONFIG_LIBIIO)
     # Only define the minimal macros actually needed for compilation
     WITH_IIOD_USB_DMABUF=0
     WITH_IIOD_V0_COMPAT=${with_iiod_v0_compat}
+    WITH_IIOD_V0_COMPAT_GRAMMAR_PARSER=${with_iiod_v0_compat_grammar_parser}
     WITH_LOCAL_BACKEND=0
     WITH_NETWORK_BACKEND=0
     WITH_SERIAL_BACKEND=0
