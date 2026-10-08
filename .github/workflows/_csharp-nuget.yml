@@ -1,0 +1,77 @@
+name: C# NuGet Package
+
+on:
+  workflow_call:
+    inputs:
+      build-type:
+        required: true
+        type: string
+
+jobs:
+  nuget:
+    name: libiio-sharp-nupkg
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install dependencies
+        run: |
+          set -e
+          export DEBIAN_FRONTEND=noninteractive
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libxml2-dev bison flex \
+            libaio-dev libusb-1.0-0-dev libzstd-dev libserialport-dev \
+            libavahi-client-dev
+
+          git clone --depth 1 https://github.com/pcercuei/libini.git
+          cd libini && mkdir build && cd build && cmake .. && make && sudo make install && sudo ldconfig
+
+      - name: Download Windows native binaries
+        uses: actions/download-artifact@v8
+        with:
+          name: Windows-VS-2022-x64
+          path: windows-native
+
+      - name: Build
+        run: |
+          set -e
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCSHARP_BINDINGS=ON -DCSHARP_DOTNET_TFM=net8.0 -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DLIBIIO_CS_WINDOWS_NATIVE_DIR="${{ github.workspace }}/windows-native/${{ inputs.build-type }}"
+          make -j$(nproc)
+          make libiio-sharp-nupkg
+
+      - name: Verify Windows native assets were bundled
+        run: |
+          set -e
+          NUPKG=$(ls build/bindings/csharp/nupkg/*.nupkg)
+          unzip -l "${NUPKG}" | grep -q 'runtimes/win-x64/native/libiio1\.dll' \
+            && echo "libiio1.dll bundled: OK" \
+            || { echo "libiio1.dll missing from runtimes/win-x64/native"; exit 1; }
+
+      - name: Smoke test the package
+        run: |
+          set -e
+          NUPKG_DIR="${{ github.workspace }}/build/bindings/csharp/nupkg"
+          NUPKG=$(ls "${NUPKG_DIR}"/*.nupkg)
+          VERSION=$(basename "${NUPKG}" .nupkg | sed 's/^libiio\.//')
+
+          cd CI/nuget-smoke
+          dotnet add package libiio --version "${VERSION}" --source "${NUPKG_DIR}"
+          dotnet build -c Release
+
+          LD_LIBRARY_PATH="${{ github.workspace }}/build" dotnet run -c Release --no-build
+
+      - name: Upload NuGet package
+        uses: actions/upload-artifact@v7
+        with:
+          name: libiio-sharp-nupkg
+          path: |
+            build/bindings/csharp/nupkg/*.nupkg
+            build/bindings/csharp/nupkg/*.snupkg

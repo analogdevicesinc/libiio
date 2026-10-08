@@ -13,6 +13,25 @@
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
   </PropertyGroup>
 
+  <!-- NuGet package metadata, used by `dotnet pack`. -->
+  <PropertyGroup>
+    <PackageId>libiio</PackageId>
+    <Authors>Analog Devices, Inc.</Authors>
+    <Company>Analog Devices, Inc.</Company>
+    <Copyright>Copyright (C) Analog Devices, Inc.</Copyright>
+    <Description>C# bindings for libiio, the library for interfacing with Linux Industrial I/O (IIO) devices. Bundles the native library on Windows (win-x64); on Linux and macOS it must be installed separately.</Description>
+    <PackageTags>libiio;iio;industrial-io;sdr;adc;dac;analog-devices</PackageTags>
+    <!-- Bundling libiio1.dll (LGPL-2.1-or-later) on Windows makes this a
+         compound expression; see runtimes/win-x64/native below. -->
+    <PackageLicenseExpression>MIT AND LGPL-2.1-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/analogdevicesinc/libiio</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/analogdevicesinc/libiio</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+  </PropertyGroup>
+
   <ItemGroup>
     <Compile Include="Attr.cs" />
     <Compile Include="Block.cs" />
@@ -29,5 +48,14 @@
     <Compile Include="Scan.cs" />
     <Compile Include="Stream.cs" />
     <Compile Include="UTF8Marshaler.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <!-- Set by CI to bundle libiio1.dll + deps into runtimes/win-x64/native. -->
+  <ItemGroup Condition="'$(LibiioSharpWindowsNativeDir)' != '' AND Exists('$(LibiioSharpWindowsNativeDir)')">
+    <None Include="$(LibiioSharpWindowsNativeDir)/*.dll" Pack="true" PackagePath="runtimes/win-x64/native/%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>
