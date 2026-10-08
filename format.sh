@@ -50,16 +50,37 @@ is_not_ignored_in() {
 
 
 
-format_all() {
-    git ls-tree -r --name-only HEAD | while read -r file; do
-        if is_source_file "$file" && is_not_ignored_in "$file" .clangformatignore; then
-            clang-format -i "$file"
-        fi
-        if is_cmake_file "$file" && is_not_ignored_in "$file" .cmakeformatignore; then
-            cmake-format -i "$file"
+format_all() (
+    # Keep strict error handling local: CI sources this file for its helpers.
+    set -euo pipefail
+
+    local formatter file files
+    for formatter in clang-format cmake-format; do
+        if ! command -v "$formatter" >/dev/null; then
+            printf 'Required formatter not found: %s\n' "$formatter" >&2
+            return 1
         fi
     done
-}
+
+    files=$(mktemp)
+    trap 'rm -f "$files"' EXIT
+    # Check Git's result before formatting, and preserve arbitrary filenames.
+    git ls-tree -r --name-only -z HEAD > "$files"
+    while IFS= read -r -d '' file; do
+        if is_source_file "$file" && is_not_ignored_in "$file" .clangformatignore; then
+            if ! clang-format -i "$file"; then
+                printf 'clang-format failed for %s\n' "$file" >&2
+                return 1
+            fi
+        fi
+        if is_cmake_file "$file" && is_not_ignored_in "$file" .cmakeformatignore; then
+            if ! cmake-format -i "$file"; then
+                printf 'cmake-format failed for %s\n' "$file" >&2
+                return 1
+            fi
+        fi
+    done < "$files"
+)
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     format_all
