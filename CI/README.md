@@ -91,6 +91,9 @@ Builds on GitHub-hosted ARM64 and Intel runners:
 
 Each produces a `.pkg` installer and a `.tar.gz` archive.
 
+The macOS builds also compile the API tests and run their emulated-device
+variants with CTest before installation. These tests do not require hardware.
+
 ### ARM / Cross-Architecture (`_arm-builds.yml`)
 
 Uses QEMU user-space emulation to cross-compile in vanilla distro Docker
