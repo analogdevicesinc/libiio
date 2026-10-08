@@ -29,7 +29,8 @@ python -m pip install clang-format==18.1.8 cmakelang==0.6.13
 ./format.sh
 ```
 
-The script formats tracked C/header and CMake files, respecting
+The script formats tracked C/header and CMake files, including new files
+added with `git add` and skipping removed files, while respecting
 `.clangformatignore` and `.cmakeformatignore`. Review the diff before
 committing: this command formats the whole checkout. Missing formatters
 and formatting errors cause a non-zero exit status.
@@ -58,4 +59,3 @@ commit or fetched branch reference, such as `origin/main`.
 3. Before a Pull Request can be merged, it must be reviewd by at least one reviewer, and tested on as
    many different IIO devices as possible. If you have tested it, you can indicated that in your commit
    message.
-

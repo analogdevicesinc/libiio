@@ -37,7 +37,7 @@ is_not_ignored_in() {
         # Skip empty lines and comments
         [[ -z "$entry" || "$entry" =~ ^# ]] && continue
         # If entry is a directory and file is inside it
-        if [[ -d "$entry" && "$file" == "$entry"* ]]; then
+        if [[ -d "$entry" && "$file" == "${entry%/}/"* ]]; then
             return 1
         fi
         # If entry matches the file exactly
@@ -64,9 +64,12 @@ format_all() (
 
     files=$(mktemp)
     trap 'rm -f "$files"' EXIT
-    # Check Git's result before formatting, and preserve arbitrary filenames.
-    git ls-tree -r --name-only -z HEAD > "$files"
+    # Include staged additions and exclude staged deletions. Check Git's
+    # result before formatting, and preserve arbitrary filenames.
+    git ls-files --cached -z > "$files"
     while IFS= read -r -d '' file; do
+        # A tracked file may also have been removed only in the working tree.
+        [[ -f "$file" ]] || continue
         if is_source_file "$file" && is_not_ignored_in "$file" .clangformatignore; then
             if ! clang-format -i "$file"; then
                 printf 'clang-format failed for %s\n' "$file" >&2

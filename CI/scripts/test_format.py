@@ -104,6 +104,49 @@ class FormatScriptTests(unittest.TestCase):
                 finally:
                     hidden.rename(path)
 
+    def test_directory_ignore_boundaries(self):
+        """Format sibling directories that only share an ignored prefix."""
+        files = [f"{folder}/{name}"
+                 for folder in ("deps_extra", "bindings_extra", "zephyr_extra")
+                 for name in ("probe.c", "CMakeLists.txt")]
+        for name in files:
+            path = self.repo / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text("test fixture\n")
+        self.git("add", ".")
+        self.git("-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                 "-c", "core.hooksPath=/dev/null", "commit", "-qm", "prefix siblings")
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        for name in files:
+            formatter = "clang-format" if name.endswith(".c") else "cmake-format"
+            self.assertIn([formatter, "-i", name], calls)
+        self.assertNotIn(["clang-format", "-i", "deps/ignored.c"], calls)
+        self.assertNotIn(["cmake-format", "-i", "deps/CMakeLists.txt"], calls)
+
+    def test_staged_additions_are_formatted(self):
+        """Include staged new C and CMake files while excluding untracked files."""
+        for name in ("new.c", "new.cmake", "untracked.c"):
+            (self.repo / name).write_text("test fixture\n")
+        self.git("add", "new.c", "new.cmake")
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertIn(["clang-format", "-i", "new.c"], calls)
+        self.assertIn(["cmake-format", "-i", "new.cmake"], calls)
+        self.assertNotIn(["clang-format", "-i", "untracked.c"], calls)
+
+    def test_deleted_files_are_skipped(self):
+        """Skip staged deletions and files removed only in the working tree."""
+        self.git("rm", "space name.h")
+        (self.repo / "sample.c").unlink()
+        result = self.run_script()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        self.assertNotIn(["clang-format", "-i", "space name.h"], calls)
+        self.assertNotIn(["clang-format", "-i", "sample.c"], calls)
+
     def test_formatter_errors_fail(self):
         """Propagate failures from both the C and CMake formatters."""
         for formatter in ("clang-format", "cmake-format"):
