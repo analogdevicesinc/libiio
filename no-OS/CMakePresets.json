@@ -1,0 +1,179 @@
+{
+  "version": 7,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 27,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "iiod-base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-${presetName}",
+      "cacheVariables": {
+        "BOARD": "ad-apard32690-sl",
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "PROBE": "openocd"
+      }
+    },
+    {
+      "name": "uart",
+      "displayName": "IIOD over UART",
+      "description": "Override the board with -DBOARD=<no-OS board> (use --fresh when the dir already exists)",
+      "inherits": "iiod-base",
+      "cacheVariables": {
+        "IIOD_TRANSPORT": "uart"
+      }
+    },
+    {
+      "name": "usb",
+      "displayName": "IIOD over USB (MAXUSB vendor pipes)",
+      "description": "Override the board with -DBOARD=<no-OS board> (use --fresh when the dir already exists)",
+      "inherits": "iiod-base",
+      "cacheVariables": {
+        "IIOD_TRANSPORT": "usb"
+      }
+    },
+    {
+      "name": "network",
+      "displayName": "IIOD over TCP (lwIP + ADIN1110)",
+      "description": "Override the board with -DBOARD=<no-OS board> (use --fresh when the dir already exists)",
+      "inherits": "iiod-base",
+      "cacheVariables": {
+        "IIOD_TRANSPORT": "network"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "uart",
+      "configurePreset": "uart"
+    },
+    {
+      "name": "flash-uart",
+      "displayName": "flash the uart build",
+      "configurePreset": "uart",
+      "targets": [
+        "flash"
+      ]
+    },
+    {
+      "name": "usb",
+      "configurePreset": "usb"
+    },
+    {
+      "name": "flash-usb",
+      "displayName": "flash the usb build",
+      "configurePreset": "usb",
+      "targets": [
+        "flash"
+      ]
+    },
+    {
+      "name": "network",
+      "configurePreset": "network"
+    },
+    {
+      "name": "flash-network",
+      "displayName": "flash the network build",
+      "configurePreset": "network",
+      "targets": [
+        "flash"
+      ]
+    }
+  ],
+  "workflowPresets": [
+    {
+      "name": "uart",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "uart"
+        },
+        {
+          "type": "build",
+          "name": "uart"
+        }
+      ]
+    },
+    {
+      "name": "flash-uart",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "uart"
+        },
+        {
+          "type": "build",
+          "name": "uart"
+        },
+        {
+          "type": "build",
+          "name": "flash-uart"
+        }
+      ]
+    },
+    {
+      "name": "usb",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "usb"
+        },
+        {
+          "type": "build",
+          "name": "usb"
+        }
+      ]
+    },
+    {
+      "name": "flash-usb",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "usb"
+        },
+        {
+          "type": "build",
+          "name": "usb"
+        },
+        {
+          "type": "build",
+          "name": "flash-usb"
+        }
+      ]
+    },
+    {
+      "name": "network",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "network"
+        },
+        {
+          "type": "build",
+          "name": "network"
+        }
+      ]
+    },
+    {
+      "name": "flash-network",
+      "steps": [
+        {
+          "type": "configure",
+          "name": "network"
+        },
+        {
+          "type": "build",
+          "name": "network"
+        },
+        {
+          "type": "build",
+          "name": "flash-network"
+        }
+      ]
+    }
+  ]
+}
