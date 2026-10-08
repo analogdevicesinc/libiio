@@ -79,6 +79,25 @@ set_target_properties(
                C_STANDARD_REQUIRED ON
                C_EXTENSIONS OFF)
 
+# An unavailable default context may be skipped; an explicit request must fail.
+add_executable(test_context_helper test_context_helper.c)
+target_link_libraries(test_context_helper PRIVATE iio)
+set_target_properties(
+    test_context_helper
+    PROPERTIES C_STANDARD 99
+               C_STANDARD_REQUIRED ON
+               C_EXTENSIONS OFF)
+add_test(NAME api_context_default_unavailable
+         COMMAND ${CMAKE_COMMAND} -E env --unset=TESTS_CONTEXT_HELPER_URI
+                 $<TARGET_FILE:test_context_helper>)
+add_test(NAME api_context_requested_unavailable COMMAND test_context_helper)
+set_tests_properties(
+    api_context_requested_unavailable
+    PROPERTIES ENVIRONMENT "TESTS_CONTEXT_HELPER_URI=unavailable:" WILL_FAIL
+               TRUE)
+set_tests_properties(api_context_default_unavailable
+                     api_context_requested_unavailable PROPERTIES LABELS "api")
+
 # Make targets available to parent scope
 set(API_TEST_TARGETS
     ${API_TEST_TARGETS}
