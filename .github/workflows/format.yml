@@ -26,6 +26,9 @@ jobs:
       - name: Install formatters
         run: python -m pip install clang-format==18.1.8 cmakelang==0.6.13
 
+      - name: Test formatting script error handling
+        run: python CI/scripts/test_format.py
+
       - name: Check formatting of changed files
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}

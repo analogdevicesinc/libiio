@@ -17,6 +17,27 @@ Any pull requests will be covered by one of these licenses.
 
 - **Documentation**: See [doc/CONTRIBUTING.md](doc/CONTRIBUTING.md) for documentation-specific guidelines, including building docs, checking links, and style checking with Vale.
 
+## Code formatting
+
+From the repository root, install the same formatter versions used by CI
+in a virtual environment and run the formatting script:
+
+```sh
+python3 -m venv /tmp/libiio-format-venv
+. /tmp/libiio-format-venv/bin/activate
+python -m pip install clang-format==18.1.8 cmakelang==0.6.13
+./format.sh
+```
+
+The script formats tracked C/header and CMake files, respecting
+`.clangformatignore` and `.cmakeformatignore`. Review the diff before
+committing: this command formats the whole checkout. Missing formatters
+and formatting errors cause a non-zero exit status.
+
+To check only the files changed by your branch without modifying them, run
+`bash CI/scripts/check-format.sh <base-ref>`, where `<base-ref>` is a local
+commit or fetched branch reference, such as `origin/main`.
+
 ## Pull Request Checklist
 
 1. Commit message includes a "Signed-off-by: [name] < email >" to the commit message. 
