@@ -66,6 +66,9 @@ enum iiod_opcode {
 
 	IIOD_OP_NOP,
 
+	IIOD_OP_READ_FWU_ATTR,
+	IIOD_OP_WRITE_FWU_ATTR,
+
 	IIOD_NB_OPCODES,
 };
 
