@@ -21,6 +21,7 @@ if(CONFIG_LIBIIO)
     ${ZEPHYR_LIBIIO_MODULE_DIR}/sort.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/block.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/events.c
+    ${ZEPHYR_LIBIIO_MODULE_DIR}/fwu.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/tinyiiod.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/responder.c
     ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod-responder.c

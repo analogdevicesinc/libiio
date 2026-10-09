@@ -58,6 +58,7 @@ add_library(
     context.c
     device.c
     events.c
+    fwu.c
     library.c
     mask.c
     scan.c
@@ -384,6 +385,7 @@ check_symbol_exists(strerror_r "string.h" HAS_STRERROR_R)
 check_symbol_exists(strtok_r "string.h" HAS_STRTOK_R)
 check_symbol_exists(newlocale "locale.h" HAS_NEWLOCALE)
 check_symbol_exists(clock_gettime "time.h" HAS_CLOCK_GETTIME)
+check_symbol_exists(nanosleep "time.h" HAS_NANOSLEEP)
 set(CMAKE_REQUIRED_FLAGS "${_saved_CMAKE_REQUIRED_FLAGS}")
 set(CMAKE_REQUIRED_DEFINITIONS "${_saved_CMAKE_REQUIRED_DEFINITIONS}")
 unset(_saved_CMAKE_REQUIRED_FLAGS)
@@ -395,6 +397,10 @@ check_include_file("netdb.h" HAVE_NETDB_H)
 
 if (HAS_CLOCK_GETTIME)
     target_compile_definitions(iio PRIVATE CLOCK_GETTIME_AVAILABLE=1)
+endif ()
+
+if (HAS_NANOSLEEP)
+    target_compile_definitions(iio PRIVATE NANOSLEEP_AVAILABLE=1)
 endif ()
 
 iio_option(ENABLE_IPV6 "Define if you want to enable IPv6 support" ON "POSIX")

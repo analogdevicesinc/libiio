@@ -413,6 +413,19 @@ const struct iio_fwu *iio_device_find_fwu(const struct iio_device *dev, const ch
 	return NULL;
 }
 
+unsigned int iio_device_get_fwu_count(const struct iio_device *dev)
+{
+	return dev->nb_fwus;
+}
+
+const char *iio_device_get_fwu_id(const struct iio_device *dev, unsigned int index)
+{
+	if (index >= dev->nb_fwus)
+		return NULL;
+
+	return dev->fwus[index].id;
+}
+
 void iio_device_set_data(struct iio_device *dev, void *data)
 {
 	dev->userdata = data;
