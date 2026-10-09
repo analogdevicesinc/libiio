@@ -690,6 +690,9 @@ ssize_t iiod_client_attr_read(
 	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		/* Event attributes not supported in legacy text protocol */
 		return -ENOSYS;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		/* Firmware upload not supported in legacy text protocol */
+		return -ENOSYS;
 	case IIO_ATTR_TYPE_BUFFER:
 		iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n", id, attr->name);
 		break;
@@ -902,6 +905,9 @@ ssize_t iiod_client_attr_write(struct iiod_client *client, const struct iio_attr
 	case IIO_ATTR_TYPE_DEVICE_EVENT:
 	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		/* Event attributes not supported in legacy text protocol */
+		return -ENOSYS;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		/* Firmware upload not supported in legacy text protocol */
 		return -ENOSYS;
 	case IIO_ATTR_TYPE_BUFFER:
 		iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n", id, attr->name,
