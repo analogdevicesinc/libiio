@@ -158,11 +158,13 @@ char **dup_argv(char *name, unsigned int argc, char *argv[])
 		goto err_oom;
 
 	for (i = 0; i < argc; i++) {
-		new_argv[i] = cmn_strndup(argv[i], NAME_MAX);
+		/* argv entries are NUL-terminated by the C runtime, with no NAME_MAX limit. */
+		new_argv[i] = cmn_strndup(argv[i], strlen(argv[i])); /* Flawfinder: ignore */
 		if (!new_argv[i])
 			goto err_dup;
 	}
 
+	new_argv[argc] = NULL;
 	return new_argv;
 
 err_dup:
@@ -172,8 +174,8 @@ err_dup:
 	free(new_argv);
 
 err_oom:
-	fprintf(stderr, "out of memory\n");
-	exit(0);
+	fprintf(stderr, "%s: out of memory while copying arguments\n", name);
+	exit(EXIT_FAILURE);
 }
 
 void free_argw(unsigned int argc, char *argw[])
