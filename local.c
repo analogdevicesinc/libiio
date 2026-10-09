@@ -447,6 +447,9 @@ static ssize_t local_do_read_dev_attr(const char *id, unsigned int buf_id, const
 	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/events/%s", id, attr);
 		break;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		iio_snprintf(buf, sizeof(buf), "/sys/class/firmware/%s:%s", id, attr);
+		break;
 	case IIO_ATTR_TYPE_BUFFER:
 		if (buf_id > 0) {
 			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer%u/%s", id,
@@ -512,6 +515,9 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev, unsigned int b
 	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/events/%s", dev->id, attr);
 		break;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		iio_snprintf(buf, sizeof(buf), "/sys/class/firmware/%s:%s", dev->id, attr);
+		break;
 	case IIO_ATTR_TYPE_BUFFER:
 		if (buf_id > 0) {
 			iio_snprintf(buf, sizeof(buf), "/sys/bus/iio/devices/%s/buffer%u/%s",
@@ -533,6 +539,8 @@ static ssize_t local_write_dev_attr(const struct iio_device *dev, unsigned int b
 	fflush(f);
 	if (ferror(f))
 		ret = -errno;
+	else if ((size_t)ret < len)
+		ret = -EIO;
 	fclose(f);
 	return ret ? ret : -EIO;
 }
@@ -1572,6 +1580,36 @@ static int add_debug(void *d, const char *path)
 	return foreach_in_dir(ctx, dev, path, false, add_debug_attr);
 }
 
+static int add_fwu(void *d, const char *path)
+{
+	struct iio_context *ctx = d;
+	const char *name = strrchr(path, '/') + 1;
+	unsigned int i, nb = iio_context_get_devices_count(ctx);
+	char buf[1024];
+	struct stat st;
+
+	/* Firmware upload instances are named "<dev-id>:<fwu-id>" */
+	for (i = 0; i < nb; i++) {
+		struct iio_device *dev = ctx->devices[i];
+		size_t len = strlen(dev->id);
+
+		if (WITH_HWMON && iio_device_is_hwmon(dev))
+			continue;
+
+		if (strncmp(name, dev->id, len) || name[len] != ':')
+			continue;
+
+		/* Skip the firmware fallback loader, which has no "status" file */
+		iio_snprintf(buf, sizeof(buf), "%s/status", path);
+		if (stat(buf, &st) < 0 || !S_ISREG(st.st_mode))
+			return 0;
+
+		return iio_device_add_fwu(dev, &name[len + 1]);
+	}
+
+	return 0;
+}
+
 static void local_signal_cancel_fd(const struct iio_device *dev, int fd)
 {
 	uint64_t event = 1;
@@ -2117,6 +2155,7 @@ static struct iio_context *local_create_context(
 	iio_sort_devices(ctx);
 
 	foreach_in_dir(ctx, ctx, "/sys/kernel/debug/iio", true, add_debug);
+	foreach_in_dir(ctx, ctx, "/sys/class/firmware", true, add_fwu);
 
 	if (WITH_LOCAL_CONFIG) {
 		ret = populate_context_attrs(ctx, "/etc/libiio.ini");
