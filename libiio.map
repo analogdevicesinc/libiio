@@ -245,3 +245,9 @@ global:
 local:
 	*;
 };
+
+LIBIIO_1.1 {
+global:
+	iio_device_add_fwu;
+	iio_device_get_fwu_attr;
+} LIBIIO_1.0;

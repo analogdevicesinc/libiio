@@ -77,6 +77,11 @@ struct iio_attr_list {
 	unsigned int num;
 };
 
+struct iio_fwu {
+	char *id;
+	struct iio_attr attrs[IIO_FWU_FILE_NB];
+};
+
 struct iio_context {
 	struct iio_context_pdata *pdata;
 	const struct iio_backend_ops *ops;
@@ -131,6 +136,9 @@ struct iio_device {
 
 	struct iio_attr_list attrlist[3];
 	char **values[3];
+
+	struct iio_fwu *fwus;
+	unsigned int nb_fwus;
 
 	struct iio_channel **channels;
 	unsigned int nb_channels;
@@ -214,6 +222,8 @@ const struct iio_backend *iio_module_get_backend(struct iio_module *module);
 void free_channel(struct iio_channel *chn);
 void free_device(struct iio_device *dev);
 void free_buffer(struct iio_buffer *buf);
+
+const struct iio_fwu *iio_device_find_fwu(const struct iio_device *dev, const char *fwu_id);
 
 ssize_t iio_snprintf_channel_xml(char *str, ssize_t slen, const struct iio_channel *chn);
 ssize_t iio_snprintf_device_xml(char *str, ssize_t slen, const struct iio_device *dev);
