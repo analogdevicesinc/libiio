@@ -365,6 +365,103 @@ static ssize_t write_channel_event_attr(xmlDoc *doc, const char *device_id, cons
 	return (ssize_t)len;
 }
 
+/*
+ * Firmware upload instances are described by <firmware-upload id="..." />.
+ * The optional "status", "error" and "remaining_size" properties of the node
+ * provide the values returned for the corresponding files.
+ */
+static xmlNode *get_fwu_node(xmlDoc *doc, const char *device_id, const char *filename,
+		const char **file)
+{
+	xmlNode *root, *node_device, *node;
+	const char *sep = strrchr(filename, '/');
+	size_t id_len;
+	char *fwu_id;
+
+	if (!doc || !sep)
+		return NULL;
+
+	root = xmlDocGetRootElement(doc);
+	if (!root)
+		return NULL;
+
+	node_device = getNode(root, "device", "id", device_id);
+	if (!node_device)
+		return NULL;
+
+	id_len = (size_t)(sep - filename);
+	fwu_id = malloc(id_len + 1);
+	if (!fwu_id)
+		return NULL;
+
+	memcpy(fwu_id, filename, id_len);
+	fwu_id[id_len] = '\0';
+
+	node = getNode(node_device, "firmware-upload", "id", fwu_id);
+	free(fwu_id);
+
+	*file = sep + 1;
+
+	return node;
+}
+
+static ssize_t read_fwu_attr(
+		xmlDoc *doc, const char *device_id, const char *filename, char *buf, size_t len)
+{
+	const char *file, *def;
+	xmlNode *node = get_fwu_node(doc, device_id, filename, &file);
+	char *value;
+
+	if (!node)
+		return -ENOENT;
+
+	if (!strcmp(file, "status"))
+		def = "idle";
+	else if (!strcmp(file, "error"))
+		def = "";
+	else if (!strcmp(file, "remaining_size"))
+		def = "0";
+	else
+		return -EPERM;
+
+	value = (char *)xmlGetProp(node, (const xmlChar *)file);
+	iio_strlcpy(buf, value ? value : def, len);
+	if (value)
+		xmlFree(value);
+
+	return (ssize_t)strnlen(buf, len) + 1;
+}
+
+static ssize_t write_fwu_attr(xmlDoc *doc, const char *device_id, const char *filename, size_t len)
+{
+	const char *file;
+	xmlNode *node = get_fwu_node(doc, device_id, filename, &file);
+
+	if (!node)
+		return -ENOENT;
+
+	if (strcmp(file, "loading") && strcmp(file, "data") && strcmp(file, "cancel"))
+		return -EPERM;
+
+	return (ssize_t)len;
+}
+
+static int add_fwu_to_device(struct iio_device *dev, xmlNode *n)
+{
+	char *id = (char *)xmlGetProp(n, (const xmlChar *)"id");
+	int ret;
+
+	if (!id) {
+		dev_err(dev, "Incomplete firmware upload instance\n");
+		return -EINVAL;
+	}
+
+	ret = iio_device_add_fwu(dev, id);
+	xmlFree(id);
+
+	return ret;
+}
+
 static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_type type)
 {
 	xmlAttr *attr;
@@ -753,6 +850,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE_EVENT);
 			if (err < 0)
 				return err;
+		} else if (!strcmp((char *)n->name, "firmware-upload")) {
+			err = add_fwu_to_device(dev, n);
+			if (err < 0)
+				return err;
 		} else if (!strcmp((char *)n->name, "buffer-attribute") && buf_legacy) {
 			struct iio_buffer *buf = iio_device_get_buffer(dev, 0);
 
@@ -974,6 +1075,9 @@ static ssize_t emu_read_attr_locked(struct iio_context_pdata *pdata, const struc
 				iio_channel_is_output(chn), attr_name, dst, len);
 	}
 
+	if (attr->type == IIO_ATTR_TYPE_DEVICE_FWU)
+		return read_fwu_attr(pdata->doc, device_id, iio_attr_get_filename(attr), dst, len);
+
 	return read_device_attr(pdata->doc, device_id, attr->type, attr_name, dst, len);
 }
 
@@ -1135,6 +1239,9 @@ static ssize_t emu_write_attr_locked(struct iio_context_pdata *pdata, const stru
 		return write_channel_event_attr(pdata->doc, device_id, iio_channel_get_id(chn),
 				iio_channel_is_output(chn), attr_name, src, len);
 	}
+
+	if (attr->type == IIO_ATTR_TYPE_DEVICE_FWU)
+		return write_fwu_attr(pdata->doc, device_id, iio_attr_get_filename(attr), len);
 
 	return write_device_attr(pdata->doc, device_id, attr_name, src, len, attr->type);
 }
