@@ -8,6 +8,7 @@ set(API_TEST_TARGETS
     test_context
     test_device
     test_events
+    test_fwu
     test_hwmon
     test_channel
     test_attr
@@ -37,6 +38,9 @@ foreach (test ${API_TEST_TARGETS})
         target_compile_definitions(
             ${test}
             PRIVATE TESTS_XMLS_DIR="${CMAKE_SOURCE_DIR}/tests/resources/xmls")
+    endif ()
+    if (WITH_EMU_BACKEND)
+        target_compile_definitions(${test} PRIVATE TESTS_WITH_EMU=1)
     endif ()
     set_target_properties(
         ${test}

@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE context [
+	<!ELEMENT context (device)*>
+	<!ELEMENT device (channel | attribute | firmware-upload)*>
+	<!ELEMENT channel (scan-element?, attribute*)>
+	<!ELEMENT attribute EMPTY>
+	<!ELEMENT scan-element EMPTY>
+	<!ELEMENT firmware-upload EMPTY>
+	<!ATTLIST context name CDATA #REQUIRED version-major CDATA #IMPLIED version-minor CDATA #IMPLIED version-git CDATA #IMPLIED>
+	<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED name CDATA #IMPLIED>
+	<!ATTLIST attribute name CDATA #REQUIRED filename CDATA #IMPLIED value CDATA #IMPLIED>
+	<!ATTLIST firmware-upload id CDATA #REQUIRED status CDATA #IMPLIED error CDATA #IMPLIED remaining_size CDATA #IMPLIED>
+]>
+<context name="local" version-major="1" version-minor="0" version-git="test-v1">
+	<device id="iio:device0" name="test_fwu_device" >
+		<attribute name="sampling_frequency" value="100" />
+		<channel id="voltage0" type="input" >
+			<attribute name="raw" filename="in_voltage0_raw" value="500" />
+		</channel>
+		<firmware-upload id="fpga:bitstream" />
+		<firmware-upload id="ad9081-fw" />
+		<firmware-upload id="busy-fw" status="programming" remaining_size="4096" />
+		<firmware-upload id="failed-fw" error="transferring:hw-error" />
+		<firmware-upload id="dev-busy-fw" error="preparing:device-busy" />
+		<firmware-upload id="dev-timeout-fw" error="programming:timeout" />
+	</device>
+</context>
