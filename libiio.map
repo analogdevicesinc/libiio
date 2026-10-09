@@ -250,4 +250,6 @@ LIBIIO_1.1 {
 global:
 	iio_free;
 	iio_strndup;
+	iio_device_add_fwu;
+	iio_device_get_fwu_attr;
 } LIBIIO_1.0;
