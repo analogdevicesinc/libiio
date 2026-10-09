@@ -210,6 +210,33 @@ static void print_attribute_value(
 	free(buf);
 }
 
+/* A positive result can still mean that only part of the configuration was written. */
+static ssize_t write_attribute(const struct iio_attr *attr, const char *type, const char *var,
+		const char *wbuf, const unsigned char *wraw, size_t wraw_len)
+{
+	/* wbuf is a NUL-terminated argument copied by dup_argv(); files use wraw_len. */
+	size_t len = wraw ? wraw_len : strlen(wbuf) + 1; /* Flawfinder: ignore */
+	ssize_t ret;
+
+	if (wraw) {
+		ret = iio_attr_write_raw(attr, wraw, len);
+	} else {
+		gen_function(type, var, attr, wbuf);
+		ret = iio_attr_write_string(attr, wbuf);
+	}
+	if (ret < 0) {
+		IIO_PERROR((int)ret, "Unable to write attribute '%s' (%zu bytes)",
+				iio_attr_get_name(attr), len);
+		return ret;
+	}
+	if ((size_t)ret != len) {
+		IIO_ERR("Incomplete write on attribute '%s': %li of %zu bytes accepted\n",
+				iio_attr_get_name(attr), (long)ret, len);
+		return -EIO;
+	}
+	return ret;
+}
+
 static int dump_device_attributes(const struct iio_device *dev, const struct iio_attr *attr,
 		const char *type, const char *var, const char *wbuf, const unsigned char *wraw,
 		size_t wraw_len, bool write_only, enum verbosity quiet)
@@ -229,24 +256,14 @@ static int dump_device_attributes(const struct iio_device *dev, const struct iio
 		print_attribute_value(attr, "", quiet);
 	}
 	if (writing) {
-		if (wraw) {
-			ret = iio_attr_write_raw(attr, (const void *)wraw, wraw_len);
-		} else {
-			gen_function(type, var, attr, wbuf);
-			ret = iio_attr_write_string(attr, wbuf);
-		}
+		ret = write_attribute(attr, type, var, wbuf, wraw, wraw_len);
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret,
 						iio_attr_get_name(attr));
-			if (wraw && (size_t)ret < wraw_len)
-				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
-						iio_attr_get_name(attr), (long)ret, wraw_len);
 			if (!write_only)
 				dump_device_attributes(
 						dev, attr, type, var, NULL, NULL, 0, false, quiet);
-		} else {
-			IIO_PERROR((int)ret, "Unable to write attribute");
 		}
 	}
 	return (int)ret;
@@ -283,23 +300,13 @@ static int dump_channel_attributes(const struct iio_device *dev, struct iio_chan
 		print_attribute_value(attr, "", quiet);
 	}
 	if (writing) {
-		if (wraw) {
-			ret = iio_attr_write_raw(attr, (const void *)wraw, wraw_len);
-		} else {
-			gen_function("channel", "ch", attr, wbuf);
-			ret = iio_attr_write_string(attr, wbuf);
-		}
+		ret = write_attribute(attr, "channel", "ch", wbuf, wraw, wraw_len);
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret,
 						iio_attr_get_name(attr));
-			if (wraw && (size_t)ret < wraw_len)
-				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
-						iio_attr_get_name(attr), (long)ret, wraw_len);
 			if (!write_only)
 				dump_channel_attributes(dev, ch, attr, NULL, NULL, 0, false, quiet);
-		} else {
-			IIO_PERROR((int)ret, "Unable to write channel attribute");
 		}
 	}
 	return (int)ret;
@@ -324,24 +331,14 @@ static int dump_buffer_attributes(const struct iio_device *dev, const struct iio
 		print_attribute_value(attr, "", quiet);
 	}
 	if (writing) {
-		if (wraw) {
-			ret = iio_attr_write_raw(attr, (const void *)wraw, wraw_len);
-		} else {
-			gen_function("buffer", "buffer", attr, wbuf);
-			ret = iio_attr_write_string(attr, wbuf);
-		}
+		ret = write_attribute(attr, "buffer", "buffer", wbuf, wraw, wraw_len);
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret,
 						iio_attr_get_name(attr));
-			if (wraw && (size_t)ret < wraw_len)
-				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
-						iio_attr_get_name(attr), (long)ret, wraw_len);
 			if (!write_only)
 				dump_buffer_attributes(dev, buffer, buffer_index, attr, NULL, NULL,
 						0, false, quiet);
-		} else {
-			IIO_PERROR((int)ret, "Unable to write buffer attribute");
 		}
 	}
 	return (int)ret;

@@ -142,13 +142,15 @@ OPTIONS
    raw bytes are written to the attribute via the \_raw API variant,
    instead of writing [value] as a string. Cannot be combined with
    **-C** or **--generate-code,** and is rejected when used with
-   wildcard matches. A short write (fewer bytes accepted than supplied)
-   is reported as a WARNING on stderr.
+   wildcard matches. An incomplete write (fewer bytes accepted than supplied)
+   is reported as an error on stderr and causes a non-zero exit code.
 
 RETURN VALUE
 ------------
 
-If the specified device is not found, a non-zero exit code is returned.
+If the specified device is not found, or an attribute write fails or is
+incomplete, a non-zero exit code is returned. Write errors are reported on
+stderr, including in quiet mode.
 
 SEE ALSO
 --------
