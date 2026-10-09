@@ -180,6 +180,15 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len, const struct iio_device 
 		}
 	}
 
+	for (i = 0; i < dev->nb_fwus; i++) {
+		ret = iio_xml_print_and_sanitized_param(
+				ptr, len, "<firmware-upload id=\"", dev->fwus[i].id, "\" />");
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	}
+
 	/* Backward compatibility: To make sure that older clients will still work,
 	 * we also need to create <buffer-attributes> tags. Note that given that
 	 * multi buffer is not still supported (and won't ever be in older versions),
