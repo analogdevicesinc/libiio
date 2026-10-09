@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014 Analog Devices, Inc.
+ * Copyright (C) 2014-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -37,8 +37,12 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#elif CLOCK_GETTIME_AVAILABLE
+#else
 #include <time.h>
+#endif
+
+#if defined(__ZEPHYR__)
+#include <zephyr/kernel.h>
 #endif
 
 #if defined(_WIN32) || (defined(__APPLE__) && defined(__MACH__)) || \
@@ -447,6 +451,31 @@ uint64_t iio_read_counter_us(void)
 	}
 
 	return value;
+}
+
+void iio_sleep_ms(unsigned int ms)
+{
+#ifdef _WIN32
+	Sleep(ms);
+#elif defined(__ZEPHYR__)
+	k_msleep((int32_t)ms);
+#elif NANOSLEEP_AVAILABLE
+	const struct timespec ts = {
+		.tv_sec = ms / 1000,
+		.tv_nsec = (long)(ms % 1000) * 1000 * 1000,
+	};
+
+	nanosleep(&ts, NULL);
+#else
+	/* No sleep primitive (e.g. bare-metal); busy-wait on the platform
+	 * tick counter if one was registered, otherwise return immediately. */
+	if (platform_get_ticks_us) {
+		uint64_t end = platform_get_ticks_us() + ms * 1000ull;
+
+		while (platform_get_ticks_us() < end)
+			;
+	}
+#endif
 }
 
 bool string_ends_with(const char *string, const char *suffix)
