@@ -4,6 +4,7 @@ if (TESTS_DEBUG)
 endif ()
 add_subdirectory(hardware)
 add_subdirectory(api)
+add_subdirectory(utils)
 
 # Check that libiio.map still describes exactly the public API and that the
 # built library exports nothing beyond it. Without this, adding an __api

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE context [
+<!ELEMENT context (device)*>
+<!ATTLIST context name CDATA #REQUIRED version-major CDATA #REQUIRED
+  version-minor CDATA #REQUIRED version-git CDATA #REQUIRED>
+<!ELEMENT device (attribute | channel | buffer)*>
+<!ATTLIST device id CDATA #REQUIRED name CDATA #IMPLIED>
+<!ELEMENT channel (attribute)*>
+<!ATTLIST channel id CDATA #REQUIRED type (input|output) #REQUIRED>
+<!ELEMENT buffer (attribute)*>
+<!ATTLIST buffer index CDATA #REQUIRED direction (in|out) #IMPLIED>
+<!ELEMENT attribute EMPTY>
+<!ATTLIST attribute name CDATA #REQUIRED value CDATA #IMPLIED>
+]>
+<context name="xml" version-major="1" version-minor="0" version-git="test">
+  <device id="iio:device0" name="test-device">
+    <attribute name="filter_fir_config" value="initial" />
+    <channel id="voltage0" type="input">
+      <attribute name="filter_fir_config" value="initial" />
+    </channel>
+    <buffer index="0" direction="in">
+      <attribute name="filter_fir_config" value="initial" />
+    </buffer>
+  </device>
+</context>
