@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2021 Analog Devices, Inc.
+ * Copyright (C) 2021-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -65,6 +65,9 @@ enum iiod_opcode {
 	IIOD_OP_REFRESH_FORMAT,
 
 	IIOD_OP_NOP,
+
+	IIOD_OP_READ_FWU_ATTR,
+	IIOD_OP_WRITE_FWU_ATTR,
 
 	IIOD_NB_OPCODES,
 };
