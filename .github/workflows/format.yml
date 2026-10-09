@@ -1,0 +1,47 @@
+name: Code Formatting
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  format-check:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+
+      - name: Install formatters
+        run: python -m pip install clang-format==18.1.8 cmakelang==0.6.13
+
+      - name: Check if format scripts changed
+        id: format-scripts
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: |
+          changed_files=$(git diff --name-only "$BASE_SHA"...HEAD -- \
+            format.sh CI/scripts/test_format.py .clangformatignore .cmakeformatignore)
+          if [[ -n "$changed_files" ]]; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Test formatting script error handling
+        if: steps.format-scripts.outputs.changed == 'true'
+        run: python CI/scripts/test_format.py
+
+      - name: Check formatting of changed files
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: bash CI/scripts/check-format.sh "$BASE_SHA"
