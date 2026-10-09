@@ -247,6 +247,7 @@ char *iio_strndup(const char *str, size_t n);
 char *iio_strtok_r(char *str, const char *delim, char **saveptr);
 char *iio_getenv(char *envvar);
 uint64_t iio_read_counter_us(void);
+void iio_sleep_ms(unsigned int ms);
 bool string_ends_with(const char *string, const char *suffix);
 
 __cnst const struct iio_context_params *get_default_params(void);

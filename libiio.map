@@ -249,5 +249,11 @@ local:
 LIBIIO_1.1 {
 global:
 	iio_device_add_fwu;
+	iio_device_fwu_cancel;
+	iio_device_fwu_get_status;
+	iio_device_fwu_wait;
+	iio_device_fwu_write;
 	iio_device_get_fwu_attr;
+	iio_device_get_fwu_count;
+	iio_device_get_fwu_id;
 } LIBIIO_1.0;

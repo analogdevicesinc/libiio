@@ -37,8 +37,12 @@
 
 #ifdef _WIN32
 #include <Windows.h>
-#elif CLOCK_GETTIME_AVAILABLE
+#else
 #include <time.h>
+#endif
+
+#if defined(__ZEPHYR__)
+#include <zephyr/kernel.h>
 #endif
 
 #if defined(_WIN32) || (defined(__APPLE__) && defined(__MACH__)) || \
@@ -447,6 +451,22 @@ uint64_t iio_read_counter_us(void)
 	}
 
 	return value;
+}
+
+void iio_sleep_ms(unsigned int ms)
+{
+#ifdef _WIN32
+	Sleep(ms);
+#elif defined(__ZEPHYR__)
+	k_msleep((int32_t)ms);
+#else
+	const struct timespec ts = {
+		.tv_sec = ms / 1000,
+		.tv_nsec = (long)(ms % 1000) * 1000 * 1000,
+	};
+
+	nanosleep(&ts, NULL);
+#endif
 }
 
 bool string_ends_with(const char *string, const char *suffix)
