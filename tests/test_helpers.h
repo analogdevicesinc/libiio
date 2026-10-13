@@ -9,18 +9,30 @@
 #define TEST_HELPERS_H
 
 #include <iio/iio.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 static inline struct iio_context *create_test_context(const char *env_var_name,
 		const char *default_uri, const struct iio_context_params *params)
 {
-	const char *uri = getenv(env_var_name);
+	const char *requested_uri = getenv(env_var_name);
+	const char *uri = requested_uri;
 	if (!uri) {
 		uri = default_uri;
 	}
 
 	struct iio_context *ctx = iio_create_context(params, uri);
-	if (iio_err(ctx)) {
+	int err = iio_err(ctx);
+	if (err) {
+		if (requested_uri) {
+			char error[256];
+
+			iio_strerror(err, error, sizeof(error));
+			fprintf(stderr, "%s='%s': unable to create requested test context: %s\n",
+					env_var_name, requested_uri, error);
+			exit(EXIT_FAILURE);
+		}
 		return NULL;
 	}
 
