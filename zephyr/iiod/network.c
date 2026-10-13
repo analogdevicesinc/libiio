@@ -6,6 +6,8 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/netinet/tcp.h>
 #include <zephyr/posix/arpa/inet.h>
 #include <zephyr/posix/unistd.h>
 #include <zephyr/logging/log.h>
@@ -277,6 +279,8 @@ static void iiod_network_server_thread(void *p1, void *p2, void *p3)
 	struct iio_context_params ctx_params = {0};
 	struct client_data *client;
 	static int counter;
+	int nodelay = 1;
+	int ret;
 
 	LOG_DBG("*** Simple TCP Test Server for %s ***", CONFIG_BOARD_TARGET);
 	LOG_DBG("Waiting for network to initialize...");
@@ -350,6 +354,12 @@ static void iiod_network_server_thread(void *p1, void *p2, void *p3)
 			continue;
 		}
 		LOG_DBG("Accept successful! Client fd: %d", new_fd);
+
+		ret = setsockopt(new_fd, IPPROTO_TCP, TCP_NODELAY, &nodelay,
+				 sizeof(nodelay));
+		if (ret < 0) {
+			LOG_WRN("Failed to set TCP_NODELAY: %d", errno);
+		}
 
 		inet_ntop(client_addr.sin_family, &client_addr.sin_addr,
 				addr_str, sizeof(addr_str));
