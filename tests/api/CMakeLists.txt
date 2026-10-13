@@ -15,11 +15,10 @@ set(API_TEST_TARGETS
     test_buffer
     test_lowlevel)
 
-# Create a helper library for common test utilities
-add_library(test_common STATIC test_framework.h)
-set_target_properties(test_common PROPERTIES LINKER_LANGUAGE C)
-target_include_directories(test_common PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(test_common PUBLIC iio)
+# Share header-only test utilities without creating an empty archive.
+add_library(test_common INTERFACE)
+target_include_directories(test_common INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+target_link_libraries(test_common INTERFACE iio)
 
 # Build each API test
 foreach (test ${API_TEST_TARGETS})

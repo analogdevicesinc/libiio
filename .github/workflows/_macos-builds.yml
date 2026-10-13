@@ -43,12 +43,13 @@ jobs:
           brew install doxygen libusb libxml2 ncurses cdk libserialport sphinx-doc pkg-config zstd
           pip3 install sphinx setuptools
 
-      - name: Build
+      - name: Build and test
         run: |
           set -e
           mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH=$(python3 -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python3'))") -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DOSX_PACKAGE=ON -DPYTHON_EXECUTABLE:FILEPATH="$(python3 -c "import os, sys; print(os.path.join(os.path.dirname(sys.executable), 'python3'))")" -DPYTHON_BINDINGS=ON -DWITH_EXAMPLES=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DWITH_TESTS=ON
           make VERBOSE=1
+          ctest -L emu --output-on-failure --no-tests=error
           cmake -DLICENSE_CHECK=ON ..
           sudo make install
           cd ..
