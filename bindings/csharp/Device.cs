@@ -54,6 +54,12 @@ namespace iio
         private static extern IntPtr iio_device_get_event_attr(IntPtr dev, uint index);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern uint iio_device_get_fwu_count(IntPtr dev);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IntPtr iio_device_get_fwu_id(IntPtr dev, uint index);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern IIOPtr iio_device_get_trigger(IntPtr dev);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -97,6 +103,9 @@ namespace iio
         /// <summary>A <c>Dictionary</c> of all the event attributes that this device has. Key is the attribute name.</summary>
         public readonly IReadOnlyDictionary<string, Attr> event_attrs;
 
+        /// <summary>A <c>Dictionary</c> of all the firmware upload instances that this device has. Key is the instance ID.</summary>
+        public readonly IReadOnlyDictionary<string, FirmwareUpload> firmware_uploads;
+
         /// <summary>A <c>list</c> of all the <see cref="iio.Channel"/> objects that this device possesses.</summary>
         public readonly IReadOnlyList<Channel> channels;
 
@@ -123,6 +132,7 @@ namespace iio
             uint nb_attrs = iio_device_get_attrs_count(dev);
             uint nb_debug_attrs = iio_device_get_debug_attrs_count(dev);
             uint nb_event_attrs = iio_device_get_event_attrs_count(dev);
+            uint nb_fwus = iio_device_get_fwu_count(dev);
             uint nb_buffers = iio_device_get_buffers_count(dev);
 
             var channelsList = new List<Channel>();
@@ -164,6 +174,16 @@ namespace iio
                 eventAttrsDict[a.name] = a;
             }
 
+            var fwusDict = new Dictionary<string, FirmwareUpload>();
+            for (uint i = 0; i < nb_fwus; i++)
+            {
+                IntPtr fwu_id_ptr = iio_device_get_fwu_id(dev, i);
+                if (fwu_id_ptr == IntPtr.Zero)
+                    throw new IIOException("Unable to get firmware upload instance at index " + i);
+                string fwu_id = UTF8Marshaler.PtrToStringUTF8(fwu_id_ptr);
+                fwusDict[fwu_id] = new FirmwareUpload(this, fwu_id);
+            }
+
             IntPtr id_ptr = iio_device_get_id(dev);
             if (id_ptr == IntPtr.Zero)
                 throw new IIOException("Unable to get device ID");
@@ -182,6 +202,7 @@ namespace iio
             attrs = attrsDict;
             debug_attrs = debugAttrsDict;
             event_attrs = eventAttrsDict;
+            firmware_uploads = fwusDict;
             buffers = buffersList;
 
             IntPtr name_ptr = iio_device_get_name(dev);
