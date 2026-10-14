@@ -530,6 +530,7 @@ static ssize_t iiod_client_read_attr_new(
 	unsigned int i;
 	uint16_t arg1, arg2 = 0;
 	struct iiod_buf iiod_buf;
+	ssize_t ret;
 
 	switch (attr->type) {
 	case IIO_ATTR_TYPE_CHANNEL:
@@ -638,7 +639,14 @@ static ssize_t iiod_client_read_attr_new(
 	iiod_buf.ptr = dest;
 	iiod_buf.size = len;
 
-	return iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+	ret = iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+
+	/* An empty value is received without any data: terminate the string
+	 * here, as it was never written to the buffer. */
+	if (ret == 0 && len > 0)
+		dest[0] = '\0';
+
+	return ret;
 }
 
 ssize_t iiod_client_attr_read(
