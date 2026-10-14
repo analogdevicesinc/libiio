@@ -32,6 +32,8 @@ API Classes
 
    context
    device
+   firmwareupload
+   fwustatus
    channel
    buffer
    block
