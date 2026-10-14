@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		ad5593r {
+			compatible = "iio,io-channels";
+			io-name = "ad5593r";
+			io-channels = <&ad5593_dac_mikroe_adac_click 0
+				       &ad5593_adc_mikroe_adac_click 0
+				       &ad5593_adc_mikroe_adac_click 1
+				       &ad5593_dac_mikroe_adac_click 2
+				       &ad5593_adc_mikroe_adac_click 2
+				       &ad5593_dac_mikroe_adac_click 3>;
+			io-channel-names = "voltage0",
+					   "voltage0",
+					   "voltage1",
+					   "voltage2",
+					   "voltage2",
+					   "voltage3";
+		};
+	};
+};
