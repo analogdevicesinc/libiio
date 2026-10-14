@@ -62,6 +62,7 @@ bindings/csharp/ChannelsMask.cs
 bindings/csharp/Context.cs
 bindings/csharp/Device.cs
 bindings/csharp/EventStream.cs
+bindings/csharp/FirmwareUpload.cs
 bindings/csharp/IIOEvent.cs
 bindings/csharp/IOBuffer.cs
 bindings/csharp/IioLib.cs
