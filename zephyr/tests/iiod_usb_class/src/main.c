@@ -34,10 +34,26 @@ LOG_MODULE_REGISTER(iio_usb_class_test, LOG_LEVEL_INF);
 /* VENDOR | RECIPIENT_INTERFACE, host to device */
 #define IIO_VENDOR_REQTYPE 0x41U
 
+/* Binary-protocol opcodes, as iiod-responder.h numbers them */
+#define IIOD_OP_RESPONSE 0
+#define IIOD_OP_PRINT    1
+
+struct iiod_wire_command {
+	uint16_t client_id;
+	uint8_t op;
+	uint8_t dev;
+	int32_t code;
+} __packed;
+
+BUILD_ASSERT(sizeof(struct iiod_wire_command) == 8, "iiod command header must be 8 bytes");
+
 /* The class puts its endpoints on interface 0, which is what wIndex names */
 #define IIO_IFACE 0U
 
 #define IIO_NUM_PIPES DT_PROP(DT_NODELABEL(iio_usb0), num_pipes)
+
+/* One transmit chunk: the most the class sends per USB transfer */
+#define IIO_TX_CHUNK DT_PROP(DT_NODELABEL(iio_usb0), tx_buf_size)
 
 BUILD_ASSERT(IIO_NUM_PIPES >= 3,
 	     "the tests need a command channel and two data pipes");
@@ -358,6 +374,118 @@ ZTEST(iio_usb_class, test_reopened_pipe_discards_the_previous_session)
 	close_pipe(1);
 	open_pipe(1);
 	expect_handshake(1);
+}
+
+/*
+ * A response larger than one transmit chunk has to arrive whole. Nothing else
+ * in this suite reads more than a single chunk, so without this a transmit that
+ * gave up early would truncate every large reply unnoticed.
+ */
+ZTEST(iio_usb_class, test_multi_chunk_response_arrives_whole)
+{
+	const struct iiod_wire_command print_cmd = {
+		.client_id = 1,
+		.op = IIOD_OP_PRINT,
+	};
+	struct iiod_wire_command rsp = {0};
+	uint8_t chunk[IIO_TX_CHUNK];
+	size_t total = 0;
+	size_t got = 0;
+	bool first = true;
+
+	open_pipe(1);
+	expect_handshake(1);
+
+	zassert_ok(bulk_xfer(ep_out[1], (void *)&print_cmd, sizeof(print_cmd), NULL, PIPE_TIMEOUT),
+		   "PRINT write failed");
+
+	zassert_ok(bulk_xfer(ep_in[1], &rsp, sizeof(rsp), &got, PIPE_TIMEOUT),
+		   "response header read failed");
+	zassert_equal(rsp.op, IIOD_OP_RESPONSE, "reply was not a response (op %u)", rsp.op);
+	zassert_true(rsp.code > (int32_t)IIO_TX_CHUNK,
+		     "XML is %d bytes, which does not span chunks", rsp.code);
+
+	while (total < (size_t)rsp.code) {
+		const size_t want = MIN(sizeof(chunk), (size_t)rsp.code - total);
+
+		got = 0;
+		zassert_ok(bulk_xfer(ep_in[1], chunk, want, &got, PIPE_TIMEOUT),
+			   "payload read failed at offset %zu", total);
+		zassert_true(got > 0, "payload read returned nothing at offset %zu", total);
+
+		if (first) {
+			/* Enough to show it is the XML and not a stale frame */
+			zassert_mem_equal(chunk, "<?xml", 5,
+					  "payload does not begin with an XML declaration");
+			first = false;
+		}
+
+		total += got;
+	}
+
+	zassert_equal(total, (size_t)rsp.code, "read %zu payload bytes, header said %d", total,
+		      rsp.code);
+
+	/* The pipe is back at a frame boundary, so it still answers */
+	close_pipe(1);
+	open_pipe(1);
+	expect_handshake(1);
+}
+
+/*
+ * The transmit-side mirror: a session that ends part-way through a response
+ * must not go on delivering it to the next session. The chunk already handed
+ * to the controller cannot be abandoned, so the next session is expected to
+ * see it; the chunk after it is only sent if the writer never rechecks.
+ */
+ZTEST(iio_usb_class, test_reopened_pipe_does_not_inherit_a_partial_response)
+{
+	const struct iiod_wire_command print_cmd = {
+		.client_id = 1,
+		.op = IIOD_OP_PRINT,
+	};
+	struct iiod_wire_command rsp = {0};
+	uint8_t reply[IIO_TX_CHUNK];
+	size_t got = 0;
+
+	open_pipe(1);
+	expect_handshake(1);
+
+	zassert_ok(bulk_xfer(ep_out[1], (void *)&print_cmd, sizeof(print_cmd), NULL, PIPE_TIMEOUT),
+		   "PRINT write failed");
+
+	/* Read the response header only, leaving the payload write under way */
+	zassert_ok(bulk_xfer(ep_in[1], &rsp, sizeof(rsp), &got, PIPE_TIMEOUT),
+		   "response header read failed");
+	zassert_equal(got, sizeof(rsp), "response header was %zu bytes", got);
+	zassert_equal(rsp.op, IIOD_OP_RESPONSE, "reply was not a response (op %u)", rsp.op);
+	zassert_true(rsp.code > (int32_t)IIO_TX_CHUNK,
+		     "XML is %d bytes, not more than one %u-byte chunk - this case needs a "
+		     "response that spans chunks", rsp.code, IIO_TX_CHUNK);
+
+	/* End the session mid-response and start a fresh one */
+	close_pipe(1);
+	open_pipe(1);
+
+	/* The new session's handshake, which arrives stamped for it */
+	zassert_ok(bulk_xfer(ep_out[1], "BINARY\r\n", 8, NULL, PIPE_TIMEOUT),
+		   "handshake write failed");
+
+	/* The chunk already in the controller's hands; unavoidable, so expected */
+	zassert_ok(bulk_xfer(ep_in[1], reply, sizeof(reply), &got, PIPE_TIMEOUT),
+		   "read of the in-flight chunk failed");
+
+	/*
+	 * This read must be the new session's handshake reply. Another full
+	 * chunk means the dead session is still writing.
+	 */
+	got = 0;
+	memset(reply, 0, sizeof(reply));
+	zassert_ok(bulk_xfer(ep_in[1], reply, sizeof(reply), &got, PIPE_TIMEOUT),
+		   "handshake read failed");
+	zassert_equal(got, 3, "expected the 3-byte handshake reply, got %zu bytes of the "
+		      "previous session's response", got);
+	zassert_equal(reply[0], '0', "handshake reply was \"%s\"", reply);
 }
 
 /*
