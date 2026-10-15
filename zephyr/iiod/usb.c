@@ -777,6 +777,28 @@ static int iio_usb_validate_eps(struct usbd_class_data *const c_data)
 	return ret;
 }
 
+/*
+ * Arm every pipe's receive endpoint, as far as its credit allows. Buffers
+ * claimed here live for the whole configuration; credit is only returned by
+ * the completion that releases a buffer, so anything still outstanding arms
+ * itself as it comes back.
+ */
+static void iio_usb_arm_all(struct usbd_class_data *const c_data)
+{
+	struct iio_usb_data *data = usbd_class_get_private(c_data);
+
+	for (int i = 0; i < data->num_pipes; i++) {
+		struct iio_usb_pipe *pipe = &data->pipes[i];
+
+		for (int n = 0; n < data->rx_depth; n++) {
+			if (iio_usb_arm_rx(c_data, pipe)) {
+				LOG_ERR("Pipe %d: failed to arm receive endpoint", i);
+				break;
+			}
+		}
+	}
+}
+
 static void iio_usb_enable(struct usbd_class_data *const c_data)
 {
 	struct iio_usb_data *data = usbd_class_get_private(c_data);
@@ -795,21 +817,24 @@ static void iio_usb_enable(struct usbd_class_data *const c_data)
 
 	data->enabled = true;
 
-	/*
-	 * Buffers claimed here live for the whole configuration; credit is only
-	 * returned by the completion that releases a buffer, so anything still
-	 * outstanding arms itself as it comes back.
-	 */
-	for (int i = 0; i < data->num_pipes; i++) {
-		struct iio_usb_pipe *pipe = &data->pipes[i];
+	iio_usb_arm_all(c_data);
+}
 
-		for (int n = 0; n < data->rx_depth; n++) {
-			if (iio_usb_arm_rx(c_data, pipe)) {
-				LOG_ERR("Pipe %d: failed to arm receive endpoint", i);
-				break;
-			}
-		}
-	}
+/*
+ * SET_INTERFACE disables, dequeues and re-enables every endpoint on the
+ * interface, and this is the only notice the class gets - there is no
+ * disable/enable pair around it, even when the alternate is the one already
+ * selected. Arm the pipes again rather than rely on the cancelled buffers'
+ * completions arriving after the request has returned.
+ */
+static void iio_usb_update(struct usbd_class_data *const c_data, const uint8_t iface,
+			   const uint8_t alternate)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(alternate);
+
+	LOG_INF("IIO USB interface reset");
+	iio_usb_arm_all(c_data);
 }
 
 static void iio_usb_disable(struct usbd_class_data *const c_data)
@@ -834,6 +859,7 @@ static const struct usbd_class_api iio_usb_api = {
 	.get_desc = iio_usb_get_desc,
 	.control_to_dev = iio_usb_control_to_dev,
 	.request = iio_usb_request_handler,
+	.update = iio_usb_update,
 	.enable = iio_usb_enable,
 	.disable = iio_usb_disable,
 	.init = iio_usb_init,
