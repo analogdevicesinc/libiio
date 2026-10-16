@@ -250,15 +250,31 @@ static ssize_t read_device_attr(xmlDoc *doc, const char *device_id, enum iio_att
 	return (ssize_t)strnlen(buf, len) + 1;
 }
 
+static int set_attr_value(xmlNode *node_attr, const char *buf, size_t len)
+{
+	char *val = iio_strndup(buf, len);
+
+	if (!val)
+		return -ENOMEM;
+
+	xmlSetProp(node_attr, (const xmlChar *)"value", (const xmlChar *)val);
+	free(val);
+
+	return 0;
+}
+
 static ssize_t write_device_attr(xmlDoc *doc, const char *device_id, const char *attr,
 		const char *buf, size_t len, enum iio_attr_type type)
 {
 	xmlNode *node_attr = getDeviceAttr(doc, device_id, type, attr);
+	int ret;
 
 	if (!node_attr)
 		return -ENOENT;
 
-	xmlSetProp(node_attr, (const xmlChar *)"value", (const xmlChar *)buf);
+	ret = set_attr_value(node_attr, buf, len);
+	if (ret)
+		return ret;
 
 	return (ssize_t)len;
 }
@@ -284,11 +300,14 @@ static ssize_t write_channel_attr(xmlDoc *doc, const char *device_id, const char
 		bool ch_out, const char *attr, const char *buf, size_t len)
 {
 	xmlNode *node_attr = getChannelAttr(doc, device_id, channel_id, ch_out, attr);
+	int ret;
 
 	if (!node_attr)
 		return -ENOENT;
 
-	xmlSetProp(node_attr, (const xmlChar *)"value", (const xmlChar *)buf);
+	ret = set_attr_value(node_attr, buf, len);
+	if (ret)
+		return ret;
 
 	return (ssize_t)len;
 }
@@ -321,6 +340,7 @@ static ssize_t write_buffer_attr(xmlDoc *doc, const char *device_id, unsigned in
 		const char *attr, const char *src, size_t len)
 {
 	xmlNode *root, *node_device, *attr_node;
+	int ret;
 
 	root = xmlDocGetRootElement(doc);
 	node_device = getNode(root, "device", "id", device_id);
@@ -331,7 +351,10 @@ static ssize_t write_buffer_attr(xmlDoc *doc, const char *device_id, unsigned in
 	if (!attr_node)
 		return -ENOENT;
 
-	xmlSetProp(attr_node, (const xmlChar *)"value", (const xmlChar *)src);
+	ret = set_attr_value(attr_node, src, len);
+	if (ret)
+		return ret;
+
 	return (ssize_t)len;
 }
 
@@ -356,11 +379,14 @@ static ssize_t write_channel_event_attr(xmlDoc *doc, const char *device_id, cons
 		bool ch_out, const char *attr, const char *buf, size_t len)
 {
 	xmlNode *node_attr = getChannelEventAttr(doc, device_id, channel_id, ch_out, attr);
+	int ret;
 
 	if (!node_attr)
 		return -ENOENT;
 
-	xmlSetProp(node_attr, (const xmlChar *)"value", (const xmlChar *)buf);
+	ret = set_attr_value(node_attr, buf, len);
+	if (ret)
+		return ret;
 
 	return (ssize_t)len;
 }
