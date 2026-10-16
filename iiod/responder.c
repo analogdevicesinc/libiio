@@ -158,6 +158,9 @@ static const struct iio_attr *get_attr(struct parser_pdata *pdata, const struct 
 	case IIOD_OP_READ_DEV_EVT_ATTR:
 	case IIOD_OP_WRITE_DEV_EVT_ATTR:
 		return iio_device_get_event_attr(dev, arg1);
+	case IIOD_OP_READ_FWU_ATTR:
+	case IIOD_OP_WRITE_FWU_ATTR:
+		return iio_device_get_fwu_attr(dev, arg1, (enum iio_fwu_file)arg2);
 	case IIOD_OP_READ_BUF_ATTR:
 	case IIOD_OP_WRITE_BUF_ATTR:
 		buf = iio_device_get_buffer(dev, arg2);
@@ -1258,6 +1261,9 @@ static const iiod_opcode_fn iiod_op_functions[] = {
 	[IIOD_OP_REFRESH_FORMAT] = handle_refresh_format,
 
 	[IIOD_OP_NOP] = handle_nop,
+
+	[IIOD_OP_READ_FWU_ATTR] = handle_read_attr,
+	[IIOD_OP_WRITE_FWU_ATTR] = handle_write_attr,
 };
 
 static int iiod_cmd(const struct iiod_command *cmd, struct iiod_command_data *data, void *d)
