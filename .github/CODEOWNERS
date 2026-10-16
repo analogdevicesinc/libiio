@@ -18,3 +18,7 @@
 ##### Code owners for CI related files/folders #####
 /CI/	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com
 /.github/workflows/	cristina.suteu@analog.com dan.nechita@analog.com michael.hennerich@analog.com stefan.raus@analog.com
+
+##### Code owners for zephyr related files/folders #####
+/zephyr/	maureen.helm@analog.com pete.johanson@analog.com
+west.yml	maureen.helm@analog.com pete.johanson@analog.com
