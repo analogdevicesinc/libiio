@@ -14,7 +14,37 @@ properties:
 
   sensor-channels:
     type: array
-    required: true
 
   buffer-name:
     type: string
+
+  attrs:
+    type: array
+    default: []
+    description: |
+      TODO
+
+  attr-names:
+    type: string-array
+    default: []
+    description: |
+      TODO
+
+# Detailed sensor channel setup.
+child-binding:
+  properties:
+    channel:
+      type: int
+      required: true
+
+    attrs:
+      type: array
+      default: []
+      description: |
+        TODO
+
+    attr-names:
+      type: string-array
+      default: []
+      description: |
+        TODO
