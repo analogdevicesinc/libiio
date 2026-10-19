@@ -11,6 +11,7 @@
 #include <iio/iio-backend.h>
 #include <iio/iio-debug.h>
 #include <iio/iio.h>
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -44,6 +45,46 @@ static const char *options_descriptions[] = {
 	("Read and print the value of debug attributes."),
 	("Do not read or print the value of regular attributes."),
 };
+
+static const char *const fwu_status_names[] = {
+	[IIO_FWU_IDLE] = "idle",
+	[IIO_FWU_RECEIVING] = "receiving",
+	[IIO_FWU_PREPARING] = "preparing",
+	[IIO_FWU_TRANSFERRING] = "transferring",
+	[IIO_FWU_PROGRAMMING] = "programming",
+};
+
+static void print_fwu(const struct iio_device *dev, unsigned int idx, bool read_sysfs_attr)
+{
+	const struct iio_attr *err_attr = iio_device_get_fwu_attr(dev, idx, IIO_FWU_FILE_ERROR);
+	const char *id = iio_device_get_fwu_id(dev, idx);
+	enum iio_fwu_status status;
+	uint64_t remaining;
+	char buf[256];
+	ssize_t ret;
+
+	printf("			fwu %2u: %s", idx, id);
+
+	if (!read_sysfs_attr) {
+		printf("\n");
+		return;
+	}
+
+	ret = iio_device_fwu_get_status(dev, id, &status, &remaining);
+	if (ret < 0) {
+		iio_strerror((int)ret, buf, sizeof(buf));
+		printf(" status: ERROR: %s\n", buf);
+		return;
+	}
+
+	printf(" status: %s (%" PRIu64 " bytes remaining)", fwu_status_names[status], remaining);
+
+	ret = iio_attr_read_raw(err_attr, buf, sizeof(buf));
+	if (ret > 0 && buf[0])
+		printf(" last error: %s", buf);
+
+	printf("\n");
+}
 
 static int dev_is_buffer_capable(const struct iio_device *dev)
 {
@@ -425,6 +466,14 @@ int main(int argc, char **argv)
 				attr = iio_device_get_debug_attr(dev, j);
 				print_attr(attr, 3, j, read_sysfs_attr, read_debug_attr);
 			}
+		}
+
+		nb_attrs = iio_device_get_fwu_count(dev);
+		if (nb_attrs) {
+			printf("\t\t%u firmware upload instance%s found:\n", nb_attrs,
+					nb_attrs == 1 ? "" : "s");
+			for (j = 0; j < nb_attrs; j++)
+				print_fwu(dev, j, read_sysfs_attr);
 		}
 
 		trig = iio_device_get_trigger(dev);

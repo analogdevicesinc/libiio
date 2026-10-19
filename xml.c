@@ -66,6 +66,27 @@ static int add_attr_to_device(struct iio_device *dev, xmlNode *n, enum iio_attr_
 	return iio_device_add_attr(dev, name, type);
 }
 
+static int add_fwu_to_device(struct iio_device *dev, xmlNode *n)
+{
+	xmlAttr *attr;
+	char *id = NULL;
+
+	for (attr = n->properties; attr; attr = attr->next) {
+		if (!strcmp((char *)attr->name, "id")) {
+			id = (char *)attr->children->content;
+		} else {
+			dev_dbg(dev, "Unknown field \'%s\'\n", attr->name);
+		}
+	}
+
+	if (!id) {
+		dev_err(dev, "Incomplete firmware upload instance\n");
+		return -EINVAL;
+	}
+
+	return iio_device_add_fwu(dev, id);
+}
+
 static int add_attr_to_buffer(struct iio_buffer *buf, xmlNode *n)
 {
 	xmlAttr *attr;
@@ -361,6 +382,10 @@ static int create_device(struct iio_context *ctx, xmlNode *n)
 				return err;
 		} else if (!strcmp((char *)n->name, "event-attribute")) {
 			err = add_attr_to_device(dev, n, IIO_ATTR_TYPE_DEVICE_EVENT);
+			if (err < 0)
+				return err;
+		} else if (!strcmp((char *)n->name, "firmware-upload")) {
+			err = add_fwu_to_device(dev, n);
 			if (err < 0)
 				return err;
 		} else if (!strcmp((char *)n->name, "buffer-attribute") && buf_legacy) {

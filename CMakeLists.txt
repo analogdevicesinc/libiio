@@ -58,6 +58,7 @@ add_library(
     context.c
     device.c
     events.c
+    fwu.c
     library.c
     mask.c
     scan.c

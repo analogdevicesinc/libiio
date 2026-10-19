@@ -40,6 +40,7 @@ from ctypes import (
 from contextlib import contextmanager
 from ctypes.util import find_library
 from enum import Enum
+from errno import EAGAIN as _EAGAIN
 from os import strerror as _strerror
 from os import path as _path
 from platform import system as _system
@@ -183,6 +184,15 @@ class EventDirection(Enum):
     IIO_EV_DIR_DOUBLETAP = 5
     IIO_EV_DIR_FAULT_OPENWIRE = 6
 
+class FwuStatus(Enum):
+    """Represents the progress of a firmware upload instance."""
+
+    IDLE = 0
+    RECEIVING = 1
+    PREPARING = 2
+    TRANSFERRING = 3
+    PROGRAMMING = 4
+
 class Event(Structure):
     """Represents an IIO event."""
 
@@ -312,6 +322,7 @@ class ChannelType(Enum):
     IIO_ALTCURRENT = 40
     IIO_COVERAGE = 41
     IIO_VOLUMEFLOW = 42
+    IIO_FREQUENCY = 43
     IIO_CHAN_TYPE_UNKNOWN = 0x7FFFFFFF
 
 
@@ -547,6 +558,35 @@ _d_get_event_attr = _lib.iio_device_get_event_attr
 _d_get_event_attr.restype = _AttrPtr
 _d_get_event_attr.argtypes = (_DevicePtr, c_uint)
 _d_get_event_attr.errcheck = _check_null
+
+_d_fwu_count = _lib.iio_device_get_fwu_count
+_d_fwu_count.restype = c_uint
+_d_fwu_count.argtypes = (_DevicePtr,)
+
+_d_get_fwu_id = _lib.iio_device_get_fwu_id
+_d_get_fwu_id.restype = c_char_p
+_d_get_fwu_id.argtypes = (_DevicePtr, c_uint)
+_d_get_fwu_id.errcheck = _check_null
+
+_d_fwu_write = _lib.iio_device_fwu_write
+_d_fwu_write.restype = c_int
+_d_fwu_write.argtypes = (_DevicePtr, c_char_p, c_char_p, c_size_t)
+_d_fwu_write.errcheck = _check_negative
+
+_d_fwu_wait = _lib.iio_device_fwu_wait
+_d_fwu_wait.restype = c_int
+_d_fwu_wait.argtypes = (_DevicePtr, c_char_p, c_int)
+_d_fwu_wait.errcheck = _check_negative
+
+_d_fwu_get_status = _lib.iio_device_fwu_get_status
+_d_fwu_get_status.restype = c_int
+_d_fwu_get_status.argtypes = (_DevicePtr, c_char_p, _POINTER(c_int), _POINTER(c_uint64))
+_d_fwu_get_status.errcheck = _check_negative
+
+_d_fwu_cancel = _lib.iio_device_fwu_cancel
+_d_fwu_cancel.restype = c_int
+_d_fwu_cancel.argtypes = (_DevicePtr, c_char_p)
+_d_fwu_cancel.errcheck = _check_negative
 
 _d_buffers_count = _lib.iio_device_get_buffers_count
 _d_buffers_count.restype = c_uint
@@ -1431,6 +1471,133 @@ class EventStream(_IIO_Object):
 
         return (event, (chn1, chn2))
 
+class FirmwareUpload(_IIO_Object):
+    """Represents a firmware upload instance of an IIO device."""
+
+    # IIO_TIMEOUT_INFINITE and IIO_TIMEOUT_NONBLOCK
+    _TIMEOUT_INFINITE = -1
+    _TIMEOUT_NONBLOCK = -(2 ** 31)
+
+    def __init__(self, device, fwu_id):
+        """
+        Initialize a new instance of the FirmwareUpload class.
+
+        :param device: type=iio.Device
+            The IIO device this instance belongs to.
+        :param fwu_id: type=str
+            The ID of the firmware upload instance.
+
+        returns: type=iio.FirmwareUpload
+            A new instance of this class
+        """
+        super(FirmwareUpload, self).__init__(device._device, device)
+        self._device = device._device
+        self._id = fwu_id
+        self._b_id = fwu_id.encode("utf-8")
+
+    def __eq__(self, other):
+        return super(FirmwareUpload, self).__eq__(other) and self._id == other._id
+
+    def __str__(self):
+        return self._id
+
+    def _get_status(self):
+        status = c_int()
+        remaining = c_uint64()
+        _d_fwu_get_status(self._device, self._b_id, _byref(status), _byref(remaining))
+        return FwuStatus(status.value), remaining.value
+
+    def write(self, data):
+        """
+        Start uploading a firmware image.
+
+        This returns as soon as the image has been handed over to the device.
+        Use wait() to wait for the upload to complete.
+
+        :param data: type=bytes-like object
+            The firmware image.
+        """
+        buf = bytes(data)
+        _d_fwu_write(self._device, self._b_id, buf, len(buf))
+
+    def wait(self, timeout_ms=None, nonblock=False):
+        """
+        Wait for a firmware upload to complete.
+
+        :param timeout_ms: type=int
+            Maximum time to wait, in milliseconds. Wait until the upload
+            completes if None.
+        :param nonblock: type=bool
+            If set, don't wait, and return False if the upload is still in
+            progress.
+
+        returns: type=bool
+            True if the upload completed, False if it is still in progress
+            (nonblock is set, or timeout_ms expired). The upload continues,
+            and wait() can be called again.
+
+        An OSError is raised if the device reported an error; for instance
+        a TimeoutError if the device timed out.
+        """
+        if nonblock:
+            timeout = self._TIMEOUT_NONBLOCK
+        elif timeout_ms is None:
+            timeout = self._TIMEOUT_INFINITE
+        elif timeout_ms > 0:
+            timeout = int(timeout_ms)
+        else:
+            raise ValueError("timeout_ms must be positive or None")
+
+        try:
+            _d_fwu_wait(self._device, self._b_id, timeout)
+        except OSError as err:
+            if err.errno == _EAGAIN:
+                return False
+            raise
+
+        return True
+
+    def upload(self, data, timeout_ms=None):
+        """
+        Upload a firmware image, and wait for the upload to complete.
+
+        :param data: type=bytes-like object
+            The firmware image.
+        :param timeout_ms: type=int
+            Maximum time to wait, in milliseconds. Wait until the upload
+            completes if None.
+
+        returns: type=bool
+            True if the upload completed, False if it is still in progress
+            after timeout_ms.
+        """
+        self.write(data)
+        return self.wait(timeout_ms)
+
+    def cancel(self):
+        """Cancel the firmware upload in progress."""
+        _d_fwu_cancel(self._device, self._b_id)
+
+    id = property(
+        lambda self: self._id,
+        None,
+        None,
+        "The ID of this firmware upload instance.\n\ttype=str",
+    )
+    status = property(
+        lambda self: self._get_status()[0],
+        None,
+        None,
+        "The progress of this firmware upload instance.\n\ttype=iio.FwuStatus",
+    )
+    remaining_size = property(
+        lambda self: self._get_status()[1],
+        None,
+        None,
+        "The number of bytes that remain to be processed by the device.\n\ttype=int",
+    )
+
+
 class _DeviceOrTrigger(_IIO_Object):
     def __init__(self, _ctx, _device):
         super(_DeviceOrTrigger, self).__init__(_device, _ctx)
@@ -1612,11 +1779,41 @@ class Device(_DeviceOrTrigger):
         finally:
             _evstream_destroy(stream)
 
+    def fw_upload(self, fwu_id, data, timeout_ms=None):
+        """
+        Upload a firmware image, and wait for the upload to complete.
+
+        :param fwu_id: type=str
+            The ID of the firmware upload instance.
+        :param data: type=bytes-like object
+            The firmware image.
+        :param timeout_ms: type=int
+            Maximum time to wait, in milliseconds. Wait until the upload
+            completes if None.
+
+        returns: type=bool
+            True if the upload completed, False if it is still in progress
+            after timeout_ms.
+        """
+        fwu = self.firmware_uploads.get(fwu_id)
+        if fwu is None:
+            raise OSError(2, _strerror(2))  # ENOENT
+        return fwu.upload(data, timeout_ms)
+
     trigger = property(
         _get_trigger,
         _set_trigger,
         None,
         "Contains the configured trigger for this IIO device.\n\ttype=iio.Trigger",
+    )
+    firmware_uploads = property(
+        lambda self: {fwu.id: fwu for fwu in [
+            FirmwareUpload(self, _d_get_fwu_id(self._device, x).decode("utf-8"))
+            for x in range(0, _d_fwu_count(self._device))
+        ]},
+        None,
+        None,
+        "Firmware upload instances of this IIO device.\n\ttype=dict of iio.FirmwareUpload",
     )
     hwmon = property(
         lambda self: self._id[:5] == "hwmon", None, None,
