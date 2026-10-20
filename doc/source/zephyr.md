@@ -130,7 +130,10 @@ touching the backend or IIOD.
 
 `zephyr/drivers/adc/adc_emul_generator.c` is a synthetic waveform generator
 for Zephyr's `ADC_EMUL` driver, used by the sample application to produce
-ADC data without real hardware.
+ADC data without real hardware. Similarly,
+`zephyr/drivers/gpio/gpio_emul_generator.c` toggles the Zephyr `GPIO_EMUL`
+input pins listed in its `gpios` property every 500 ms, used by the tests
+to exercise the one bit ADC DAC driver without real hardware.
 
 ### IIOD transports
 
