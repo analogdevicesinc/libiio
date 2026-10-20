@@ -98,7 +98,7 @@ wired up by hand.
 
 ### Drivers
 
-Two IIO device drivers ship with the module, under
+Three IIO device drivers ship with the module, under
 `zephyr/drivers/iio_device/`:
 
 - **`sensor.c`** adapts any Zephyr [Sensor
@@ -116,12 +116,16 @@ Two IIO device drivers ship with the module, under
   channel with a `raw` attribute, plus `scale`, `gain`, `reference`, and
   `differential` attributes on ADC channels backed by the corresponding
   `adc_dt_spec`/`adc_channel_cfg` fields.
+- **`one_bit_adc_dac.c`** exposes GPIO lines as 1-bit IIO voltage
+  channels (`compatible = "iio,one-bit-adc-dac"`). GPIOs listed in
+  `in-gpios` become input channels and those in `out-gpios` become output
+  channels, each with a `raw` attribute holding the line level (0 or 1).
 
-These two are not the only drivers the `iio_device` class can ever have.
+These three are not the only drivers the `iio_device` class can ever have.
 Since it's a regular Zephyr driver class, additional implementations can
 be added the same way — a new devicetree binding, a `compatible` string,
 and an `iio_device_driver_api` implementation — to adapt other Zephyr
-APIs (e.g. GPIO, PWM, or a vendor-specific bus) to IIO channels, without
+APIs (e.g. PWM, or a vendor-specific bus) to IIO channels, without
 touching the backend or IIOD.
 
 `zephyr/drivers/adc/adc_emul_generator.c` is a synthetic waveform generator
