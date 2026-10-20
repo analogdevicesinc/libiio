@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
 sample:
   description: iiod server sample
   name: iiod
@@ -192,3 +195,17 @@ tests:
     extra_args:
       - SHIELD="adafruit_lis3dh;iio_adafruit_lis3dh;adafruit_aht20;iio_adafruit_aht20;adafruit_veml7700;iio_adafruit_veml7700;adafruit_ism330dhcx;iio_adafruit_ism330dhcx"
 
+  sample.iiod.alif_shuttle_click:
+    platform_allow:
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_he/sram
+    integration_platforms:
+      - ensemble_e8_dk/ae822fa0e5597ls0/rtss_he/sram
+    extra_configs:
+      - CONFIG_ADC=y
+      - CONFIG_DAC=y
+      - CONFIG_SENSOR=y
+      - CONFIG_TEST_RANDOM_GENERATOR=y
+      - CONFIG_LOG=y
+    extra_args:
+      - SNIPPET=iiod-network
+      - SHIELD="mikroe_accel_click;iio_mikroe_accel_click;mikroe_adac_click;iio_mikroe_adac_click;mikroe_surface_temp_2_click;iio_mikroe_surface_temp_2_click"
