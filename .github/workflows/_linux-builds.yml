@@ -27,18 +27,18 @@ jobs:
             deb: true
           - image: fedora:42
             artifact-name: Linux-Fedora-42
-          - image: fedora:44
-            artifact-name: Linux-Fedora-44
+          # - image: fedora:44
+          #   artifact-name: Linux-Fedora-44
           - image: debian:bookworm
             artifact-name: Linux-Debian-12
             deb: true
           - image: debian:trixie
             artifact-name: Linux-Debian-13
             deb: true
-          - image: opensuse/leap:15.6
-            artifact-name: Linux-openSUSE-15.6
-          - image: opensuse/leap:16.0
-            artifact-name: Linux-openSUSE-16.0
+          # - image: opensuse/leap:15.6
+          #   artifact-name: Linux-openSUSE-15.6
+          # - image: opensuse/leap:16.0
+          #   artifact-name: Linux-openSUSE-16.0
     container:
       image: ${{ matrix.image }}
     steps:
@@ -53,7 +53,7 @@ jobs:
             apt-get install -y build-essential git cmake libxml2-dev bison flex \
               libcdk5-dev libaio-dev libusb-1.0-0-dev libzstd-dev \
               libserialport-dev libavahi-client-dev doxygen graphviz man2html \
-              python3 python3-pip python3-setuptools wget
+              python3 python3-pip python3-setuptools wget curl
             pip3 install sphinx --break-system-packages 2>/dev/null || pip3 install sphinx
 
             # Fedora
@@ -89,10 +89,10 @@ jobs:
           make VERBOSE=1
           cmake .. -DLICENSE_CHECK=ON
           export QA_RPATHS=$(( 0x0001|0x0002 ))
-          if [[ "${{ matrix.deb }}" != "true" ]]; then
+          if [ "${{ matrix.deb }}" != "true" ]; then
             make package
+            make required2tar
           fi
-          make required2tar
 
       - name: Get version
         if: matrix.deb
