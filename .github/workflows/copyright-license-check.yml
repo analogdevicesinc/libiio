@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+name: Copyright & License Check
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      file-extensions:
+        description: 'Comma-separated file extensions to scan (without dots). Leave empty for action defaults.'
+        required: false
+
+permissions:
+  contents: read
+
+jobs:
+  copyright-license-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Scan for copyright/license headers
+        if: ${{ !inputs.file-extensions }}
+        uses: analogdevicesinc/shared-actions/copyright-license-check@main
+        with:
+          full-scan: ${{ github.event_name == 'workflow_dispatch' }}
+          fail-on-missing: true
+          copyright-holder: 'Analog Devices'
+
+      - name: Scan for copyright/license headers (custom extensions)
+        if: ${{ inputs.file-extensions }}
+        uses: analogdevicesinc/shared-actions/copyright-license-check@main
+        with:
+          full-scan: ${{ github.event_name == 'workflow_dispatch' }}
+          fail-on-missing: true
+          copyright-holder: 'Analog Devices'
+          file-extensions: ${{ inputs.file-extensions }}
