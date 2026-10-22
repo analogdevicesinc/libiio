@@ -18,18 +18,23 @@ jobs:
         include:
           - image: ubuntu:22.04
             artifact-name: Linux-Ubuntu-22.04
+            deb: true
           - image: ubuntu:24.04
             artifact-name: Linux-Ubuntu-24.04
+            deb: true
           - image: ubuntu:26.04
             artifact-name: Linux-Ubuntu-26.04
+            deb: true
           - image: fedora:42
             artifact-name: Linux-Fedora-42
           - image: fedora:44
             artifact-name: Linux-Fedora-44
           - image: debian:bookworm
             artifact-name: Linux-Debian-12
+            deb: true
           - image: debian:trixie
             artifact-name: Linux-Debian-13
+            deb: true
           - image: opensuse/leap:15.6
             artifact-name: Linux-openSUSE-15.6
           - image: opensuse/leap:16.0
@@ -84,8 +89,23 @@ jobs:
           make VERBOSE=1
           cmake .. -DLICENSE_CHECK=ON
           export QA_RPATHS=$(( 0x0001|0x0002 ))
-          make package
+          if [[ "${{ matrix.deb }}" != "true" ]]; then
+            make package
+          fi
           make required2tar
+
+      - name: Get version
+        if: matrix.deb
+        id: version
+        run: |
+          version=$(grep -oP '(?<=VERSION )[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt)
+          echo "version=${version}" >> "${GITHUB_OUTPUT}"
+
+      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
+        if: matrix.deb
+        id: deb
+        with:
+          version: ${{ steps.version.outputs.version }}
 
       - name: Build with Examples
         if: matrix.artifact-name == 'Linux-Ubuntu-24.04'
@@ -104,10 +124,19 @@ jobs:
         run: ./CI/scripts/check_README_BUILD.sh
 
       - name: Upload artifacts
+        if: "!matrix.deb"
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: |
-            build/*.deb
             build/*.rpm
             build/*.tar.gz
+
+      - name: Upload artifacts
+        if: matrix.deb
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            ${{ steps.deb.outputs.artifact-dir }}
+            build/*.deb
