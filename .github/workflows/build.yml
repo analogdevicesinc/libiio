@@ -9,6 +9,7 @@ on:
       - libiio-v0
       - 'staging/*'
       - '20*'
+      - 'ci/*'
     tags:
       - 'v*'
     paths-ignore:
