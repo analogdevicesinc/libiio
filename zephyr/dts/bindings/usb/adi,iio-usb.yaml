@@ -13,32 +13,31 @@ properties:
   num-pipes:
     type: int
     default: 3
+    min: 1
     description: |
       Number of USB bulk endpoint pairs (pipes). Pipe 0 is the IIOD
       command channel. Additional pipes are used for data streaming
       (one per concurrent buffer/stream). Each pipe requires one IN
       and one OUT bulk endpoint.
 
-  rx-buf-size:
+  rx-depth:
     type: int
-    default: 512
+    default: 2
+    min: 2
     description: |
-      Maximum buffer size in bytes for a single USB bulk receive
-      transfer. Must match the bulk endpoint max packet size or be
-      a multiple of it.
+      Receive buffers each pipe may hold at once: one armed on the
+      endpoint and one being read by the interpreter, so the endpoint
+      does not go bare between packets. The class allocates
+      num-pipes * rx-depth of them.
 
   tx-buf-size:
     type: int
-    default: 64
+    default: 512
     description: |
-      Size in bytes of each TX chunk when transmitting data over USB.
-      Smaller values reduce peak buffer pool usage at the cost of
-      more USB transactions.
-
-  rx-fifo-size:
-    type: int
-    default: 4096
-    description: |
-      Per-pipe RX ring buffer size in bytes. Must hold multiple
-      in-flight packets to avoid drops while the iiod interpreter
-      is busy. Should be a multiple of rx-buf-size.
+      Size in bytes of each chunk when transmitting over USB. Every
+      chunk costs a transfer and a completion, so smaller values trade
+      throughput for a smaller buffer pool. Must be a multiple of the
+      largest bulk packet the build can use (512 on a high-speed
+      capable build, 64 otherwise), so that a chunk ends on a packet
+      boundary rather than a short packet that would end the host's
+      read early.
