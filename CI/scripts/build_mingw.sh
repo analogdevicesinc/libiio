@@ -1,10 +1,14 @@
 #!/usr/bin/bash.exe
+# Copyright (c) 2024-2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
 set -xe
 
 init_env() {
     # Define architecture and prefix
     export ARCH=x86_64
-    export MINGW_VERSION=mingw64
+    export MINGW_VERSION=ucrt64
 
     # Set up compilers and tools using absolute Windows paths
     export CC=/c/msys64/${MINGW_VERSION}/bin/${ARCH}-w64-mingw32-gcc.exe
@@ -16,15 +20,15 @@ init_env() {
 }
 
 install_pacman_deps() {
-    WINDEPS="mingw-w64-x86_64-libserialport \
-    mingw-w64-x86_64-libusb \
-    mingw-w64-x86_64-zstd \
-    mingw-w64-x86_64-libxml2 \
-    mingw-w64-x86_64-python3 \
-    mingw-w64-x86_64-python-pip \
-    mingw-w64-x86_64-python-setuptools \
-    mingw-w64-x86_64-cmake \
-    mingw-w64-x86_64-gcc \
+    WINDEPS="mingw-w64-ucrt-x86_64-libserialport \
+    mingw-w64-ucrt-x86_64-libusb \
+    mingw-w64-ucrt-x86_64-zstd \
+    mingw-w64-ucrt-x86_64-libxml2 \
+    mingw-w64-ucrt-x86_64-python3 \
+    mingw-w64-ucrt-x86_64-python-pip \
+    mingw-w64-ucrt-x86_64-python-setuptools \
+    mingw-w64-ucrt-x86_64-cmake \
+    mingw-w64-ucrt-x86_64-gcc \
     cmake
     "
     echo "$WINDEPS" | xargs pacman -S --noconfirm --needed
