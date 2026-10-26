@@ -3,7 +3,7 @@
 """
 SPDX-License-Identifier: LGPL-2.1-or-later
 
-Copyright (C) 2014 Analog Devices, Inc.
+Copyright (C) 2014-2026 Analog Devices, Inc.
 Author: Paul Cercueil <paul.cercueil@analog.com>
 """
 
