@@ -105,13 +105,24 @@ config LIBIIO_IIOD_USB_THREAD_STACK_SIZE
 	int "Thread stack size"
 	default 4096
 	help
-	  Stack size of the thread running the iiod server.
+	  Stack size of the thread running the iiod server. This thread also
+	  runs the iiod interpreter for pipe 0, the command channel.
 
 config LIBIIO_IIOD_USB_PIPE_THREAD_STACK_SIZE
 	int "Pipe thread stack size"
 	default 4096
 	help
 	  Stack size of threads running the iiod interpreter on data pipes.
+
+config LIBIIO_IIOD_USB_TX_WARN_MS
+	int "Transmit stall warning threshold (ms)"
+	default 2000
+	range 1 60000
+	help
+	  How long a transmit may stay outstanding before the transport warns.
+	  A transfer cannot be abandoned once the controller has it, so this
+	  only controls when a host that has stopped reading is reported; the
+	  transport waits either way.
 
 config LIBIIO_IIOD_USB_INIT
 	bool "Initialize the USB device stack"
