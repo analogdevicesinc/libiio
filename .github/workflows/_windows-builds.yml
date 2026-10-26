@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
 name: Windows Builds
 
 on:
@@ -148,13 +152,13 @@ jobs:
       - name: Install dependencies
         run: |
           git submodule update --init
-          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+          $env:PATH += ";C:\msys64\bin;C:\msys64\ucrt64\bin;C:\msys64\usr\bin"
           C:\msys64\usr\bin\bash.exe -c "./CI/scripts/build_mingw.sh install_pacman_deps"
         shell: pwsh
 
       - name: Build
         run: |
-          $env:PATH += ";C:\msys64\bin;C:\msys64\mingw64\bin;C:\msys64\usr\bin"
+          $env:PATH += ";C:\msys64\bin;C:\msys64\ucrt64\bin;C:\msys64\usr\bin"
           mkdir build-mingw
           cd build-mingw
           C:\msys64\usr\bin\bash.exe -c "../CI/scripts/build_mingw.sh build_libiio"
