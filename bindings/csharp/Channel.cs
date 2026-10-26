@@ -183,6 +183,7 @@ namespace iio
             IIO_ALTCURRENT,
             IIO_COVERAGE,
             IIO_VOLUMEFLOW,
+            IIO_FREQUENCY,
             IIO_CHAN_TYPE_UNKNOWN = Int32.MaxValue
         }
 
