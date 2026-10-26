@@ -1,18 +1,22 @@
+# Copyright (c) 2021-2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
 # https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_preference_variables?view=powershell-7.2#erroractionpreference
 $ErrorActionPreference = "Stop"
 $ErrorView = "NormalView"
 
 if ("$Env:COMPILER" -eq "MinGW Makefiles") {
-	cp C:\msys64\mingw64\bin\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libxml2-16.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libgcc_s_seh-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libiconv-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\zlib1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\liblzma-5.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libwinpthread-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
-	cp C:\msys64\mingw64\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libserialport-0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libusb-1.0.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libxml2-16.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libzstd.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libgcc_s_seh-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libiconv-2.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\zlib1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\liblzma-5.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libwinpthread-1.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
+	cp C:\msys64\ucrt64\bin\libstdc++-6.dll $env:BUILD_ARTIFACTSTAGINGDIRECTORY
 } else {
 	if ( "$Env:COMPILER" -eq "Visual Studio 17 2022" ){
 		$USB_VS_version="VS2022"
