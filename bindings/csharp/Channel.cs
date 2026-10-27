@@ -217,6 +217,7 @@ namespace iio
         }
 
         internal IntPtr chn;
+        internal Device device;
         private uint sample_size;
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -268,12 +269,6 @@ namespace iio
         private static extern int iio_channel_get_index(IntPtr chn);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_channel_get_device(IntPtr chn);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_get_context(IntPtr dev);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_channel_get_modifier(IntPtr chn);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -318,12 +313,13 @@ namespace iio
         /// <summary>Represents the format of a data sample.</summary>
         public DataFormat format { get; private set; }
 
-        internal Channel(IntPtr chn)
+        internal Channel(IntPtr chn, Device device)
         {
             IntPtr fmt_struct = iio_channel_get_data_format(chn);
             uint nb_attrs = iio_channel_get_attrs_count(chn);
 
             this.chn = chn;
+            this.device = device;
             attrs = new List<Attr>();
             modifier = (ChannelModifier) iio_channel_get_modifier(chn);
             type = (ChannelType) iio_channel_get_type(chn);
@@ -468,8 +464,7 @@ namespace iio
         /// <returns><see cref="iio.Device"/></returns>
         public Device get_device()
         {
-            IntPtr dev_ptr = iio_channel_get_device(chn);
-            return new Device(new Context(iio_device_get_context(dev_ptr)), dev_ptr);
+            return device;
         }
 
         /// <summary>Converts the data from the hardware format to the format of the arhitecture on which libiio is running.</summary>

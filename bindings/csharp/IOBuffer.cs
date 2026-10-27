@@ -57,13 +57,8 @@ namespace iio
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern long iio_buffer_step(IntPtr buf);
 
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_get_context(IntPtr dev);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_buffer_get_device(IntPtr buf);
-
         internal IntPtr buf;
+        internal Device device;
 
         /// <summary>The size of this buffer, in samples.</summary>
         public readonly uint samples_count;
@@ -82,6 +77,7 @@ namespace iio
             this.samples_count = samples_count;
             this.circular = circular;
             this.circular_buffer_pushed = false;
+            this.device = dev;
 
             buf = iio_device_create_buffer(dev.dev, samples_count, circular);
             if (buf == IntPtr.Zero)
@@ -203,8 +199,7 @@ namespace iio
         /// <returns>The device of the current buffer.</returns>
         public Device get_device()
         {
-            IntPtr dev = iio_buffer_get_device(buf);
-            return new Device(new Context(iio_device_get_context(dev)), dev);
+            return device;
         }
 
         /// <summary>Gets a pointer to the first sample from the current buffer for a specific channel.</summary>
