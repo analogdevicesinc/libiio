@@ -519,6 +519,25 @@ static int iiod_client_discard(
 	return 0;
 }
 
+static int iiod_client_get_fwu_attr_index(
+		const struct iio_attr *attr, uint16_t *fwu_idx, uint16_t *file)
+{
+	const struct iio_device *dev = attr->iio.dev;
+	unsigned int i, j;
+
+	for (i = 0; i < iio_device_get_fwu_count(dev); i++) {
+		for (j = 0; j < IIO_FWU_FILE_NB; j++) {
+			if (iio_device_get_fwu_attr(dev, i, (enum iio_fwu_file)j) == attr) {
+				*fwu_idx = (uint16_t)i;
+				*file = (uint16_t)j;
+				return 0;
+			}
+		}
+	}
+
+	return -ENOENT;
+}
+
 static ssize_t iiod_client_read_attr_new(
 		struct iiod_client *client, const struct iio_attr *attr, char *dest, size_t len)
 {
@@ -530,6 +549,7 @@ static ssize_t iiod_client_read_attr_new(
 	unsigned int i;
 	uint16_t arg1, arg2 = 0;
 	struct iiod_buf iiod_buf;
+	ssize_t ret;
 
 	switch (attr->type) {
 	case IIO_ATTR_TYPE_CHANNEL:
@@ -628,6 +648,13 @@ static ssize_t iiod_client_read_attr_new(
 		arg1 = (uint16_t)i;
 		arg2 = (uint16_t)buf->idx;
 		break;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		dev = attr->iio.dev;
+		cmd.op = IIOD_OP_READ_FWU_ATTR;
+
+		if (iiod_client_get_fwu_attr_index(attr, &arg1, &arg2))
+			return -ENOENT;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -638,7 +665,14 @@ static ssize_t iiod_client_read_attr_new(
 	iiod_buf.ptr = dest;
 	iiod_buf.size = len;
 
-	return iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+	ret = iiod_io_exec_command(io, &cmd, NULL, &iiod_buf);
+
+	/* An empty value is received without any data: terminate the string
+	 * here, as it was never written to the buffer. */
+	if (ret == 0 && len > 0)
+		dest[0] = '\0';
+
+	return ret;
 }
 
 ssize_t iiod_client_attr_read(
@@ -681,6 +715,9 @@ ssize_t iiod_client_attr_read(
 	case IIO_ATTR_TYPE_DEVICE_EVENT:
 	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		/* Event attributes not supported in legacy text protocol */
+		return -ENOSYS;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		/* Firmware upload not supported in legacy text protocol */
 		return -ENOSYS;
 	case IIO_ATTR_TYPE_BUFFER:
 		iio_snprintf(buf, sizeof(buf), "READ %s BUFFER %s\r\n", id, attr->name);
@@ -828,6 +865,13 @@ static ssize_t iiod_client_write_attr_new(struct iiod_client *client, const stru
 		arg1 = (uint16_t)i;
 		arg2 = (uint16_t)buf->idx;
 		break;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		dev = attr->iio.dev;
+		cmd.op = IIOD_OP_WRITE_FWU_ATTR;
+
+		if (iiod_client_get_fwu_attr_index(attr, &arg1, &arg2))
+			return -ENOENT;
+		break;
 	default:
 		return -EINVAL;
 	}
@@ -894,6 +938,9 @@ ssize_t iiod_client_attr_write(struct iiod_client *client, const struct iio_attr
 	case IIO_ATTR_TYPE_DEVICE_EVENT:
 	case IIO_ATTR_TYPE_CHANNEL_EVENT:
 		/* Event attributes not supported in legacy text protocol */
+		return -ENOSYS;
+	case IIO_ATTR_TYPE_DEVICE_FWU:
+		/* Firmware upload not supported in legacy text protocol */
 		return -ENOSYS;
 	case IIO_ATTR_TYPE_BUFFER:
 		iio_snprintf(buf, sizeof(buf), "WRITE %s BUFFER %s %lu\r\n", id, attr->name,
