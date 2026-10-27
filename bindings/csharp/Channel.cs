@@ -385,21 +385,28 @@ namespace iio
             byte[] array = new byte[(int) (buffer.samples_count * sample_size)];
             MemoryStream stream = new MemoryStream(array, true);
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
 
-            if (raw)
+            try
             {
-                count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
+                IntPtr addr = handle.AddrOfPinnedObject();
+
+                if (raw)
+                {
+                    count = iio_channel_read_raw(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
+                }
+                else
+                {
+                    count = iio_channel_read(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
+                }
             }
-            else
+            finally
             {
-                count = iio_channel_read(this.chn, buffer.buf, addr, buffer.samples_count * sample_size);
+                handle.Free();
             }
-            handle.Free();
+
             stream.SetLength((long) count);
             return stream.ToArray();
-
         }
 
         /// <summary>
@@ -423,18 +430,25 @@ namespace iio
             }
 
             GCHandle handle = GCHandle.Alloc(array, GCHandleType.Pinned);
-            IntPtr addr = handle.AddrOfPinnedObject();
             uint count;
 
-            if (raw)
+            try
             {
-                count = iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
+                IntPtr addr = handle.AddrOfPinnedObject();
+
+                if (raw)
+                {
+                    count = iio_channel_write_raw(this.chn, buffer.buf, addr, (uint) array.Length);
+                }
+                else
+                {
+                    count = iio_channel_write(this.chn, buffer.buf, addr, (uint) array.Length);
+                }
             }
-            else
+            finally
             {
-                count = iio_channel_write(this.chn, buffer.buf, addr, (uint) array.Length);
+                handle.Free();
             }
-            handle.Free();
 
             return count;
         }
