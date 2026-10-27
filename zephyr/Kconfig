@@ -86,6 +86,44 @@ config LIBIIO_COND_POOL_SIZE
 	  LIBIIO_MUTEX_POOL_SIZE.
 
 endif # LIBIIO_MULTITHREADING
+config LIBIIO_IIOD_V0_COMPAT
+	bool "libiio v0.x (ASCII protocol) compatibility"
+	default y
+	help
+	  Make the iiod server understand the line-based ASCII command
+	  protocol used by libiio v0.x clients, in addition to the binary
+	  protocol used by v1.x clients. The client is detected automatically:
+	  a v1 client's first command is "BINARY", which switches the server
+	  to the binary protocol; a v0 client stays on the ASCII protocol.
+
+	  Disable this to build a binary-only (v1) server.
+
+choice
+	prompt "v0 ASCII command parser implementation"
+	depends on LIBIIO_IIOD_V0_COMPAT
+	default LIBIIO_IIOD_V0_PARSER_LITE
+	help
+	  Selects how the v0 ASCII protocol front end recognizes commands.
+	  Both implementations recognize the same language and share all
+	  command handlers; only the recognize-and-dispatch layer differs.
+
+config LIBIIO_IIOD_V0_PARSER_LITE
+	bool "Hand-written tokenizer/dispatcher"
+	help
+	  Recognize v0 commands with the hand-written line tokenizer and
+	  positional dispatcher in tinyiiod/ascii-ops.c. No flex/bison build
+	  dependency; smallest footprint. Recommended.
+
+config LIBIIO_IIOD_V0_PARSER_GRAMMAR
+	bool "Generated flex/bison scanner/parser"
+	help
+	  Recognize v0 commands with the flex/bison scanner/parser generated
+	  from iiod/lexer.l and iiod/parser.y. Requires pre-generated
+	  iiod/lexer.c, iiod/parser.c and iiod/parser.h to be present in the
+	  source tree (they are .gitignore'd); generate them with a host iiod
+	  build before selecting this. Larger flash footprint.
+
+endchoice
 
 rsource "drivers/Kconfig"
 rsource "iiod/Kconfig"
