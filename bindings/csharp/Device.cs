@@ -217,9 +217,6 @@ namespace iio
         private static extern int iio_device_reg_read(IntPtr dev, uint addr, ref uint value);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern IntPtr iio_device_get_context(IntPtr dev);
-
-        [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_set_kernel_buffers_count(IntPtr dev, uint nb);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
@@ -280,7 +277,7 @@ namespace iio
 
             for (uint i = 0; i < nb_channels; i++)
             {
-                channels.Add(new Channel(iio_device_get_channel(dev, i)));
+                channels.Add(new Channel(iio_device_get_channel(dev, i), this));
             }
 
             for (uint i = 0; i < nb_attrs; i++)
@@ -421,7 +418,7 @@ namespace iio
         /// <returns>An instance of the <see cref="iio.Context"/> class.</returns>
         public Context get_context()
         {
-            return new Context(iio_device_get_context(dev));
+            return ctx;
         }
 
         /// <summary>Finds the channel with the given name from the current device.</summary>
@@ -438,7 +435,7 @@ namespace iio
                 throw new Exception("There is no channel with the given name!");
             }
 
-            return new Channel(chn);
+            return new Channel(chn, this);
         }
 
         /// <summary>Finds the attribute with the given name from the current device.</summary>
