@@ -202,7 +202,7 @@ namespace iio
         private static extern IntPtr iio_device_get_buffer_attr(IntPtr dev, uint index);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern int iio_device_get_trigger(IntPtr dev, IntPtr triggerptr);
+        private static extern int iio_device_get_trigger(IntPtr dev, out IntPtr triggerptr);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         private static extern int iio_device_set_trigger(IntPtr dev, IntPtr trigger);
@@ -348,20 +348,18 @@ namespace iio
         /// <exception cref="System.Exception">The instance could not be retrieved.</exception>
         public Trigger get_trigger()
         {
-            IntPtr ptr = (IntPtr)0;
-            int err = iio_device_get_trigger(this.dev, ptr);
+            IntPtr ptr;
+            int err = iio_device_get_trigger(this.dev, out ptr);
             if (err < 0)
             {
                 throw new Exception("Unable to get trigger: err=" + err);
             }
 
-            ptr = Marshal.ReadIntPtr(ptr);
-
-            foreach (Trigger trig in ctx.devices)
+            foreach (Device each in ctx.devices)
             {
-                if (trig.dev == ptr)
+                if (each.dev == ptr)
                 {
-                    return trig;
+                    return each as Trigger;
                 }
             }
 
