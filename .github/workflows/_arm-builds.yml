@@ -47,49 +47,45 @@ jobs:
           - image: arm32v7/debian:trixie
             platform-flag: '--platform linux/arm/v7'
             artifact-name: Debian-13-armhf
-    env:
-      ARTIFACTNAME: ${{ matrix.artifact-name }}
-      CMAKE_BUILD_TYPE: ${{ inputs.build-type }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
-      - name: Build
+      - uses: actions/checkout@v7
+        with:
+          repository: analogdevicesinc/shared-actions
+          path: shared-actions
+          fetch-depth: 1
+
+      - name: Get version
+        id: version
+        run: |
+          major=$(grep -oP '(?<=LIBIIO_VERSION_MAJOR )[0-9]+' CMakeLists.txt)
+          minor=$(grep -oP '(?<=LIBIIO_VERSION_MINOR )[0-9]+' CMakeLists.txt)
+          echo "version=${major}.${minor}~v0" >> "${GITHUB_OUTPUT}"
+
+      - name: Build deb
         run: |
           set -e
-          docker run \
-            ${{ matrix.platform-flag }} \
-            --rm -t --privileged \
-            -e ARTIFACTNAME=${{ matrix.artifact-name }} \
-            -e CMAKE_BUILD_TYPE=${{ inputs.build-type }} \
-            -e CFLAGS="-Wno-error=deprecated-declarations -Wno-error=format" \
-            -v "${{ github.workspace }}":"/ci" \
-            "${{ matrix.image }}" \
-            /bin/bash -c "
-              set -e
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update
-              apt-get install -y build-essential git cmake libxml2-dev bison flex \
-                libcdk5-dev libaio-dev libusb-1.0-0-dev \
-                libserialport-dev libavahi-client-dev \
-                python3 python3-pip python3-setuptools
-
-              cd /ci
-              mkdir build && cd build
-              cmake .. -DCMAKE_BUILD_TYPE=\${CMAKE_BUILD_TYPE:-RelWithDebInfo} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EXAMPLES=ON -DPYTHON_BINDINGS=ON -DENABLE_PACKAGING=ON -DCPACK_SYSTEM_NAME=\${ARTIFACTNAME}
-              make
-              make package
-              make required2tar
-            "
+          docker run -d --name builder \
+            ${{ matrix.platform-flag }} --privileged \
+            -v "${{ github.workspace }}:${{ github.workspace }}" \
+            -w "${{ github.workspace }}" \
+            -e DEBIAN_FRONTEND=noninteractive \
+            -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            -e VERSION="${{ steps.version.outputs.version }}" \
+            -e WORKING_DIRECTORY="${{ github.workspace }}" \
+            -e IGNORE_PATH="shared-actions" \
+            "${{ matrix.image }}" sleep infinity
+          docker exec builder bash -c "apt-get update && apt-get install -y curl"
+          docker exec builder bash shared-actions/deb-generator-action/build-deb.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
-          path: |
-            build/*.deb
-            build/*.tar.gz
+          path: artifacts
 
   cross-arch:
     name: ${{ matrix.artifact-name }}
@@ -111,49 +107,45 @@ jobs:
           - image: ubuntu:26.04
             arch: s390x
             artifact-name: Ubuntu-26.04-s390x
-    env:
-      ARTIFACTNAME: ${{ matrix.artifact-name }}
-      CMAKE_BUILD_TYPE: ${{ inputs.build-type }}
     steps:
       - uses: actions/checkout@v7
         with:
           fetch-depth: 1
 
+      - uses: actions/checkout@v7
+        with:
+          repository: analogdevicesinc/shared-actions
+          path: shared-actions
+          fetch-depth: 1
+
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v4
 
-      - name: Build
+      - name: Get version
+        id: version
+        run: |
+          major=$(grep -oP '(?<=LIBIIO_VERSION_MAJOR )[0-9]+' CMakeLists.txt)
+          minor=$(grep -oP '(?<=LIBIIO_VERSION_MINOR )[0-9]+' CMakeLists.txt)
+          echo "version=${major}.${minor}~v0" >> "${GITHUB_OUTPUT}"
+
+      - name: Build deb
         run: |
           set -e
-          sudo docker run \
-            --platform "linux/${{ matrix.arch }}" \
-            --rm -t --privileged \
-            -e ARTIFACTNAME=${{ matrix.artifact-name }} \
-            -e CMAKE_BUILD_TYPE=${{ inputs.build-type }} \
-            -e CFLAGS="-Wno-error=deprecated-declarations -Wno-error=format" \
-            -v "${{ github.workspace }}":"/ci" \
-            "${{ matrix.image }}" \
-            /bin/bash -c "
-              set -e
-              export DEBIAN_FRONTEND=noninteractive
-              apt-get update
-              apt-get install -y build-essential git cmake libxml2-dev bison flex \
-                libcdk5-dev libaio-dev libusb-1.0-0-dev \
-                libserialport-dev libavahi-client-dev \
-                python3 python3-pip python3-setuptools
-
-              cd /ci
-              mkdir build && cd build
-              cmake .. -DCMAKE_BUILD_TYPE=\${CMAKE_BUILD_TYPE:-RelWithDebInfo} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DWITH_SERIAL_BACKEND=ON -DWITH_EXAMPLES=ON -DPYTHON_BINDINGS=ON -DENABLE_PACKAGING=ON -DCPACK_SYSTEM_NAME=\${ARTIFACTNAME}
-              make
-              make package
-              make required2tar
-            "
+          docker run -d --name builder \
+            --platform "linux/${{ matrix.arch }}" --privileged \
+            -v "${{ github.workspace }}:${{ github.workspace }}" \
+            -w "${{ github.workspace }}" \
+            -e DEBIAN_FRONTEND=noninteractive \
+            -e GITHUB_WORKSPACE="${{ github.workspace }}" \
+            -e VERSION="${{ steps.version.outputs.version }}" \
+            -e WORKING_DIRECTORY="${{ github.workspace }}" \
+            -e IGNORE_PATH="shared-actions" \
+            "${{ matrix.image }}" sleep infinity
+          docker exec builder bash -c "apt-get update && apt-get install -y curl"
+          docker exec builder bash shared-actions/deb-generator-action/build-deb.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
-          path: |
-            build/*.deb
-            build/*.tar.gz
+          path: artifacts

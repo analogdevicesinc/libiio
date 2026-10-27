@@ -18,18 +18,23 @@ jobs:
         include:
           - image: ubuntu:22.04
             artifact-name: Linux-Ubuntu-22.04
+            deb: true
           - image: ubuntu:24.04
             artifact-name: Linux-Ubuntu-24.04
+            deb: true
           - image: ubuntu:26.04
             artifact-name: Linux-Ubuntu-26.04
+            deb: true
           - image: fedora:42
             artifact-name: Linux-Fedora-42
           - image: fedora:44
             artifact-name: Linux-Fedora-44
           - image: debian:bookworm
             artifact-name: Linux-Debian-12
+            deb: true
           - image: debian:trixie
             artifact-name: Linux-Debian-13
+            deb: true
           - image: opensuse/leap:15.6
             artifact-name: Linux-openSUSE-15.6
           - image: opensuse/leap:16.0
@@ -48,7 +53,7 @@ jobs:
             apt-get install -y build-essential git cmake libxml2-dev bison flex \
               libcdk5-dev libaio-dev libusb-1.0-0-dev \
               libserialport-dev libavahi-client-dev doxygen graphviz man2html \
-              python3 python3-pip python3-setuptools wget
+              python3 python3-pip python3-setuptools wget curl
             pip3 install sphinx --break-system-packages 2>/dev/null || pip3 install sphinx
 
           # Fedora
@@ -81,8 +86,24 @@ jobs:
           mkdir build && cd build
           cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DENABLE_PACKAGING=ON -DPYTHON_BINDINGS=ON -DWITH_SERIAL_BACKEND=ON -DWITH_MAN=ON -DCPACK_SYSTEM_NAME=${{ matrix.artifact-name }}
           make VERBOSE=1
-          make package
-          make required2tar
+          if [ "${{ matrix.deb }}" != "true" ]; then
+            make package
+            make required2tar
+          fi
+
+      - name: Get version
+        if: matrix.deb
+        id: version
+        run: |
+          major=$(grep -oP '(?<=LIBIIO_VERSION_MAJOR )[0-9]+' CMakeLists.txt)
+          minor=$(grep -oP '(?<=LIBIIO_VERSION_MINOR )[0-9]+' CMakeLists.txt)
+          echo "version=${major}.${minor}~v0" >> "${GITHUB_OUTPUT}"
+
+      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
+        if: matrix.deb
+        id: deb
+        with:
+          version: ${{ steps.version.outputs.version }}
 
       - name: Kernel check
         if: matrix.artifact-name == 'Linux-Ubuntu-22.04' && github.event_name == 'pull_request'
@@ -93,10 +114,18 @@ jobs:
         run: ./CI/azure/check_README_BUILD.sh
 
       - name: Upload artifacts
+        if: "!matrix.deb"
         uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact-name }}
           path: |
-            build/*.deb
             build/*.rpm
             build/*.tar.gz
+
+      - name: Upload artifacts
+        if: matrix.deb
+        uses: actions/upload-artifact@v7
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: |
+            ${{ steps.deb.outputs.artifact-dir }}
