@@ -469,7 +469,7 @@ namespace iio
         public Device get_device()
         {
             IntPtr dev_ptr = iio_channel_get_device(chn);
-            return new Device(new Context(dev_ptr), dev_ptr);
+            return new Device(new Context(iio_device_get_context(dev_ptr)), dev_ptr);
         }
 
         /// <summary>Converts the data from the hardware format to the format of the arhitecture on which libiio is running.</summary>
