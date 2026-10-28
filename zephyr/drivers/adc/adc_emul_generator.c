@@ -15,6 +15,7 @@ LOG_MODULE_REGISTER(adc_emul_generator, CONFIG_ADC_LOG_LEVEL);
 
 struct channel_data {
 	uint32_t value;
+	uint32_t max;
 };
 
 struct generator_config {
@@ -28,7 +29,7 @@ static int generator_value_set(const struct device *dev,
 {
 	struct channel_data *channel_data = data;
 
-	channel_data->value += 1;
+	channel_data->value = (channel_data->value + 1) % channel_data->max;
 	*result = channel_data->value;
 
 	return 0;
@@ -46,6 +47,8 @@ static int generator_init(const struct device *dev)
 			LOG_ERR("ADC emulator device not ready");
 			return -ENODEV;
 		}
+
+		config->channel_data[i].max = BIT(config->channel_spec[i].resolution);
 
 		err = adc_emul_raw_value_func_set(
 				config->channel_spec[i].dev,
