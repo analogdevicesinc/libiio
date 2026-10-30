@@ -1,3 +1,10 @@
+// SPDX-License-Identifier: MIT
+/*
+ * libiio - Library for interfacing industrial I/O (IIO) devices
+ *
+ * Copyright (C) 2026 Analog Devices, Inc.
+ */
+
 // Smoke test for the packaged libiio-sharp.dll: fails if it can't load
 // the native library or call into it.
 using System;

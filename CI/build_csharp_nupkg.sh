@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
 # Packs the libiio C# bindings into a NuGet package.
 #
 # Usage: build_csharp_nupkg.sh <csproj> <output-dir> [windows-native-dir]
