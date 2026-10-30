@@ -1,3 +1,7 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
 param(
     [string]$StagingDir,
     [string]$Configuration,
