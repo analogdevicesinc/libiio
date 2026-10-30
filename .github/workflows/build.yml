@@ -113,7 +113,7 @@ jobs:
       build-type: ${{ needs.config.outputs.build-type }}
 
   csharp-nuget:
-    needs: config
+    needs: [config, windows]
     uses: ./.github/workflows/_csharp-nuget.yml
     with:
       build-type: ${{ needs.config.outputs.build-type }}
