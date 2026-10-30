@@ -9,6 +9,7 @@
 using System;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace iio
 {
@@ -17,7 +18,14 @@ namespace iio
     public static class IioLib
     {
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
-        private static extern void iio_strerror(int err, [In] string buf, ulong len);
+        private static extern void iio_strerror(int err, StringBuilder buf, ulong len);
+
+        // Kept so binaries compiled against the old strerror(int, string)
+        // signature keep resolving if libiio-sharp.dll is swapped without a
+        // recompile. Not usable from newly compiled code: see the [Obsolete]
+        // overload below.
+        [DllImport("libiio.dll", EntryPoint = "iio_strerror", CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_strerror_legacy(int err, [In] string buf, ulong len);
 
         [DllImport("libiio.dll", CallingConvention = CallingConvention.Cdecl)]
         [return: MarshalAs(UnmanagedType.I1)]
@@ -31,14 +39,32 @@ namespace iio
 
         /// <summary>Calls the iio_strerror method from libiio.</summary>
         /// <param name="err">Error code.</param>
-        /// <param name="buf">Error message.</param>
+        /// <param name="buf">Buffer that will receive the error message. Must be
+        /// pre-sized via its constructor (e.g. <c>new StringBuilder(256)</c>); the
+        /// native call will not write past its <see cref="StringBuilder.Capacity"/>.</param>
+        public static void strerror(int err, StringBuilder buf)
+        {
+            if (buf == null)
+            {
+                throw new System.Exception("The buffer should not be null!");
+            }
+            iio_strerror(err, buf, (ulong) buf.Capacity);
+        }
+
+        /// <summary>Non-functional: kept only for binary compatibility with
+        /// binaries compiled against the old signature.</summary>
+        /// <param name="err">Error code.</param>
+        /// <param name="buf">Error message. Never actually populated: .NET
+        /// strings are immutable, so the native write can't be copied back
+        /// into it.</param>
+        [Obsolete("strerror(int, string) cannot return the error message because string marshaling is one-way in .NET. Use strerror(int, StringBuilder) instead.", true)]
         public static void strerror(int err, string buf)
         {
             if (buf == null)
             {
                 throw new System.Exception("The buffer should not be null!");
             }
-            iio_strerror(err, buf, (ulong) buf.Length);
+            iio_strerror_legacy(err, buf, (ulong) buf.Length);
         }
 
         /// <summary>Checks if the given backend is available or not.</summary>
