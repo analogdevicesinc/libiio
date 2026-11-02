@@ -84,6 +84,49 @@ err_free_block:
 	return iio_ptr(ret);
 }
 
+struct iio_block *iio_buffer_stream_create_block_from_dmabuf(
+		struct iio_buffer_stream *buf_stream, int dmabuf_fd, size_t size)
+{
+	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+	struct iio_block_pdata *pdata;
+	struct iio_block *block;
+	size_t sample_size;
+	int ret;
+
+	if (dmabuf_fd < 0)
+		return iio_ptr(-EBADF);
+
+	if (!ops->create_block_from_dmabuf)
+		return iio_ptr(-ENOSYS);
+
+	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
+	if (sample_size == 0 || size < sample_size)
+		return iio_ptr(-EINVAL);
+
+	block = zalloc(sizeof(*block));
+	if (!block)
+		return iio_ptr(-ENOMEM);
+
+	pdata = ops->create_block_from_dmabuf(buf_stream->pdata, dmabuf_fd, size);
+	ret = iio_err(pdata);
+	if (ret) {
+		free(block);
+		return iio_ptr(ret);
+	}
+
+	block->pdata = pdata;
+	block->dmabuf_fd = ops->get_dmabuf_fd ? ops->get_dmabuf_fd(pdata) : -EINVAL;
+	block->buf_stream = buf_stream;
+	block->size = size;
+
+	iio_mutex_lock(buf_stream->lock);
+	buf_stream->nb_blocks++;
+	iio_mutex_unlock(buf_stream->lock);
+
+	return block;
+}
+
 void iio_block_destroy(struct iio_block *block)
 {
 	struct iio_buffer_stream *buf_stream = block->buf_stream;
