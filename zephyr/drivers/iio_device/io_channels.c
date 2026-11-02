@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: MIT
  */
@@ -720,6 +720,10 @@ static int iio_device_io_channels_init(const struct device *dev)
 
 	for (size_t i = 0; i < config->num_channels; i++) {
 		if (config->channels[i].type == IO_CHANNEL_TYPE_ADC) {
+			if (!adc_is_ready_dt(&config->channels[i].adc)) {
+				LOG_ERR_DEVICE_NOT_READY(config->channels[i].adc.dev);
+				return -ENODEV;
+			}
 			data->overrides[i].adc.gain = config->channels[i].adc.channel_cfg.gain;
 			data->overrides[i].adc.reference = config->channels[i].adc.channel_cfg.reference;
 			data->overrides[i].adc.differential = config->channels[i].adc.channel_cfg.differential;
@@ -730,6 +734,11 @@ static int iio_device_io_channels_init(const struct device *dev)
 				break;
 			}
 		} else {
+			if (!dac_is_ready_dt(&config->channels[i].dac)) {
+				LOG_ERR_DEVICE_NOT_READY(config->channels[i].dac.dev);
+				return -ENODEV;
+			}
+
 			/* Find the matching ADC channel, if present */
 			data->channels[i].dac.adc_channel_idx = IO_CHANNEL_DAC_ADC_CHANNEL_IDX_NONE;
 			for (size_t j = 0; j < config->num_channels; j++) {
