@@ -181,6 +181,7 @@ Project Pages
    bindings
    tools/index
    iiod
+   iiod-binary-protocol
    zephyr
    tls_userguide
    training
