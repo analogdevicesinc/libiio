@@ -177,6 +177,7 @@ Project Pages
    usage
    examples
    api
+   compat
    bindings
    tools/index
    iiod
