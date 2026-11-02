@@ -1,5 +1,5 @@
 GENERATE_XML = YES
-INPUT = ../../include/iio
+INPUT = ../../include/iio ../../iio-compat.h
 OUTPUT_DIRECTORY = generated
 
 ENABLE_PREPROCESSING   = YES
