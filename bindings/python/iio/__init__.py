@@ -43,6 +43,7 @@ from enum import Enum
 from os import strerror as _strerror
 from os import path as _path
 from platform import system as _system
+from sys import platform as _platform
 import abc
 
 if "Windows" in _system():
@@ -368,7 +369,14 @@ else:
 if _lib_loc is None:
     raise OSError(2, "Could not find libiio C library")
 _lib = _cdll(_lib_loc, use_errno=True, use_last_error=True)
-_libc = _cdll(find_library("c"))
+
+libc_name = find_library('c') if _platform != 'win32' else 'msvcrt.dll'
+if not libc_name:
+  raise ImportError(
+      "Could not find the standard C library (c). "
+      "Please ensure your system has the standard C library runtime installed."
+  )
+_libc = _cdll(libc_name)
 
 _get_backends_count = _lib.iio_get_builtin_backends_count
 _get_backends_count.restype = c_uint
