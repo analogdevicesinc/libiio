@@ -29,7 +29,7 @@ struct iio_scan_context;
 
 /* ---------------------------------------------------------------------------*/
 /* ------------------------- Libiio 0.x to 1.x compat API --------------------*/
-/** @defgroup TopLevel Top-level functions
+/** @defgroup CompatAPI Libiio 0.x compatibility API
  * @{ */
 
 /** @brief Create a context from local or remote IIO devices
