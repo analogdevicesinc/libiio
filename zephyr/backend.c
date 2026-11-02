@@ -1,9 +1,10 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: MIT
  */
 
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/version.h>
 #include <iio/iio-backend.h>
@@ -11,6 +12,8 @@
 #include <errno.h>
 #include <string.h>
 #include <iio_device.h>
+
+LOG_MODULE_REGISTER(libiio_backend, CONFIG_LIBIIO_LOG_LEVEL);
 
 #if defined(__DATE__) && defined(__TIME__)
 #define BACKEND_VERSION(_ver) _ver " " __DATE__ " " __TIME__
@@ -70,6 +73,12 @@ zephyr_create_context(const struct iio_context_params *params, const char *args)
 
 	STRUCT_SECTION_FOREACH(iio_device_info, iio_device_info) {
 		dev = iio_device_info->dev;
+
+		if (!device_is_ready(dev)) {
+			LOG_ERR_DEVICE_NOT_READY(dev);
+			continue;
+		}
+
 		name = iio_device_info->name;
 		if (!name) {
 			name = dev->name;
