@@ -105,6 +105,41 @@ static int enable_cpu_access(struct iio_block_pdata *pdata, bool enable)
 	return ioctl_nointr(fd, IIO_DMABUF_SYNC_IOCTL, &dbuf_sync);
 }
 
+/* Attach a DMABUF fd to the buffer, and record that the buffer is in DMABUF mode */
+static int local_attach_dmabuf(struct iio_buffer_pdata *pdata, int fd, size_t size)
+{
+	int ret;
+
+	ret = ioctl(pdata->fd, IIO_DMABUF_ATTACH_IOCTL, &fd);
+	if (ret) {
+		ret = -errno;
+
+		if (ret == -ENODEV) {
+			/* If the ioctl is not available, return -ENOSYS to mark
+			 * the DMABUF interface as unavailable */
+			ret = -ENOSYS;
+		}
+
+		if (ret == -EPERM) {
+			/* If the ioctl is available, but the buffer implementation used
+			 * in the kernel driver does not provide the necessary
+			 * DMABUF iio_buffer_access_funcs, mark the DMABUF interface as
+			 * unavailable. */
+			ret = -ENOSYS;
+		}
+
+		return ret;
+	}
+
+	pdata->dmabuf_supported = true;
+
+	/* Keep the smallest block size seen on this buffer. */
+	if (!pdata->size || size < pdata->size)
+		pdata->size = size;
+
+	return 0;
+}
+
 struct iio_block_pdata *local_create_dmabuf(
 		struct iio_buffer_pdata *pdata, size_t size, void **data)
 {
@@ -172,32 +207,9 @@ struct iio_block_pdata *local_create_dmabuf(
 		goto err_data_unmap;
 
 	/* Attach DMABUF to the buffer */
-	ret = ioctl(pdata->fd, IIO_DMABUF_ATTACH_IOCTL, &fd);
-	if (ret) {
-		ret = -errno;
-
-		if (ret == -ENODEV) {
-			/* If the ioctl is not available, return -ENOSYS to mark
-			 * the DMABUF interface as unavailable */
-			ret = -ENOSYS;
-		}
-
-		if (ret == -EPERM) {
-			/* If the ioctl is available, but the buffer implementation used
-			 * in the kernel driver does not provide the necessary
-			 * DMABUF iio_buffer_access_funcs, mark the DMABUF interface as
-			 * unavailable. */
-			ret = -ENOSYS;
-		}
-
+	ret = local_attach_dmabuf(pdata, fd, size);
+	if (ret)
 		goto err_data_unmap;
-	}
-
-	pdata->dmabuf_supported = true;
-
-	/* Keep the smallest block size seen on this buffer. */
-	if (!pdata->size || size < pdata->size)
-		pdata->size = size;
 
 	close(devfd);
 
