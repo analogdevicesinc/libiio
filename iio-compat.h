@@ -4,7 +4,7 @@
  *
  * Libiio 0.x to 1.x compat library
  *
- * Copyright (C) 2021 Analog Devices, Inc.
+ * Copyright (C) 2021-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 /** @file iio-compat.h
