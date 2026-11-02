@@ -226,6 +226,59 @@ err_free_priv:
 	return iio_ptr(ret);
 }
 
+struct iio_block_pdata *local_create_dmabuf_from_fd(
+		struct iio_buffer_pdata *pdata, int dmabuf_fd, size_t size)
+{
+	struct iio_block_pdata *priv;
+	off_t dmabuf_size;
+	int ret, fd;
+
+	/* A buffer cannot mix DMABUF and mmap blocks */
+	if (pdata->mmap_supported)
+		return iio_ptr(-EBUSY);
+
+	/* DMABUF objects report their size through lseek(SEEK_END). If that is
+	 * not supported, the kernel still checks the size on enqueue. */
+	dmabuf_size = lseek(dmabuf_fd, 0, SEEK_END);
+	if (dmabuf_size >= 0) {
+		/* The file offset is shared with the caller's descriptor */
+		(void)lseek(dmabuf_fd, 0, SEEK_SET);
+
+		if (size > (size_t)dmabuf_size)
+			return iio_ptr(-EINVAL);
+	}
+
+	fd = fcntl(dmabuf_fd, F_DUPFD_CLOEXEC, 0);
+	if (fd < 0)
+		return iio_ptr(-errno);
+
+	priv = zalloc(sizeof(*priv));
+	if (!priv) {
+		ret = -ENOMEM;
+		goto err_close_fd;
+	}
+
+	priv->pdata = (void *)(intptr_t)fd;
+	priv->data = NULL;
+	priv->size = size;
+	priv->buf = pdata;
+	priv->dequeued = true;
+	/* There is no CPU mapping, hence nothing to synchronize */
+	priv->cpu_access_disabled = true;
+
+	ret = local_attach_dmabuf(pdata, fd, size);
+	if (ret)
+		goto err_free_priv;
+
+	return priv;
+
+err_free_priv:
+	free(priv);
+err_close_fd:
+	close(fd);
+	return iio_ptr(ret);
+}
+
 void local_free_dmabuf(struct iio_block_pdata *pdata)
 {
 	int ret, fd = (int)(intptr_t)pdata->pdata;
@@ -234,7 +287,8 @@ void local_free_dmabuf(struct iio_block_pdata *pdata)
 	if (ret)
 		dev_perror(pdata->buf->dev, ret, "Unable to detach DMABUF");
 
-	munmap(pdata->data, pdata->size);
+	if (pdata->data)
+		munmap(pdata->data, pdata->size);
 	close(fd);
 	free(pdata);
 }
@@ -313,6 +367,10 @@ int local_dequeue_dmabuf(struct iio_block_pdata *pdata, bool nonblock)
 int local_dmabuf_disable_cpu_access(struct iio_block_pdata *pdata, bool disable)
 {
 	int ret;
+
+	/* Blocks created from an external DMABUF fd have no CPU mapping */
+	if (!pdata->data)
+		return disable ? 0 : -EINVAL;
 
 	if (pdata->dequeued) {
 		ret = enable_cpu_access(pdata, !disable);

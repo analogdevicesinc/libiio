@@ -43,6 +43,8 @@ int buffer_check_ready(
 
 struct iio_block_pdata *local_create_dmabuf(
 		struct iio_buffer_pdata *pdata, size_t size, void **data);
+struct iio_block_pdata *local_create_dmabuf_from_fd(
+		struct iio_buffer_pdata *pdata, int dmabuf_fd, size_t size);
 void local_free_dmabuf(struct iio_block_pdata *pdata);
 
 int local_enqueue_dmabuf(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic);
