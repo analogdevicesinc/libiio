@@ -203,11 +203,17 @@ int iio_block_dequeue(struct iio_block *block, bool nonblock)
 
 void *iio_block_start(const struct iio_block *block)
 {
+	if (!block->data)
+		return iio_ptr(-EACCES);
+
 	return block->data;
 }
 
 void *iio_block_end(const struct iio_block *block)
 {
+	if (!block->data)
+		return iio_ptr(-EACCES);
+
 	return (void *)((uintptr_t)block->data + block->size);
 }
 
@@ -219,6 +225,9 @@ void *iio_block_first(const struct iio_block *block, const struct iio_channel *c
 	const struct iio_channel *cur;
 	unsigned int i;
 	size_t len;
+
+	if (!block->data)
+		return iio_ptr(-EACCES);
 
 	/* Test if the block has samples for this channel */
 	if (!iio_channels_mask_test_bit(buf_stream->mask, chn->number))
@@ -260,6 +269,9 @@ ssize_t iio_block_foreach_sample(const struct iio_block *block,
 	const struct iio_device *dev = buf_stream->buf->dev;
 	size_t sample_size;
 	ssize_t processed = 0;
+
+	if (!block->data)
+		return -EACCES;
 
 	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
 	if (sample_size == 0)
