@@ -137,6 +137,7 @@ Content on this topic
 <li class="toctree-l2"><a class="reference internal" href="../api/c/debug/">Debug and Low-Level Functions</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="../compat/">0.x Compatibility API</a></li>
 <li class="toctree-l1"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3" id="toctree-collapse-3"/><div class="collapse"><a class="reference internal" href="../bindings/">Bindings</a><label for="toctree-collapse-3"><div class="icon"></div></label></div><ul>
 <li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-1" id="toctree-collapse-3-1"/><div class="collapse"><a class="reference internal" href="../api/python/">Python Bindings</a><label for="toctree-collapse-3-1"><div class="icon"></div></label></div><ul>
 <li class="toctree-l3"><a class="reference internal" href="../api/python/context/">Contexts</a></li>
@@ -617,6 +618,8 @@ Content on this topic
 </li>
       <li><a href="../api/c/context/#_CPPv422iio_context_get_paramsPK11iio_context">iio_context_get_params (C++ function)</a>
 </li>
+      <li><a href="../compat/#_CPPv423iio_context_get_versionPK11iio_contextPjPjAL8E_c">iio_context_get_version (C++ function)</a>
+</li>
       <li><a href="../api/c/context/#_CPPv429iio_context_get_version_majorPK11iio_context">iio_context_get_version_major (C++ function)</a>
 </li>
       <li><a href="../api/c/context/#_CPPv429iio_context_get_version_minorPK11iio_context">iio_context_get_version_minor (C++ function)</a>
@@ -627,6 +630,12 @@ Content on this topic
 </li>
       <li><a href="../api/c/context/#_CPPv419iio_context_get_xmlPK11iio_context">iio_context_get_xml (C++ function)</a>
 </li>
+      <li><a href="../compat/#_CPPv432iio_context_info_get_descriptionPK16iio_context_info">iio_context_info_get_description (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv424iio_context_info_get_uriPK16iio_context_info">iio_context_info_get_uri (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv426iio_context_info_list_freePP16iio_context_info">iio_context_info_list_free (C++ function)</a>
+</li>
       <li><a href="../api/c/context/#_CPPv416iio_context_pingP11iio_context">iio_context_ping (C++ function)</a>
 </li>
       <li><a href="../api/c/context/#_CPPv420iio_context_set_dataP11iio_contextPv">iio_context_set_data (C++ function)</a>
@@ -636,6 +645,20 @@ Content on this topic
       <li><a href="../api/c/debug/#_CPPv424iio_create_channels_maskj">iio_create_channels_mask (C++ function)</a>
 </li>
       <li><a href="../api/c/context/#_CPPv418iio_create_contextPK18iio_context_paramsPKc">iio_create_context (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv427iio_create_context_from_uriPKc">iio_create_context_from_uri (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv426iio_create_default_contextv">iio_create_default_context (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv424iio_create_local_contextv">iio_create_local_context (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv426iio_create_network_contextPKc">iio_create_network_context (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv421iio_create_scan_blockPKcj">iio_create_scan_block (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv423iio_create_scan_contextPKcj">iio_create_scan_context (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv422iio_create_xml_contextPKc">iio_create_xml_context (C++ function)</a>
 </li>
       <li><a href="../api/c/debug/#_CPPv415iio_data_format">iio_data_format (C++ struct)</a>
 </li>
@@ -717,6 +740,8 @@ Content on this topic
 </li>
       <li><a href="../api/c/device/#_CPPv419iio_device_set_dataP10iio_devicePv">iio_device_set_data (C++ function)</a>
 </li>
+      <li><a href="../compat/#_CPPv435iio_device_set_kernel_buffers_countPK10iio_devicej">iio_device_set_kernel_buffers_count (C++ function)</a>
+</li>
       <li><a href="../api/c/device/#_CPPv422iio_device_set_triggerPK10iio_devicePK10iio_device">iio_device_set_trigger (C++ function)</a>
 </li>
       <li><a href="../api/c/top/#_CPPv47iio_errPKv">iio_err (C++ function)</a>
@@ -741,6 +766,8 @@ Content on this topic
 </li>
       <li><a href="../api/c/top/#_CPPv415iio_has_backendPK18iio_context_paramsPKc">iio_has_backend (C++ function)</a>
 </li>
+      <li><a href="../compat/#_CPPv423iio_library_get_versionPjPjAL8E_c">iio_library_get_version (C++ function)</a>
+</li>
       <li><a href="../api/c/top/#_CPPv47iio_ptri">iio_ptr (C++ function)</a>
 </li>
       <li><a href="../api/c/scan/#_CPPv48iio_scanPK18iio_context_paramsPKc">iio_scan (C++ function)</a>
@@ -749,6 +776,16 @@ Content on this topic
         <li><a href="../api/c/scan/#_CPPv48iio_scan">(C++ struct)</a>
 </li>
       </ul></li>
+      <li><a href="../compat/#_CPPv422iio_scan_block_destroyP14iio_scan_block">iio_scan_block_destroy (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv423iio_scan_block_get_infoP14iio_scan_blockj">iio_scan_block_get_info (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv419iio_scan_block_scanP14iio_scan_block">iio_scan_block_scan (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv424iio_scan_context_destroyP16iio_scan_context">iio_scan_context_destroy (C++ function)</a>
+</li>
+      <li><a href="../compat/#_CPPv430iio_scan_context_get_info_listP16iio_scan_contextPPP16iio_context_info">iio_scan_context_get_info_list (C++ function)</a>
+</li>
       <li><a href="../api/c/scan/#_CPPv416iio_scan_destroyP8iio_scan">iio_scan_destroy (C++ function)</a>
 </li>
       <li><a href="../api/c/scan/#_CPPv424iio_scan_get_descriptionPK8iio_scan6size_t">iio_scan_get_description (C++ function)</a>
@@ -775,6 +812,8 @@ Content on this topic
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4N5iiopp4Attr4nameEv">iiopp::Attr::name (C++ function)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4AttrcvbEv">iiopp::Attr::operator bool (C++ function)</a>
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4AttrcvdEv">iiopp::Attr::operator double (C++ function)</a>
@@ -793,8 +832,6 @@ Content on this topic
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4Attr8read_rawEPc6size_t">iiopp::Attr::read_raw (C++ function)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="../api/cpp/attr/#_CPPv4N5iiopp4Attr12static_valueEv">iiopp::Attr::static_value (C++ function)</a>
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4N5iiopp4Attr10write_boolEb">iiopp::Attr::write_bool (C++ function)</a>
