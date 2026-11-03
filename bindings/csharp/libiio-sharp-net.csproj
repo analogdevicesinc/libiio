@@ -21,6 +21,7 @@
     <Compile Include="Context.cs" />
     <Compile Include="Device.cs" />
     <Compile Include="EventStream.cs" />
+    <Compile Include="FirmwareUpload.cs" />
     <Compile Include="IOBuffer.cs" />
     <Compile Include="IIOEvent.cs" />
     <Compile Include="Trigger.cs" />

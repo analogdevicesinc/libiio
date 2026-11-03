@@ -74,6 +74,19 @@ enum iio_attr_type {
 	IIO_ATTR_TYPE_CHANNEL,
 	IIO_ATTR_TYPE_CHANNEL_EVENT,
 	IIO_ATTR_TYPE_CONTEXT,
+	IIO_ATTR_TYPE_DEVICE_FWU,
+};
+
+/* Files of a firmware upload instance (/sys/class/firmware/<dev-id>:<fwu-id>/).
+ * These values are used as indexes on the IIOD protocol: append only. */
+enum iio_fwu_file {
+	IIO_FWU_FILE_LOADING = 0,
+	IIO_FWU_FILE_DATA,
+	IIO_FWU_FILE_STATUS,
+	IIO_FWU_FILE_ERROR,
+	IIO_FWU_FILE_CANCEL,
+	IIO_FWU_FILE_REMAINING_SIZE,
+	IIO_FWU_FILE_NB,
 };
 
 #define CHN_ATTRLIST_IDX(type) (type - IIO_ATTR_TYPE_CHANNEL)
@@ -185,6 +198,10 @@ __api int iio_context_add_attr(struct iio_context *ctx, const char *key, const c
 __api int iio_device_add_attr(struct iio_device *dev, const char *name, enum iio_attr_type type);
 
 __api int iio_buffer_add_attr(struct iio_buffer *buf, const char *name);
+
+__api int iio_device_add_fwu(struct iio_device *dev, const char *fwu_id);
+__api const struct iio_attr *iio_device_get_fwu_attr(
+		const struct iio_device *dev, unsigned int fwu_idx, enum iio_fwu_file file);
 
 __api void iio_buffer_set_direction(struct iio_buffer *buf, const char *direction);
 

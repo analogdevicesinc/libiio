@@ -27,6 +27,7 @@
 #include <stdexcept>
 #include <system_error>
 #include <cassert>
+#include <cerrno>
 #include <type_traits>
 
 /** @brief Public C++ API
@@ -631,6 +632,31 @@ public:
     optional<Attr> find_event_attr(cstr name) {return impl::attr<iio_device, iio_device_find_event_attr>(p, name);}
     void reg_write(uint32_t address, uint32_t value) {impl::check(iio_device_reg_write(p, address, value), "iio_device_reg_write");}
     uint32_t reg_read(uint32_t address) {uint32_t value; impl::check(iio_device_reg_read(p, address, &value), "iio_device_reg_read"); return value;}
+    unsigned int fwu_count() const {return iio_device_get_fwu_count(p);}
+    optstr fwu_id(unsigned int idx) const {return impl::opt(iio_device_get_fwu_id(p, idx));}
+    void fwu_write(cstr fwu_id, void const * data, size_t len) {impl::check(iio_device_fwu_write(p, fwu_id, data, len), "iio_device_fwu_write");}
+    iio_fwu_status fwu_status(cstr fwu_id, uint64_t * remaining = nullptr) const
+    {
+        iio_fwu_status status;
+        impl::check(iio_device_fwu_get_status(p, fwu_id, &status, remaining), "iio_device_fwu_get_status");
+        return status;
+    }
+
+    /** @brief Wait for a firmware upload to complete
+     * @return true if the upload completed, false if it is still in progress
+     * (@p timeout_ms expired, or is IIO_TIMEOUT_NONBLOCK). Errors reported by the device are thrown. */
+    bool fwu_wait(cstr fwu_id, int timeout_ms = IIO_TIMEOUT_INFINITE)
+    {
+        int ret = iio_device_fwu_wait(p, fwu_id, timeout_ms);
+
+        if (ret == -EAGAIN)
+            return false;
+
+        impl::check(ret, "iio_device_fwu_wait");
+        return true;
+    }
+
+    void fwu_cancel(cstr fwu_id) {impl::check(iio_device_fwu_cancel(p, fwu_id), "iio_device_fwu_cancel");}
 };
 
 typedef Ptr<cstr, void, free> CstrPtr;

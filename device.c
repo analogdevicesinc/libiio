@@ -180,6 +180,15 @@ ssize_t iio_snprintf_device_xml(char *ptr, ssize_t len, const struct iio_device 
 		}
 	}
 
+	for (i = 0; i < dev->nb_fwus; i++) {
+		ret = iio_xml_print_and_sanitized_param(
+				ptr, len, "<firmware-upload id=\"", dev->fwus[i].id, "\" />");
+		if (ret < 0)
+			return ret;
+
+		iio_update_xml_indexes(ret, &ptr, &len, &alen);
+	}
+
 	/* Backward compatibility: To make sure that older clients will still work,
 	 * we also need to create <buffer-attributes> tags. Note that given that
 	 * multi buffer is not still supported (and won't ever be in older versions),
@@ -306,6 +315,117 @@ const struct iio_attr *iio_device_find_debug_attr(const struct iio_device *dev, 
 	return iio_attr_find(&dev->attrlist[IIO_ATTR_TYPE_DEBUG], name);
 }
 
+static const char *const fwu_file_names[IIO_FWU_FILE_NB] = {
+	[IIO_FWU_FILE_LOADING] = "loading",
+	[IIO_FWU_FILE_DATA] = "data",
+	[IIO_FWU_FILE_STATUS] = "status",
+	[IIO_FWU_FILE_ERROR] = "error",
+	[IIO_FWU_FILE_CANCEL] = "cancel",
+	[IIO_FWU_FILE_REMAINING_SIZE] = "remaining_size",
+};
+
+static void free_fwu(struct iio_fwu *fwu)
+{
+	unsigned int i;
+
+	for (i = 0; i < IIO_FWU_FILE_NB; i++)
+		free((char *)fwu->attrs[i].filename);
+	free(fwu->id);
+}
+
+int iio_device_add_fwu(struct iio_device *dev, const char *fwu_id)
+{
+	struct iio_fwu *fwus, fwu = { 0 };
+	unsigned int i, idx;
+	size_t len;
+	char *filename;
+
+	if (!fwu_id || !fwu_id[0] || strchr(fwu_id, '/'))
+		return -EINVAL;
+
+	for (idx = 0; idx < dev->nb_fwus; idx++) {
+		int cmp = strcmp(fwu_id, dev->fwus[idx].id);
+
+		if (!cmp)
+			return -EEXIST;
+		if (cmp < 0)
+			break;
+	}
+
+	fwu.id = iio_strdup(fwu_id);
+	if (!fwu.id)
+		return -ENOMEM;
+
+	for (i = 0; i < IIO_FWU_FILE_NB; i++) {
+		len = strlen(fwu_id) + strlen(fwu_file_names[i]) + 2;
+		filename = malloc(len);
+		if (!filename) {
+			free_fwu(&fwu);
+			return -ENOMEM;
+		}
+
+		iio_snprintf(filename, len, "%s/%s", fwu_id, fwu_file_names[i]);
+
+		fwu.attrs[i] = (struct iio_attr){
+			.iio.dev = dev,
+			.type = IIO_ATTR_TYPE_DEVICE_FWU,
+			.name = fwu_file_names[i],
+			.filename = filename,
+		};
+	}
+
+	fwus = realloc(dev->fwus, (dev->nb_fwus + 1) * sizeof(*fwus));
+	if (!fwus) {
+		free_fwu(&fwu);
+		return -ENOMEM;
+	}
+
+	/* Keep the list sorted by ID, so that both ends of the IIOD protocol
+	 * agree on the indexes. */
+	memmove(&fwus[idx + 1], &fwus[idx], (dev->nb_fwus - idx) * sizeof(*fwus));
+	fwus[idx] = fwu;
+
+	dev->fwus = fwus;
+	dev->nb_fwus++;
+
+	dev_dbg(dev, "Added firmware upload instance \'%s\'\n", fwu_id);
+
+	return 0;
+}
+
+const struct iio_attr *iio_device_get_fwu_attr(
+		const struct iio_device *dev, unsigned int fwu_idx, enum iio_fwu_file file)
+{
+	if (fwu_idx >= dev->nb_fwus || (unsigned int)file >= IIO_FWU_FILE_NB)
+		return NULL;
+
+	return &dev->fwus[fwu_idx].attrs[file];
+}
+
+const struct iio_fwu *iio_device_find_fwu(const struct iio_device *dev, const char *fwu_id)
+{
+	unsigned int i;
+
+	for (i = 0; i < dev->nb_fwus; i++)
+		if (!strcmp(dev->fwus[i].id, fwu_id))
+			return &dev->fwus[i];
+
+	return NULL;
+}
+
+unsigned int iio_device_get_fwu_count(const struct iio_device *dev)
+{
+	return dev->nb_fwus;
+}
+
+const char *iio_device_get_fwu_id(const struct iio_device *dev, unsigned int index)
+{
+	if (index >= dev->nb_fwus)
+		return NULL;
+
+	return dev->fwus[index].id;
+}
+
 void iio_device_set_data(struct iio_device *dev, void *data)
 {
 	dev->userdata = data;
@@ -351,6 +471,10 @@ void free_device(struct iio_device *dev)
 
 	for (type = IIO_ATTR_TYPE_DEVICE; type <= IIO_ATTR_TYPE_DEVICE_EVENT; type++)
 		iio_free_attrs(&dev->attrlist[type]);
+
+	for (i = 0; i < dev->nb_fwus; i++)
+		free_fwu(&dev->fwus[i]);
+	free(dev->fwus);
 
 	for (i = 0; i < dev->nb_buffers; i++)
 		free_buffer(dev->buffers[i]);

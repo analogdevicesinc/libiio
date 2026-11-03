@@ -1504,6 +1504,102 @@ __api int iio_event_stream_read(
 		struct iio_event_stream *stream, struct iio_event *out_event, bool nonblock);
 
 /** @} */ /* ------------------------------------------------------------------*/
+/* ------------------------ Firmware upload ----------------------------------*/
+/** @defgroup FirmwareUpload Functions to upload firmware to IIO devices
+ * @{
+ * Devices whose kernel driver registers the firmware upload interface expose
+ * one instance per firmware image, identified by a string (the fwu-id). On
+ * Linux, an instance is found at /sys/class/firmware/<dev-id>:<fwu-id>/.
+ *
+ * An upload is started with iio_device_fwu_write(), which returns once the
+ * image has been handed to the kernel. The device then prepares, transfers
+ * and programs the image on its own; iio_device_fwu_wait() waits for this to
+ * complete and reports the outcome.
+ *
+ * @enum iio_fwu_status
+ * @brief Progress of a firmware upload instance
+ */
+enum iio_fwu_status {
+	IIO_FWU_IDLE,
+	IIO_FWU_RECEIVING,
+	IIO_FWU_PREPARING,
+	IIO_FWU_TRANSFERRING,
+	IIO_FWU_PROGRAMMING,
+};
+
+/** @brief Enumerate the firmware upload instances of the given device
+ * @param dev A pointer to an iio_device structure
+ * @return The number of firmware upload instances found */
+__api __check_ret __pure unsigned int iio_device_get_fwu_count(const struct iio_device *dev);
+
+/** @brief Get the ID of the firmware upload instance present at the given index
+ * @param dev A pointer to an iio_device structure
+ * @param index The index corresponding to the firmware upload instance
+ * @return On success, a pointer to a static NULL-terminated string
+ * @return If the index is invalid, NULL is returned */
+__api __check_ret __pure const char *iio_device_get_fwu_id(
+		const struct iio_device *dev, unsigned int index);
+
+/** @brief Upload a firmware image
+ * @param dev A pointer to an iio_device structure
+ * @param fwu_id A NULL-terminated string corresponding to the ID of the
+ *   firmware upload instance
+ * @param data A pointer to the firmware image
+ * @param len The size of the firmware image, in bytes
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned. -EBUSY is returned if
+ *   an upload is already in progress, and -ENOENT if the device has no
+ *   firmware upload instance with the given ID.
+ *
+ * <b>NOTE:</b> This function returns as soon as the image has been handed
+ * over. Use iio_device_fwu_wait() to wait for the upload to complete. */
+__api __check_ret int iio_device_fwu_write(
+		const struct iio_device *dev, const char *fwu_id, const void *data, size_t len);
+
+/** @brief Wait for a firmware upload to complete
+ * @param dev A pointer to an iio_device structure
+ * @param fwu_id A NULL-terminated string corresponding to the ID of the
+ *   firmware upload instance
+ * @param timeout_ms Timeout value in milliseconds:
+ *   - IIO_TIMEOUT_BACKEND (0) or IIO_TIMEOUT_INFINITE (-1): wait until the
+ *     upload completes
+ *   - IIO_TIMEOUT_NONBLOCK (INT_MIN): don't wait
+ *   - Positive: wait at most the specified milliseconds
+ * @return On success, 0 is returned
+ * @return If the upload is still in progress when the timeout expires, or
+ *   right away with IIO_TIMEOUT_NONBLOCK, -EAGAIN is returned. The upload
+ *   continues, and this function can be called again.
+ * @return On error, a negative errno code is returned. If the device reported
+ *   an error, it is mapped to an errno code: -EIO (hardware or read/write
+ *   error), -ETIMEDOUT (the device timed out), -ECANCELED (cancelled), -EBUSY
+ *   (device busy), -EFBIG (invalid file size), -ENOSPC (flash wearout) or
+ *   -EINVAL (invalid firmware). */
+__api __check_ret int iio_device_fwu_wait(
+		const struct iio_device *dev, const char *fwu_id, int timeout_ms);
+
+/** @brief Get the progress of a firmware upload instance
+ * @param dev A pointer to an iio_device structure
+ * @param fwu_id A NULL-terminated string corresponding to the ID of the
+ *   firmware upload instance
+ * @param status A pointer to the variable where the status will be written
+ * @param remaining If not NULL, a pointer to the variable where the number of
+ *   bytes that remain to be processed by the device will be written
+ * @return On success, 0 is returned
+ * @return On error, a negative errno code is returned */
+__api __check_ret int iio_device_fwu_get_status(const struct iio_device *dev,
+		const char *fwu_id, enum iio_fwu_status *status, uint64_t *remaining);
+
+/** @brief Cancel a firmware upload in progress
+ * @param dev A pointer to an iio_device structure
+ * @param fwu_id A NULL-terminated string corresponding to the ID of the
+ *   firmware upload instance
+ * @return On success, 0 is returned. iio_device_fwu_wait() will then return
+ *   -ECANCELED.
+ * @return On error, a negative errno code is returned. The kernel may refuse
+ *   to cancel an upload while the device is being programmed (-EBUSY). */
+__api __check_ret int iio_device_fwu_cancel(const struct iio_device *dev, const char *fwu_id);
+
+/** @} */ /* ------------------------------------------------------------------*/
 /* ------------------------- Low-level functions -----------------------------*/
 /** @defgroup Debug Debug and low-level functions
  * @{

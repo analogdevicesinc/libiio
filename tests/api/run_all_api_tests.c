@@ -68,7 +68,7 @@ int main(void)
 
 	const char *test_suites[] = { "test_error_handling", "test_toplevel", "test_scan",
 		"test_context", "test_attr", "test_device", "test_channel", "test_buffer",
-		"test_hwmon", "test_events", "test_lowlevel", "test_typed_attr" };
+		"test_hwmon", "test_events", "test_fwu", "test_lowlevel", "test_typed_attr" };
 
 	int num_suites = sizeof(test_suites) / sizeof(test_suites[0]);
 	int passed = 0;

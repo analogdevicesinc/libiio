@@ -41,6 +41,7 @@ Components
    buffer
    buffer_stream
    device
+   firmware_upload
    channel
    trigger
    examples

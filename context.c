@@ -21,7 +21,7 @@ static const char xml_header[] =
 		"<!DOCTYPE context ["
 		"<!ELEMENT context (device | context-attribute)*>"
 		"<!ELEMENT context-attribute EMPTY>"
-		"<!ELEMENT device (channel | buffer | attribute | debug-attribute | event-attribute | buffer-attribute)*>"
+		"<!ELEMENT device (channel | buffer | attribute | debug-attribute | event-attribute | buffer-attribute | firmware-upload)*>"
 		"<!ELEMENT channel (scan-element?, attribute*, event-attribute*)>"
 		"<!ELEMENT buffer (attribute*, channel*)>"
 		"<!ELEMENT attribute EMPTY>"
@@ -29,6 +29,7 @@ static const char xml_header[] =
 		"<!ELEMENT debug-attribute EMPTY>"
 		"<!ELEMENT event-attribute EMPTY>"
 		"<!ELEMENT buffer-attribute EMPTY>"
+		"<!ELEMENT firmware-upload EMPTY>"
 		"<!ATTLIST context name CDATA #REQUIRED version-major CDATA #REQUIRED "
 		"version-minor CDATA #REQUIRED version-patch CDATA #REQUIRED version-git CDATA #REQUIRED description CDATA #IMPLIED>"
 		"<!ATTLIST context-attribute name CDATA #REQUIRED value CDATA #REQUIRED>"
@@ -40,6 +41,7 @@ static const char xml_header[] =
 		"<!ATTLIST debug-attribute name CDATA #REQUIRED value CDATA #IMPLIED>"
 		"<!ATTLIST event-attribute name CDATA #REQUIRED filename CDATA #IMPLIED value CDATA #IMPLIED>"
 		"<!ATTLIST buffer-attribute name CDATA #REQUIRED value CDATA #IMPLIED>"
+		"<!ATTLIST firmware-upload id CDATA #REQUIRED>"
 		"]>";
 
 static const struct iio_context_params default_params = {
