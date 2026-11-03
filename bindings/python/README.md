@@ -36,6 +36,22 @@ cd libiio/bindings/python
 pip install .
 ```
 
+#### Windows: MSVC vs. MinGW builds of libiio
+On Windows, the bindings must free memory allocated by `libiio` (for example the XML string returned by `iio_context_get_xml()`) with the C runtime that `libiio` itself was built against. By default the bindings assume the official MSVC builds from the [releases page](https://github.com/analogdevicesinc/libiio/releases/latest), which use the Universal CRT (`ucrtbase.dll`).
+
+The MinGW builds of `libiio` link against `msvcrt.dll` instead. Using them with the default settings frees memory with the wrong runtime, which corrupts the heap and crashes when a `Context` is destroyed. To use a MinGW build, set the `LIBIIO_PY_CRT` environment variable to `msvcrt` **before** importing `iio`:
+```shell
+set LIBIIO_PY_CRT=msvcrt
+python -c "import iio"
+```
+or, from Python:
+```python
+import os
+os.environ["LIBIIO_PY_CRT"] = "msvcrt"
+import iio
+```
+The variable accepts the name of any C runtime DLL and is ignored on other platforms.
+
 ### Support
 If you have a question about libiio or the python bindings and an Analog Devices IIO kernel driver please ask on : [![EngineerZone](https://img.shields.io/badge/chat-on%20EngineerZone-blue.svg)](https://ez.analog.com/linux-device-drivers/linux-software-drivers). If you have a question about a non-ADI devices, please ask it on [github](https://github.com/analogdevicesinc/libiio/issues).
 

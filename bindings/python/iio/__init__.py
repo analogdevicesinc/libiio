@@ -40,6 +40,7 @@ from ctypes import (
 from contextlib import contextmanager
 from ctypes.util import find_library
 from enum import Enum
+from os import environ as _environ
 from os import strerror as _strerror
 from os import path as _path
 from platform import system as _system
@@ -370,7 +371,7 @@ if _lib_loc is None:
 _lib = _cdll(_lib_loc, use_errno=True, use_last_error=True)
 
 if "Windows" in _system():
-    _libc_name = "ucrtbase"
+    _libc_name = _environ.get("LIBIIO_PY_CRT") or "ucrtbase"
 else:
     _libc_name = find_library("c")
     if not _libc_name:
