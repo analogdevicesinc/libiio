@@ -134,6 +134,11 @@ jobs:
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
           cmakeBuildType: ${{ inputs.build-type }}
 
+      - name: Run Python bindings smoke test
+        run: python bindings/python/tests/test_context_lifecycle.py "staging/${{ inputs.build-type }}"
+        env:
+          PYTHONPATH: ${{ github.workspace }}/bindings/python
+
       - name: Upload artifact
         uses: actions/upload-artifact@v7
         with:
@@ -195,6 +200,13 @@ jobs:
         run: .\CI\publish_deps.ps1
         env:
           BUILD_ARTIFACTSTAGINGDIRECTORY: ${{ github.workspace }}/staging
+
+      # MinGW builds link msvcrt.dll, unlike the MSVC builds (see bindings/python/README.md)
+      - name: Run Python bindings smoke test
+        run: python bindings/python/tests/test_context_lifecycle.py staging
+        env:
+          PYTHONPATH: ${{ github.workspace }}/bindings/python
+          LIBIIO_PY_CRT: msvcrt
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
