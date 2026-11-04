@@ -1,0 +1,19 @@
+Source: libiio
+Section: libs
+Priority: optional
+Maintainer: Engineerzone <linux@analog.com>
+Build-Depends: debhelper-compat (= 13), cmake, libxml2-dev, bison, flex,
+ libcdk5-dev, libaio-dev, libusb-1.0-0-dev, libzstd-dev,
+ libserialport-dev, libavahi-client-dev
+Standards-Version: 4.6.0
+Homepage: https://github.com/analogdevicesinc/libiio
+
+Package: libiio
+Architecture: @ARCHITECTURE@
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: libiio0, libiio-dev, libiio-utils, iiod
+Conflicts: libiio0, libiio-dev, libiio-utils, iiod
+Replaces: libiio0, libiio-dev, libiio-utils, iiod
+Description: Library for interfacing with IIO devices
+ libiio is used to interface to the Linux Industrial Input/Output (IIO)
+ Subsystem. Includes library, development files, utilities, and daemon.

@@ -8,22 +8,15 @@ Linux-Fedora-44/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-44.deb
 Linux-Fedora-44/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-44.rpm
 Linux-Fedora-44/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Fedora-44.tar.gz
 
-Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.deb
-Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.rpm
-Linux-Debian-12/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-12.tar.gz
+Linux-Debian-12/libiio_@VERSION@~v0-1_amd64.deb
 
-Linux-Debian-13/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-13.deb
-Linux-Debian-13/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-13.rpm
-Linux-Debian-13/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Debian-13.tar.gz
+Linux-Debian-13/libiio_@VERSION@~v0-1_amd64.deb
 
-Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.deb
-Linux-Ubuntu-22.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-22.04.tar.gz
+Linux-Ubuntu-22.04/libiio_@VERSION@~v0-1_amd64.deb
 
-Linux-Ubuntu-24.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-24.04.deb
-Linux-Ubuntu-24.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-24.04.tar.gz
+Linux-Ubuntu-24.04/libiio_@VERSION@~v0-1_amd64.deb
 
-Linux-Ubuntu-26.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-26.04.deb
-Linux-Ubuntu-26.04/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-Ubuntu-26.04.tar.gz
+Linux-Ubuntu-26.04/libiio_@VERSION@~v0-1_amd64.deb
 
 Linux-openSUSE-15.6/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.6.deb
 Linux-openSUSE-15.6/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Linux-openSUSE-15.6.tar.gz
@@ -46,41 +39,29 @@ macOS-26-x64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
 macOS-27-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-macOS-27-arm64.tar.gz
 macOS-27-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@.pkg
 
-Ubuntu-22.04-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-arm32v7.deb
-Ubuntu-22.04-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-arm32v7.tar.gz
+Ubuntu-22.04-arm32v7/libiio_@VERSION@~v0-1_armhf.deb
 
-Ubuntu-22.04-arm64v8/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-arm64v8.deb
-Ubuntu-22.04-arm64v8/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-arm64v8.tar.gz
+Ubuntu-22.04-arm64v8/libiio_@VERSION@~v0-1_arm64.deb
 
-Ubuntu-22.04-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-ppc64le.deb
-Ubuntu-22.04-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-ppc64le.tar.gz
+Ubuntu-22.04-ppc64le/libiio_@VERSION@~v0-1_ppc64el.deb
 
-Ubuntu-22.04-s390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-s390x.deb
-Ubuntu-22.04-s390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-22.04-s390x.tar.gz
+Ubuntu-22.04-s390x/libiio_@VERSION@~v0-1_s390x.deb
 
-Ubuntu-26.04-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-arm32v7.deb
-Ubuntu-26.04-arm32v7/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-arm32v7.tar.gz
+Ubuntu-26.04-arm32v7/libiio_@VERSION@~v0-1_armhf.deb
 
-Ubuntu-26.04-arm64v8/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-arm64v8.deb
-Ubuntu-26.04-arm64v8/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-arm64v8.tar.gz
+Ubuntu-26.04-arm64v8/libiio_@VERSION@~v0-1_arm64.deb
 
-Ubuntu-26.04-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-ppc64le.deb
-Ubuntu-26.04-ppc64le/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-ppc64le.tar.gz
+Ubuntu-26.04-ppc64le/libiio_@VERSION@~v0-1_ppc64el.deb
 
-Ubuntu-26.04-s390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-s390x.deb
-Ubuntu-26.04-s390x/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Ubuntu-26.04-s390x.tar.gz
+Ubuntu-26.04-s390x/libiio_@VERSION@~v0-1_s390x.deb
 
-Debian-12-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-arm64.deb
-Debian-12-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-arm64.tar.gz
+Debian-12-arm64/libiio_@VERSION@~v0-1_arm64.deb
 
-Debian-12-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-armhf.deb
-Debian-12-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-12-armhf.tar.gz
+Debian-12-armhf/libiio_@VERSION@~v0-1_armhf.deb
 
-Debian-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-arm64.deb
-Debian-13-arm64/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-arm64.tar.gz
+Debian-13-arm64/libiio_@VERSION@~v0-1_arm64.deb
 
-Debian-13-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-armhf.deb
-Debian-13-armhf/libiio-@VERSION@.g@LIBIIO_VERSION_GIT@-Debian-13-armhf.tar.gz
+Debian-13-armhf/libiio_@VERSION@~v0-1_armhf.deb
 
 Windows-VS-2022-x64/iio.h
 Windows-VS-2022-x64/iio_attr.exe
