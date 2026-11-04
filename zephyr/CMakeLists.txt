@@ -39,13 +39,10 @@ if(CONFIG_LIBIIO)
     set(LIBIIO_NO_THREADS 1)
   endif()
 
-  # libiio v0.x (ASCII protocol) compatibility. ascii-ops.c carries the shared
-  # command handlers and the LITE command parser (the default), which needs no
-  # flex/bison generated sources. Selecting the GRAMMAR parser instead
-  # generates the flex/bison scanner/parser into the build directory.
   if(CONFIG_LIBIIO_IIOD_V0_COMPAT)
     zephyr_library_sources(
       ${ZEPHYR_LIBIIO_MODULE_DIR}/tinyiiod/ascii-ops.c
+      ${ZEPHYR_LIBIIO_MODULE_DIR}/iiod/ops-common.c
     )
     if(CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR)
       find_package(FLEX REQUIRED)
