@@ -78,6 +78,23 @@ namespace iio
         private static extern IIOPtr iio_context_get_xml(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern void iio_free(IntPtr ptr);
+
+        /// <summary>Frees memory allocated by libiio, such as the string returned by iio_context_get_xml.</summary>
+        private static void FreeLibiioMemory(IntPtr ptr)
+        {
+            try
+            {
+                iio_free(ptr);
+            }
+            catch (EntryPointNotFoundException)
+            {
+                // libiio older than 1.1 does not export iio_free
+                Marshal.FreeHGlobal(ptr);
+            }
+        }
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern uint iio_context_get_devices_count(IntPtr ctx);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -200,7 +217,7 @@ namespace iio
                 throw new IIOException("Unable to create the context xml", xml_hdl);
             }
             xml = UTF8Marshaler.PtrToStringUTF8(xml_hdl.ptr);
-            Marshal.FreeHGlobal(xml_hdl.ptr);
+            FreeLibiioMemory(xml_hdl.ptr);
 
             IntPtr name_ptr = iio_context_get_name(hdl);
             name = name_ptr == IntPtr.Zero ? "" : UTF8Marshaler.PtrToStringUTF8(name_ptr);

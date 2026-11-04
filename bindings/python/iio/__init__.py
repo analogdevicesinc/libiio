@@ -370,16 +370,21 @@ if _lib_loc is None:
     raise OSError(2, "Could not find libiio C library")
 _lib = _cdll(_lib_loc, use_errno=True, use_last_error=True)
 
-if "Windows" in _system():
-    _libc_name = _environ.get("LIBIIO_PY_CRT") or "ucrtbase"
+if hasattr(_lib, "iio_free"):
+    _free = _lib.iio_free
 else:
-    _libc_name = find_library("c")
-    if not _libc_name:
-        raise ImportError(
-            "Could not find the standard C library (c). "
-            "Please ensure your system has the standard C library runtime installed."
-        )
-_libc = _cdll(_libc_name)
+    # libiio < 1.1 has no iio_free(): free with the C library instead
+    if "Windows" in _system():
+        _libc_name = _environ.get("LIBIIO_PY_CRT") or "ucrtbase"
+    else:
+        _libc_name = find_library("c")
+        if not _libc_name:
+            raise ImportError(
+                "Could not find the standard C library (c). "
+                "Please ensure your system has the standard C library runtime installed."
+            )
+    _free = _cdll(_libc_name).free
+_free.argtypes = (c_void_p,)
 
 _get_backends_count = _lib.iio_get_builtin_backends_count
 _get_backends_count.restype = c_uint
@@ -828,9 +833,6 @@ _ev_get_channel = _lib.iio_event_get_channel
 _ev_get_channel.restype = _ChannelPtr
 _ev_get_channel.argtypes = (_EventPtr, _DevicePtr, c_bool)
 _ev_get_channel.errcheck = _check_null
-
-_libc_free = _libc.free
-_libc_free.argtypes = (c_void_p,)
 
 # pylint: enable=invalid-name
 
@@ -1708,7 +1710,7 @@ class Context(_IIO_Object):
         """Destroy this context."""
         if self._context is not None:
             _destroy(self._context)
-            _libc_free(cast(self._xml_hdl, c_void_p))
+            _free(cast(self._xml_hdl, c_void_p))
 
     def set_timeout(self, timeout):
         """

@@ -633,7 +633,7 @@ public:
     uint32_t reg_read(uint32_t address) {uint32_t value; impl::check(iio_device_reg_read(p, address, &value), "iio_device_reg_read"); return value;}
 };
 
-typedef Ptr<cstr, void, free> CstrPtr;
+typedef Ptr<cstr, void, iio_free> CstrPtr;
 
 /** @brief C++ wrapper for the @ref Context C-API
  */

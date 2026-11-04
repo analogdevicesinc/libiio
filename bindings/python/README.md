@@ -37,7 +37,9 @@ pip install .
 ```
 
 #### Windows: MSVC vs. MinGW builds of libiio
-On Windows, the bindings must free memory allocated by `libiio` (for example the XML string returned by `iio_context_get_xml()`) with the C runtime that `libiio` itself was built against. By default the bindings assume the official MSVC builds from the [releases page](https://github.com/analogdevicesinc/libiio/releases/latest), which use the Universal CRT (`ucrtbase.dll`).
+**This only applies to a `libiio` older than 1.1.** Newer versions export `iio_free()`, which the bindings use to release memory with `libiio`'s own C runtime, so MSVC and MinGW builds both work without any setting.
+
+With an older `libiio` on Windows, the bindings must free memory allocated by `libiio` (for example the XML string returned by `iio_context_get_xml()`) with the C runtime that `libiio` itself was built against. By default the bindings assume the official MSVC builds from the [releases page](https://github.com/analogdevicesinc/libiio/releases/latest), which use the Universal CRT (`ucrtbase.dll`).
 
 The MinGW builds of `libiio` link against `msvcrt.dll` instead. Using them with the default settings frees memory with the wrong runtime, which corrupts the heap and crashes when a `Context` is destroyed. To use a MinGW build, set the `LIBIIO_PY_CRT` environment variable to `msvcrt` **before** importing `iio`:
 ```shell
