@@ -712,9 +712,19 @@ __api __pure const char *iio_context_get_version_tag(const struct iio_context *c
 
 /** @brief Obtain a XML representation of the given context
  * @param ctx A pointer to an iio_context structure
- * @return On success, an allocated string. Must be deallocated with free().
+ * @return On success, an allocated string. Must be deallocated with iio_free().
  * @return On failure, a pointer-encoded error is returned */
 __api __check_ret char *iio_context_get_xml(const struct iio_context *ctx);
+
+/** @brief Free memory that was allocated by libiio
+ * @param ptr A pointer returned by a libiio function that documents it must be
+ * released with iio_free(), such as iio_context_get_xml(), or NULL
+ *
+ * The memory must be released by the C runtime libiio was built against. This
+ * matters on Windows, where an application or language binding may use a
+ * different C runtime than libiio and calling free() directly would then
+ * corrupt the heap. */
+__api void iio_free(void *ptr);
 
 /** @brief Get the name of the given context
  * @param ctx A pointer to an iio_context structure

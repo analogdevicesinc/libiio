@@ -135,7 +135,12 @@ library version.
 
 In v0.x, `iio_context_get_xml` returned a pointer to a static string owned by
 the context. In v1.0 it returns a newly allocated string that the caller is
-responsible for freeing with `free()`. Failing to do so will leak memory.
+responsible for freeing with `iio_free()`. Failing to do so will leak memory.
+
+`iio_free()` releases the string with the C runtime libiio was built against.
+Prefer it over `free()`, which is only safe when your application uses the same
+C runtime as libiio; on Windows that is often not the case. Libraries older
+than 1.1 do not export `iio_free()`, so use `free()` with those.
 
 Additionally, if `IIO_CTX_XML_INCLUDE_VALUES` is set in the `flags` field of
 `iio_context_params`, `iio_context_get_xml` will also read and serialize the

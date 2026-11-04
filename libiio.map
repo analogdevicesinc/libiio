@@ -245,3 +245,8 @@ global:
 local:
 	*;
 };
+
+LIBIIO_1.1 {
+global:
+	iio_free;
+} LIBIIO_1.0;
