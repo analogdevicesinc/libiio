@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2023, DIFITEC GmbH
+ * Copyright (C) 2023 DIFITEC GmbH
  * Author: Tilman Blumhagen <tilman.blumhagen@difitec.de>
  */
 
