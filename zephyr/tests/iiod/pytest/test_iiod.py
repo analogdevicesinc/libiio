@@ -33,3 +33,7 @@ def test_adc_channel_raw_readable(iiod_context: iio.Context):
     ch = next(c for c in adc.channels if not c.output)
     raw = ch.attrs['raw'].value
     assert raw is not None
+
+
+def test_v0_client_rejected_without_compat(iiod_context_error):
+    assert isinstance(iiod_context_error, OSError)

@@ -36,7 +36,7 @@ jobs:
 
       - name: Install libiio build dependencies
         if: runner.os == 'Linux'
-        run: sudo apt-get install -y libxml2-dev socat
+        run: sudo apt-get install -y libxml2-dev socat flex bison
 
       - name: Build and install libiio C library
         if: runner.os == 'Linux'
@@ -52,6 +52,20 @@ jobs:
         if: runner.os == 'Linux'
         working-directory: libiio
         run: pip install bindings/python
+
+      - name: Build libiio v0 client
+        if: runner.os == 'Linux'
+        run: |
+          git clone --depth 1 --branch v0.26 https://github.com/analogdevicesinc/libiio.git libiio-v0
+          cmake -S libiio-v0 -B libiio-v0/build -DCMAKE_INSTALL_PREFIX=$HOME/libiio-v0 \
+            -DWITH_IIOD=OFF -DWITH_LOCAL_BACKEND=OFF -DWITH_USB_BACKEND=OFF \
+            -DWITH_SERIAL_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_ZSTD=OFF \
+            -DWITH_TESTS=OFF -DINSTALL_UDEV_RULE=OFF
+          cmake --build libiio-v0/build -j$(nproc)
+          cmake --install libiio-v0/build
+          mkdir -p $HOME/libiio-v0/python
+          cp libiio-v0/bindings/python/iio.py $HOME/libiio-v0/python/
+          echo "LIBIIO_V0_PREFIX=$HOME/libiio-v0" >> $GITHUB_ENV
 
       - name: Run Twister
         working-directory: libiio/zephyr
