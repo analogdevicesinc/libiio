@@ -68,8 +68,8 @@ def main():
             assert ctx.description == "python bindings smoke test", ctx.description
             del ctx
 
-    print(f"OK: {ITERATIONS} contexts created and destroyed "
-          f"(libc: {getattr(iio, '_libc_name', 'n/a')})")
+    freed_by = "iio_free" if hasattr(iio._lib, "iio_free") else iio._libc_name  # pylint: disable=protected-access
+    print(f"OK: {ITERATIONS} contexts created and destroyed (freed with: {freed_by})")
 
 
 if __name__ == "__main__":
