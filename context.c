@@ -467,6 +467,11 @@ out_free_values:
 	return str;
 }
 
+void iio_free(void *ptr)
+{
+	free(ptr);
+}
+
 struct iio_context *iio_context_create_from_backend(const struct iio_context_params *params,
 		const struct iio_backend *backend, const char *description, unsigned int major,
 		unsigned int minor, unsigned int patch, const char *git_tag)

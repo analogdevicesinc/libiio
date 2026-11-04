@@ -10,7 +10,7 @@ cmake_policy(SET CMP0048 NEW) # project() sets the VERSION variables
 project(
     libiio
     LANGUAGES C
-    VERSION 1.0.0)
+    VERSION 1.1.0)
 
 include(cmake/Utilities.cmake)
 
