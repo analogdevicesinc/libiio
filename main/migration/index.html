@@ -377,7 +377,11 @@ library version.</p>
 <h3>iio_context_get_xml now allocates<a class="headerlink" href="#iio-context-get-xml-now-allocates" title="Link to this heading"></a></h3>
 <p>In v0.x, <code class="docutils literal notranslate"><span class="pre">iio_context_get_xml</span></code> returned a pointer to a static string owned by
 the context. In v1.0 it returns a newly allocated string that the caller is
-responsible for freeing with <code class="docutils literal notranslate"><span class="pre">free()</span></code>. Failing to do so will leak memory.</p>
+responsible for freeing with <code class="docutils literal notranslate"><span class="pre">iio_free()</span></code>. Failing to do so will leak memory.</p>
+<p><code class="docutils literal notranslate"><span class="pre">iio_free()</span></code> releases the string with the C runtime libiio was built against.
+Prefer it over <code class="docutils literal notranslate"><span class="pre">free()</span></code>, which is only safe when your application uses the same
+C runtime as libiio; on Windows that is often not the case. Libraries older
+than 1.1 do not export <code class="docutils literal notranslate"><span class="pre">iio_free()</span></code>, so use <code class="docutils literal notranslate"><span class="pre">free()</span></code> with those.</p>
 <p>Additionally, if <code class="docutils literal notranslate"><span class="pre">IIO_CTX_XML_INCLUDE_VALUES</span></code> is set in the <code class="docutils literal notranslate"><span class="pre">flags</span></code> field of
 <code class="docutils literal notranslate"><span class="pre">iio_context_params</span></code>, <code class="docutils literal notranslate"><span class="pre">iio_context_get_xml</span></code> will also read and serialize the
 current attribute values into the XML output.</p>

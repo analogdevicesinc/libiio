@@ -105,6 +105,7 @@
 <li><a class="reference internal" href="#_CPPv429iio_context_get_version_patchPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_patch()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv427iio_context_get_version_tagPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_version_tag()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv419iio_context_get_xmlPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_xml()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv48iio_freePv"><code class="docutils literal notranslate"><span class="pre">iio_free()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv420iio_context_get_namePK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_name()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv427iio_context_get_descriptionPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_description()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv427iio_context_get_attrs_countPK11iio_context"><code class="docutils literal notranslate"><span class="pre">iio_context_get_attrs_count()</span></code></a></li>
@@ -407,10 +408,23 @@ NOTE: If ctx is non-null, it will return the git tag or hash of the remote libra
 <dd class="field-odd"><p><strong>ctx</strong> – A pointer to an <a class="reference internal" href="#structiio__context"><span class="std std-ref">iio_context</span></a> structure </p>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>
-<dd class="field-even"><p>On success, an allocated string. Must be deallocated with free(). </p>
+<dd class="field-even"><p>On success, an allocated string. Must be deallocated with <a class="reference internal" href="#group__Context_1gaf4bf8176a1ea556f351483c005fa9307"><span class="std std-ref">iio_free()</span></a>. </p>
 </dd>
 <dt class="field-odd">Returns<span class="colon">:</span></dt>
 <dd class="field-odd"><p>On failure, a pointer-encoded error is returned </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv48iio_freePv">
+<span id="_CPPv38iio_freePv"></span><span id="_CPPv28iio_freePv"></span><span id="iio_free__voidP"></span><span class="target" id="group__Context_1gaf4bf8176a1ea556f351483c005fa9307"></span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">iio_free</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">ptr</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv48iio_freePv" title="Link to this definition"></a><br /></dt>
+<dd><p>Free memory that was allocated by libiio. </p>
+<p>
+The memory must be released by the C runtime libiio was built against. This matters on Windows, where an application or language binding may use a different C runtime than libiio and calling free() directly would then corrupt the heap. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>ptr</strong> – A pointer returned by a libiio function that documents it must be released with <a class="reference internal" href="#group__Context_1gaf4bf8176a1ea556f351483c005fa9307"><span class="std std-ref">iio_free()</span></a>, such as <a class="reference internal" href="#group__Context_1ga33a09de8aa6a4786a35e412530ad782e"><span class="std std-ref">iio_context_get_xml()</span></a>, or NULL</p>
 </dd>
 </dl>
 </dd></dl>
