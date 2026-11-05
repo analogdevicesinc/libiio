@@ -180,8 +180,8 @@ if (DOTNET_EXECUTABLE)
         OUTPUT ${LIBIIO_CS_NET_DLL}
         COMMAND
             ${DOTNET_EXECUTABLE} build
-            ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release
-            -o ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
+            ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj -c Release -o
+            ${LIBIIO_CS_NET_OUT_DIR} -p:Version=${LIBIIO_CS_VERSION}
             -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
         DEPENDS ${LIBIIO_CS_SOURCES}
                 ${CMAKE_CURRENT_SOURCE_DIR}/libiio-sharp-net.csproj
