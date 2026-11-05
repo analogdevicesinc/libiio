@@ -115,11 +115,12 @@ if (DOTNET_EXECUTABLE)
             OUTPUT ${EXE_PATH}
             COMMAND
                 ${DOTNET_EXECUTABLE} build
-                ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT} -c Release
-                -o ${CSHARP_EXAMPLE_NET_DIR} -p:Version=${LIBIIO_CS_VERSION}
+                ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT} -c Release -o
+                ${CSHARP_EXAMPLE_NET_DIR} -p:Version=${LIBIIO_CS_VERSION}
                 -p:LibiioSharpDll=${LIBIIO_CS_NET_DLL}
                 -p:LibiioSharpTfm=${LIBIIO_CS_NET_TFM}
-            DEPENDS ${ARG_SOURCES} ${LIBIIO_CS_SOURCES}
+            DEPENDS ${ARG_SOURCES}
+                    ${LIBIIO_CS_SOURCES}
                     ${CMAKE_CURRENT_SOURCE_DIR}/${ARG_PROJECT}
                     ${CMAKE_CURRENT_SOURCE_DIR}/../libiio-sharp-net.csproj
                     libiio-sharp-dotnet
@@ -130,27 +131,17 @@ if (DOTNET_EXECUTABLE)
     endfunction ()
 
     add_csharp_example_net_target(
-        TARGET_NAME
-        libiio-csharp-example-program-dotnet
-        PROJECT
-        ExampleProgram.csproj
-        SOURCES
+        TARGET_NAME libiio-csharp-example-program-dotnet PROJECT
+        ExampleProgram.csproj SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/ExampleProgram.cs)
 
     add_csharp_example_net_target(
-        TARGET_NAME
-        libiio-csharp-example-pluto-dotnet
-        PROJECT
-        PlutoExample.csproj
-        SOURCES
-        ${CMAKE_CURRENT_SOURCE_DIR}/PlutoExample.cs)
+        TARGET_NAME libiio-csharp-example-pluto-dotnet PROJECT
+        PlutoExample.csproj SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/PlutoExample.cs)
 
     add_csharp_example_net_target(
-        TARGET_NAME
-        libiio-csharp-example-event-dotnet
-        PROJECT
-        ExampleIIOEvent.csproj
-        SOURCES
+        TARGET_NAME libiio-csharp-example-event-dotnet PROJECT
+        ExampleIIOEvent.csproj SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/ExampleIIOEvent.cs)
 
     add_custom_target(
