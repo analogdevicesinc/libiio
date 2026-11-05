@@ -395,6 +395,7 @@ public:
     void stop() {impl::check(iio_buffer_stream_stop(p), "iio_buffer_stream_stop");}
     ChannelsMask mask() {return iio_buffer_stream_get_channels_mask(p);}
     BlockPtr create_block(size_t size) { return BlockPtr{impl::check(iio_buffer_stream_create_block(p, size), "iio_buffer_stream_create_block")}; }
+    BlockPtr create_block(int dmabuf_fd, size_t size) { return BlockPtr{impl::check(iio_buffer_stream_create_block_from_dmabuf(p, dmabuf_fd, size), "iio_buffer_stream_create_block_from_dmabuf")}; }
 };
 
 typedef Ptr<BufferStream, iio_buffer_stream, iio_buffer_close> BufferStreamPtr;

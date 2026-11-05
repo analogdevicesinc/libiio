@@ -75,6 +75,7 @@ global:
 	iio_buffer_set_direction;
 	iio_buffer_stream_cancel;
 	iio_buffer_stream_create_block;
+	iio_buffer_stream_create_block_from_dmabuf;
 	iio_buffer_stream_get_channels_mask;
 	iio_buffer_stream_start;
 	iio_buffer_stream_stop;
