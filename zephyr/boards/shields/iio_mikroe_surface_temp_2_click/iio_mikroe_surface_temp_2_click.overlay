@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		adt7422_mikroe_surface_temp_2_click {
+			compatible = "iio,sensor";
+			io-name = "adt7422";
+			sensor-device = <&adt7422_mikroe_surface_temp_2_click>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_AMBIENT_TEMP
+			>;
+		};
+	};
+};
