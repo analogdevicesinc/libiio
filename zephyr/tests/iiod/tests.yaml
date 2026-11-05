@@ -5,8 +5,9 @@ tests:
   zephyr-iio.iiod.usb.pytest:
     # Needs privileged one-time host setup (usbip client, TAP interface,
     # vhci_hcd, udev rule -- see conftest.py's _usb_context()), so no
-    # integration_platforms. Run manually with:
-    #   west twister -p native_sim --test sample.iiod.usb.pytest
+    # integration_platforms. All USB scenarios share the DUT IP 192.0.2.1 on
+    # the zeth interface, so run them one at a time (-j 1), e.g.:
+    #   west twister -p native_sim -T tests/iiod -j 1 --test zephyr-iio.iiod.usb.pytest
     tags: usb-hostreq
     extra_args:
       - SNIPPET=iiod-usb
@@ -17,6 +18,7 @@ tests:
     extra_configs:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
     platform_allow:
       - native_sim
     harness: pytest
@@ -27,12 +29,131 @@ tests:
       pytest_dut_scope: session
       pytest_args:
         - --iiod-transport=usb
+        - --iiod-v0-compat=y
+
+  zephyr-iio.iiod.usb.no_v0_compat.pytest:
+    tags: usb-hostreq
+    extra_args:
+      - SNIPPET=iiod-usb
+      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
+      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=n
+    platform_allow:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+        - --iiod-v0-compat=n
+
+  zephyr-iio.iiod.usb.v0_client.pytest:
+    tags: usb-hostreq
+    extra_args:
+      - SNIPPET=iiod-usb
+      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
+      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+    platform_allow:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+        - --iiod-client=v0
+        - --iiod-v0-compat=y
+
+  zephyr-iio.iiod.usb.v0_client.no_v0_compat.pytest:
+    tags: usb-hostreq
+    extra_args:
+      - SNIPPET=iiod-usb
+      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
+      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=n
+    platform_allow:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+        - --iiod-client=v0
+        - --iiod-v0-compat=n
+
+  zephyr-iio.iiod.usb.grammar.pytest:
+    tags: usb-hostreq
+    extra_args:
+      - SNIPPET=iiod-usb
+      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
+      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR=y
+    platform_allow:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+        - --iiod-v0-compat=y
+        - --iiod-v0-parser=grammar
+
+  zephyr-iio.iiod.usb.v0_client.grammar.pytest:
+    tags: usb-hostreq
+    extra_args:
+      - SNIPPET=iiod-usb
+      - EXTRA_DTC_OVERLAY_FILE=adc-emul.overlay;sensor-emul.overlay
+      - EXTRA_CONF_FILE=adc-emul.conf;sensor-emul.conf
+    extra_configs:
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR=y
+    platform_allow:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+        - --iiod-client=v0
+        - --iiod-v0-compat=y
+        - --iiod-v0-parser=grammar
 
   zephyr-iio.iiod.network.pytest:
     extra_args:
       - SNIPPET=iiod-network
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
     platform_allow:
       - native_sim
     integration_platforms:
@@ -45,12 +166,126 @@ tests:
       pytest_dut_scope: session
       pytest_args:
         - --iiod-transport=network
+        - --iiod-v0-compat=y
+
+  zephyr-iio.iiod.network.no_v0_compat.pytest:
+    extra_args:
+      - SNIPPET=iiod-network
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=n
+      - CONFIG_LIBIIO_IIOD_NETWORK_PORT=30432
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 120
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=network
+        - --iiod-v0-compat=n
+
+  zephyr-iio.iiod.network.v0_client.pytest:
+    extra_args:
+      - SNIPPET=iiod-network
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_NETWORK_PORT=30433
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 120
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=network
+        - --iiod-client=v0
+        - --iiod-v0-compat=y
+
+  zephyr-iio.iiod.network.v0_client.no_v0_compat.pytest:
+    extra_args:
+      - SNIPPET=iiod-network
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=n
+      - CONFIG_LIBIIO_IIOD_NETWORK_PORT=30434
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 120
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=network
+        - --iiod-client=v0
+        - --iiod-v0-compat=n
+
+  zephyr-iio.iiod.network.grammar.pytest:
+    extra_args:
+      - SNIPPET=iiod-network
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR=y
+      - CONFIG_LIBIIO_IIOD_NETWORK_PORT=30435
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 120
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=network
+        - --iiod-v0-compat=y
+        - --iiod-v0-parser=grammar
+
+  zephyr-iio.iiod.network.v0_client.grammar.pytest:
+    extra_args:
+      - SNIPPET=iiod-network
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR=y
+      - CONFIG_LIBIIO_IIOD_NETWORK_PORT=30436
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 120
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=network
+        - --iiod-client=v0
+        - --iiod-v0-compat=y
+        - --iiod-v0-parser=grammar
 
   zephyr-iio.iiod.uart.pytest:
     extra_args:
       - SNIPPET=iiod-console
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
     platform_allow:
       - native_sim
     integration_platforms:
@@ -62,6 +297,109 @@ tests:
       pytest_dut_scope: session
       pytest_args:
         - --iiod-transport=uart
+        - --iiod-v0-compat=y
+
+  zephyr-iio.iiod.uart.no_v0_compat.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=n
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
+        - --iiod-v0-compat=n
+
+  zephyr-iio.iiod.uart.v0_client.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
+        - --iiod-client=v0
+        - --iiod-v0-compat=y
+
+  zephyr-iio.iiod.uart.v0_client.no_v0_compat.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=n
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
+        - --iiod-client=v0
+        - --iiod-v0-compat=n
+
+  zephyr-iio.iiod.uart.grammar.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
+        - --iiod-v0-compat=y
+        - --iiod-v0-parser=grammar
+
+  zephyr-iio.iiod.uart.v0_client.grammar.pytest:
+    extra_args:
+      - SNIPPET=iiod-console
+      - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
+      - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
+      - CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR=y
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=uart
+        - --iiod-client=v0
+        - --iiod-v0-compat=y
+        - --iiod-v0-parser=grammar
 
   zephyr-iio.iiod.uart.multithread.pytest:
     extra_args:
@@ -69,6 +407,7 @@ tests:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
       - CONFIG_LIBIIO_MULTITHREADING=y
+      - CONFIG_LIBIIO_IIOD_V0_COMPAT=y
     platform_allow:
       - native_sim
     integration_platforms:
@@ -79,3 +418,4 @@ tests:
       pytest_dut_scope: session
       pytest_args:
         - --iiod-transport=uart
+        - --iiod-v0-compat=y

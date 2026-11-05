@@ -22,11 +22,15 @@ void yyerror(yyscan_t scanner, const char *msg);
 typedef void *yyscan_t;
 #endif
 
-#include "../iio-config.h"
+#include "iio-config.h"
 #include "debug.h"
 
 #include <stdbool.h>
+/* <sys/socket.h> is not used by the generated parser and pulls in the POSIX
+ * socket layer, which is undesirable on Zephyr. */
+#if !defined(__ZEPHYR__)
 #include <sys/socket.h>
+#endif
 
 union YYSTYPE;
 
@@ -152,12 +156,19 @@ Line:
 	}
 	| PRINT END {
 		struct parser_pdata *pdata = yyget_extra(scanner);
-		const char *xml = iio_context_get_xml(pdata->ctx);
+		char *xml = iio_context_get_xml(pdata->ctx);
 		char buf[128];
+		int err = iio_err(xml);
+		if (err) {
+			snprintf(buf, sizeof(buf), "%d\n", err);
+			output(pdata, buf);
+			YYABORT;
+		}
 		snprintf(buf, sizeof(buf), "%lu\n", (unsigned long) strlen(xml));
 		output(pdata, buf);
 		output(pdata, xml);
 		output(pdata, "\n");
+		free(xml);
 		YYACCEPT;
 	}
 	| ZPRINT END {

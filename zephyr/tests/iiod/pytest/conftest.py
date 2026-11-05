@@ -1,16 +1,23 @@
 # Copyright (c) 2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
+from __future__ import annotations
+
 import ctypes
+import ctypes.util
 import glob
 import os
 import re
+import shutil
 import socket
 import subprocess
+import sys
 import time
-import iio
 import pytest
+from elftools.elf.elffile import ELFFile
 from twister_harness import DeviceAdapter
+
+iio = None
 
 
 def pytest_addoption(parser):
@@ -20,41 +27,165 @@ def pytest_addoption(parser):
         choices=['network', 'uart', 'usb'],
         help='IIOD transport to connect to the IIOD server (default: network)',
     )
+    parser.addoption(
+        '--iiod-client',
+        default='v1',
+        choices=['v1', 'v0'],
+        help='libiio client generation used by the tests (default: v1); v0 '
+             'loads the libiio v0 library and bindings from $LIBIIO_V0_PREFIX',
+    )
+    parser.addoption(
+        '--iiod-v0-compat',
+        default='y',
+        choices=['y', 'n'],
+        help='CONFIG_LIBIIO_IIOD_V0_COMPAT value the DUT must be built with (default: y)',
+    )
+    parser.addoption(
+        '--iiod-v0-parser',
+        default='lite',
+        choices=['lite', 'grammar'],
+        help='v0 ASCII parser the DUT must be built with when the compat layer is '
+             'enabled (default: lite)',
+    )
+
+
+def pytest_configure(config):
+    global iio
+    if config.getoption('--iiod-client') == 'v0':
+        iio = _import_v0_bindings()
+    else:
+        import iio
+    expected = 0 if config.getoption('--iiod-client') == 'v0' else 1
+    if iio.version[0] != expected:
+        raise pytest.UsageError(f'Loaded libiio {iio.version[0]}.{iio.version[1]}, '
+                                f'expected a v{expected} client')
+
+
+def _import_v0_bindings():
+    prefix = os.environ.get('LIBIIO_V0_PREFIX')
+    if not prefix:
+        raise pytest.UsageError(
+            '--iiod-client=v0 needs LIBIIO_V0_PREFIX set to a libiio v0.26 install '
+            '(e.g. export LIBIIO_V0_PREFIX=$HOME/libiio-v0); see tests/iiod/README.rst '
+            'for how to build one')
+    lib = os.path.join(prefix, 'lib', 'libiio.so.0')
+    bindings = os.path.join(prefix, 'python', 'iio.py')
+    missing = [path for path in (lib, bindings) if not os.path.exists(path)]
+    if missing:
+        raise pytest.UsageError(
+            f'LIBIIO_V0_PREFIX={prefix} is not a libiio v0.26 install: missing '
+            f'{", ".join(missing)}; see tests/iiod/README.rst for how to build one')
+    find_library = ctypes.util.find_library
+    ctypes.util.find_library = lambda name: lib if name == 'iio' else find_library(name)
+    sys.path.insert(0, os.path.join(prefix, 'python'))
+    try:
+        import iio as v0_iio
+    finally:
+        ctypes.util.find_library = find_library
+    return v0_iio
+
+
+@pytest.fixture(scope='session', autouse=True)
+def iiod_v0_compat(dut: DeviceAdapter, request):
+    # Fail fast unless the DUT was built with the config the scenario expects
+    expected = request.config.getoption('--iiod-v0-compat') == 'y'
+    built = _kconfig(dut, 'CONFIG_LIBIIO_IIOD_V0_COMPAT') == 'y'
+    assert built == expected, \
+        f'DUT built with CONFIG_LIBIIO_IIOD_V0_COMPAT={"y" if built else "n"}, ' \
+        f'scenario expects --iiod-v0-compat={"y" if expected else "n"}'
+    with open(dut.device_config.app_build_dir / 'zephyr' / 'zephyr.elf', 'rb') as f:
+        symtab = ELFFile(f).get_section_by_name('.symtab')
+        linked = bool(symtab.get_symbol_by_name('ascii_interpreter'))
+        grammar_linked = bool(symtab.get_symbol_by_name('yyparse'))
+    assert linked == expected, \
+        f'ascii_interpreter() is {"" if linked else "not "}linked into zephyr.elf'
+    if expected:
+        grammar = request.config.getoption('--iiod-v0-parser') == 'grammar'
+        built_grammar = _kconfig(dut, 'CONFIG_LIBIIO_IIOD_V0_PARSER_GRAMMAR') == 'y'
+        assert built_grammar == grammar, \
+            f'DUT built with the {"GRAMMAR" if built_grammar else "LITE"} v0 parser, ' \
+            f'scenario expects --iiod-v0-parser={"grammar" if grammar else "lite"}'
+        assert grammar_linked == grammar, \
+            f'yyparse() is {"" if grammar_linked else "not "}linked into zephyr.elf'
+    return expected
+
+
+def _kconfig(dut: DeviceAdapter, name: str):
+    # Value of a Kconfig option in the DUT build, or None if it is not set.
+    config = (dut.device_config.app_build_dir / 'zephyr' / '.config').read_text()
+    m = re.search(rf'^{name}=(.*)$', config, re.MULTILINE)
+    return m.group(1).strip('"') if m else None
 
 
 @pytest.fixture(scope='session')
-def iiod_context(dut: DeviceAdapter, request):
+def iiod_context(dut: DeviceAdapter, request, iiod_v0_compat):
+    if request.config.getoption('--iiod-client') == 'v0' and not iiod_v0_compat:
+        pytest.skip('a v0 client cannot connect without CONFIG_LIBIIO_IIOD_V0_COMPAT')
+    yield from _connect(dut, request, _create_context)
+
+
+@pytest.fixture(scope='session')
+def iiod_context_error(dut: DeviceAdapter, request, iiod_v0_compat):
+    # Without the compat layer the server only speaks the binary protocol, so
+    # a v0 client must fail to create its context. Yields the error raised.
+    if request.config.getoption('--iiod-client') != 'v0' or iiod_v0_compat:
+        pytest.skip('only for a v0 client against a build without CONFIG_LIBIIO_IIOD_V0_COMPAT')
+    yield from _connect(dut, request, _create_context_error)
+
+
+def _connect(dut: DeviceAdapter, request, connect):
     transport = request.config.getoption('--iiod-transport')
     if transport == 'uart':
-        yield from _uart_context(dut)
+        return _uart_context(dut, connect)
     elif transport == 'usb':
-        yield from _usb_context(dut)
+        return _usb_context(dut, connect)
     else:
-        yield from _network_context(dut)
+        return _network_context(dut, connect)
 
 
-def _network_context(dut: DeviceAdapter):
-    # Poll port 30431 directly until the IIOD server is accepting connections.
+def _create_context(uri: str) -> iio.Context:
+    if iio.version[0] == 0:
+        return iio.Context(uri)
+    if uri.startswith('usb:'):
+        return _create_context_with_infinite_timeout(uri)
+    return iio.Context(uri)
+
+
+def _create_context_error(uri: str):
+    try:
+        ctx = _create_context(uri)
+    except OSError as e:
+        if e.errno == 111:  # ECONNREFUSED: socat not listening yet, retried
+            raise
+        return e
+    del ctx
+    return None
+
+
+def _network_context(dut: DeviceAdapter, connect):
+    port = int(_kconfig(dut, 'CONFIG_LIBIIO_IIOD_NETWORK_PORT'))
+
+    # Poll the port directly until the IIOD server is accepting connections.
     # Waiting for a specific DUT log line is unreliable: the startup messages
     # are emitted in ~20 ms and the server then blocks in accept(), so if pytest
     # starts scanning after that point it will never see them.
     deadline = time.monotonic() + 30.0
     while time.monotonic() < deadline:
         try:
-            s = socket.create_connection(('127.0.0.1', 30431), timeout=1.0)
+            s = socket.create_connection(('127.0.0.1', port), timeout=1.0)
             s.close()
             break
         except OSError:
             time.sleep(0.1)
     else:
         raise TimeoutError('IIOD network server did not start within 30 seconds')
-    ctx = iio.Context('ip:127.0.0.1')
+    ctx = connect(f'ip:127.0.0.1:{port}')
     yield ctx
     del ctx  # close TCP connection before DUT teardown
     dut.base_timeout = 2.0
 
 
-def _uart_context(dut: DeviceAdapter):
+def _uart_context(dut: DeviceAdapter, connect):
     # The native_sim PTY UART driver prints the PTY device path during device
     # initialization, before the kernel scheduler starts.  Match uart_1
     # specifically — uart_0 (console) prints the same message first.
@@ -87,7 +218,7 @@ def _uart_context(dut: DeviceAdapter):
             if socat.poll() is not None:
                 raise RuntimeError(f'socat exited with code {socat.returncode}')
             try:
-                ctx = iio.Context(f'ip:127.0.0.1:{port}')
+                ctx = connect(f'ip:127.0.0.1:{port}')
                 break
             except OSError as e:
                 if e.errno != 111:  # not ECONNREFUSED
@@ -116,12 +247,21 @@ def _find_usbip_binary():
     # the exact running kernel (never true on WSL2). The kernel-version-
     # specific binary under /usr/lib/linux-tools/*/usbip works regardless.
     candidates = sorted(glob.glob('/usr/lib/linux-tools/*/usbip'))
-    if not candidates:
-        pytest.skip(
-            'usbip binary not found under /usr/lib/linux-tools/*/usbip -- '
-            'install with: sudo apt install linux-tools-generic linux-cloud-tools-generic'
-        )
-    return candidates[-1]
+    if candidates:
+        return candidates[-1]
+
+    # Distributions that package usbip on its own (e.g. Debian/Kali "usbip")
+    # install a real binary on PATH. Only use it if it runs, which rules out
+    # the Ubuntu wrapper described above.
+    usbip = shutil.which('usbip')
+    if usbip and subprocess.run([usbip, 'version'], capture_output=True,
+                                timeout=5).returncode == 0:
+        return usbip
+
+    pytest.skip(
+        'usbip binary not found under /usr/lib/linux-tools/*/usbip or on PATH -- '
+        'install with: sudo apt install linux-tools-generic linux-cloud-tools-generic'
+    )
 
 
 def _usbip_port_for_vendor(usbip, vendor_id):
@@ -195,7 +335,7 @@ def _wait_for_attached_bus_dev(vendor_id, timeout_s=10.0):
         if m:
             bus, dev = int(m.group(1)), int(m.group(2))
             node = f'/dev/bus/usb/{bus:03d}/{dev:03d}'
-            if os.path.exists(node):
+            if os.access(node, os.R_OK | os.W_OK):
                 return f'{bus}.{dev}'
         time.sleep(0.2)
     pytest.fail(f'Device with VID {vendor_id} did not enumerate (with a ready device node) within {timeout_s}s')
@@ -251,7 +391,7 @@ def _ensure_zeth_interface():
     pytest.fail('zeth interface did not come up after `net-setup.sh start`')
 
 
-def _usb_context(dut: DeviceAdapter):
+def _usb_context(dut: DeviceAdapter, connect):
     """
     One-time host setup NOT performed by this fixture (see README.rst):
       - `sudo apt install linux-tools-generic linux-cloud-tools-generic`
@@ -279,13 +419,7 @@ def _usb_context(dut: DeviceAdapter):
 
     try:
         bus_dev = _wait_for_attached_bus_dev(_USB_VID)
-
-        # A device node can briefly still be root-only after creation
-        # (udev applies its MODE rule as a separate step); settle once
-        # rather than retrying context creation, which was observed to
-        # leave the kernel's URB tracking in an unkillable D-state.
-        time.sleep(1.0)
-        ctx = _create_context_with_infinite_timeout(f'usb:{bus_dev}.0')
+        ctx = connect(f'usb:{bus_dev}.0')
         yield ctx
         del ctx
     finally:
