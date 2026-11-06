@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+if GPIO
+
+menu "GPIO"
+
+config GPIO_EMUL_GENERATOR
+	bool "GPIO emulator generator"
+	default y
+	depends on DT_HAS_IIO_GPIO_EMUL_GENERATOR_ENABLED && GPIO_EMUL
+
+endmenu
+
+endif # GPIO
