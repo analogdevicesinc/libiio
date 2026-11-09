@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
 sample:
   description: iiod server sample
   name: iiod
@@ -63,6 +66,15 @@ tests:
     extra_args:
       - SNIPPET=iiod-console
       - EXTRA_DTC_OVERLAY_FILE=adc-max32.overlay
+    platform_allow:
+      - apard32690/max32690/m4
+    integration_platforms:
+      - apard32690/max32690/m4
+
+  sample.iiod.one_bit_adc_dac_apard32690.console:
+    extra_args:
+      - SNIPPET=iiod-console
+      - EXTRA_DTC_OVERLAY_FILE=one-bit-adc-dac-apard32690.overlay
     platform_allow:
       - apard32690/max32690/m4
     integration_platforms:

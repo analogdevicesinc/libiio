@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+include: iio,iio-device.yaml
+
+description: |
+  One bit ADC DAC (GPIO mask)
+  Exposes GPIO lines as 1-bit IIO voltage channels.
+
+compatible: "iio,one-bit-adc-dac"
+
+properties:
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+  in-gpios:
+    type: phandle-array
+    description: Input GPIO numbers
+
+  out-gpios:
+    type: phandle-array
+    description: Output GPIO numbers
+
+child-binding:
+  description: |
+    Represents the external channels which are connected to the ADDAC.
+    Inputs are numbered first, followed by the outputs.
+
+  properties:
+    reg:
+      type: int
+      required: true
+      description: The channel number.
+
+    label:
+      type: string
+      description: Unique name to identify which channel this is.

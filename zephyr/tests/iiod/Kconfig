@@ -20,6 +20,11 @@ config LIBIIO_IIOD_MULTI_SENSOR_EMUL
 	  the reg property and @N unit-address are required when multiple
 	  nodes share the same compatible and name within an iio-sensors bus.
 
+config LIBIIO_IIOD_ONE_BIT_ADC_DAC_EMUL
+	bool "Enable one bit ADC DAC on emulated GPIOs"
+	help
+	  Enable the one bit ADC DAC IIO device driver on emulated GPIOs.
+
 endmenu
 
 source "Kconfig.zephyr"

@@ -44,5 +44,23 @@ config LIBIIO_IIO_DEVICE_SENSOR_INIT_PRIORITY
 	  Initialization priority of the Zephyr Sensor iio device driver class.
 	  Has to be higher than the initialization priority of the sensor drivers.
 
+config LIBIIO_IIO_DEVICE_ONE_BIT_ADC_DAC
+	bool "One bit ADC DAC driver (GPIO lines as IIO channels)"
+	default y
+	depends on DT_HAS_IIO_ONE_BIT_ADC_DAC_ENABLED && GPIO
+	help
+	  Enable the one bit ADC DAC iio device driver, which exposes GPIOs
+	  as IIO channels: input GPIOs as 1-bit input voltage channels and
+	  output GPIOs as 1-bit output voltage channels, each with a raw
+	  attribute holding the line level (0 or 1).
+
+config LIBIIO_IIO_DEVICE_ONE_BIT_ADC_DAC_INIT_PRIORITY
+	int "One bit ADC DAC driver init priority"
+	default 90
+	depends on LIBIIO_IIO_DEVICE_ONE_BIT_ADC_DAC
+	help
+	  Initialization priority of the one bit ADC DAC iio device driver.
+	  Has to be higher than the initialization priority of the GPIO
+	  controllers it uses, including GPIO expanders on I2C or SPI.
 
 endif # LIBIIO_IIO_DEVICE
