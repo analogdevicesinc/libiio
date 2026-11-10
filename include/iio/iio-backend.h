@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2020 Analog Devices, Inc.
+ * Copyright (C) 2020-2026 Analog Devices, Inc.
  */
 
 #ifndef __IIO_BACKEND_H__
