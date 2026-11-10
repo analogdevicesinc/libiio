@@ -220,6 +220,7 @@ __api int iio_scan_add_result(struct iio_scan *ctx, const char *desc, const char
 
 __api __iio_printf ssize_t iio_snprintf(char *buf, size_t len, const char *fmt, ...);
 __api char *iio_strdup(const char *str);
+__api char *iio_strndup(const char *str, size_t n);
 __api size_t iio_strlcpy(char *__restrict dst, const char *__restrict src, size_t dsize);
 __api FILE *iio_fopen(const char *path, const char *mode);
 

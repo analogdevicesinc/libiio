@@ -233,7 +233,6 @@ int iio_dynamic_scan(const struct iio_context_params *params, struct iio_scan *c
 void iio_channel_init_finalize(struct iio_channel *chn);
 unsigned int find_channel_modifier(const char *s, size_t *len_p);
 
-char *iio_strndup(const char *str, size_t n);
 char *iio_strtok_r(char *str, const char *delim, char **saveptr);
 char *iio_getenv(char *envvar);
 uint64_t iio_read_counter_us(void);
