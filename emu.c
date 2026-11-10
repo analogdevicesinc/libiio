@@ -1182,6 +1182,7 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 	const struct iio_context *ctx;
 	struct iio_context_pdata *pdata;
 	const char *device_id, *attr_name;
+	char *val;
 	ssize_t ret;
 
 	dev = iio_attr_get_device(attr);
@@ -1197,12 +1198,17 @@ static ssize_t emu_write_attr(const struct iio_attr *attr, const char *src, size
 	if (emu_attr_is_available(attr_name))
 		return -EACCES;
 
+	val = iio_strndup(src, len);
+	if (!val)
+		return -ENOMEM;
+
 	iio_mutex_lock(pdata->lock);
-	ret = check_available_locked(pdata, attr, device_id, src);
+	ret = check_available_locked(pdata, attr, device_id, val);
 	if (!ret)
-		ret = emu_write_attr_locked(pdata, attr, device_id, attr_name, src, len);
+		ret = emu_write_attr_locked(pdata, attr, device_id, attr_name, val, len);
 	iio_mutex_unlock(pdata->lock);
 
+	free(val);
 	return ret;
 }
 
