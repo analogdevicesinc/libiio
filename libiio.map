@@ -249,4 +249,5 @@ local:
 LIBIIO_1.1 {
 global:
 	iio_free;
+	iio_strndup;
 } LIBIIO_1.0;
