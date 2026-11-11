@@ -5,26 +5,69 @@
  * Copyright (C) 2024 Analog Devices, Inc.
  */
 
+#include <errno.h>
 #include <iio/iio.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
+#ifdef _WIN32
+#include <process.h>
+#else
+#include <spawn.h>
+#include <sys/wait.h>
+#include <unistd.h>
+
+extern char **environ;
+#endif
+
+#include "api_test_paths.h"
 #include "test_framework.h"
 
-static int run_external_test(const char *test_name)
+static int run_external_test(const char *test_path)
 {
-	char command[256];
-	snprintf(command, sizeof(command), "./%s", test_name);
+	int failed;
+	char error[256];
 
-	DEBUG_PRINT("=== Running %s ===\n", test_name);
-	int result = system(command);
+	DEBUG_PRINT("=== Running %s ===\n", test_path);
 
-	if (result == 0) {
-		DEBUG_PRINT("✓ %s PASSED\n\n", test_name);
+#ifdef _WIN32
+	const char *args[] = { test_path, NULL };
+	intptr_t result = _spawnv(_P_WAIT, test_path, args);
+
+	if (result == -1) {
+		iio_strerror(errno, error, sizeof(error));
+		fprintf(stderr, "Unable to run '%s': %s\n", test_path, error);
+		return 1;
+	}
+	failed = result != 0;
+#else
+	char *args[] = { (char *)test_path, NULL };
+	pid_t child, result;
+	int status;
+	int err = posix_spawn(&child, test_path, NULL, NULL, args, environ);
+
+	if (err) {
+		iio_strerror(err, error, sizeof(error));
+		fprintf(stderr, "Unable to run '%s': %s\n", test_path, error);
+		return 1;
+	}
+	do {
+		result = waitpid(child, &status, 0);
+	} while (result == -1 && errno == EINTR);
+	if (result == -1) {
+		iio_strerror(errno, error, sizeof(error));
+		fprintf(stderr, "Unable to wait for '%s': %s\n", test_path, error);
+		return 1;
+	}
+	failed = !WIFEXITED(status) || WEXITSTATUS(status) != 0;
+#endif
+
+	if (!failed) {
+		DEBUG_PRINT("✓ %s PASSED\n\n", test_path);
 		return 0;
 	} else {
-		DEBUG_PRINT("✗ %s FAILED (exit code: %d)\n\n", test_name, result);
+		fprintf(stderr, "API test '%s' failed\n", test_path);
 		return 1;
 	}
 }
@@ -65,10 +108,6 @@ int main(void)
 	RUN_TEST(backend_availability);
 
 	DEBUG_PRINT("\n=== Running Individual Test Suites ===\n\n");
-
-	const char *test_suites[] = { "test_error_handling", "test_toplevel", "test_scan",
-		"test_context", "test_attr", "test_device", "test_channel", "test_buffer",
-		"test_hwmon", "test_events", "test_lowlevel", "test_typed_attr" };
 
 	int num_suites = sizeof(test_suites) / sizeof(test_suites[0]);
 	int passed = 0;
