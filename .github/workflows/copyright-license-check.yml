@@ -29,6 +29,7 @@ jobs:
           full-scan: ${{ github.event_name == 'workflow_dispatch' }}
           fail-on-missing: true
           copyright-holder: 'Analog Devices'
+          allow-earlier-start-year: true
 
       - name: Scan for copyright/license headers (custom extensions)
         if: ${{ inputs.file-extensions }}
@@ -38,3 +39,4 @@ jobs:
           fail-on-missing: true
           copyright-holder: 'Analog Devices'
           file-extensions: ${{ inputs.file-extensions }}
+          allow-earlier-start-year: true
