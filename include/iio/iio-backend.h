@@ -144,6 +144,11 @@ struct iio_backend_ops {
 
 	/* Connection liveness test */
 	int (*ping)(struct iio_context *ctx);
+
+	/* Create a block from a DMABUF fd that is owned by the caller. The backend
+	 * must duplicate the fd, and must not provide a CPU mapping. */
+	struct iio_block_pdata *(*create_block_from_dmabuf)(
+			struct iio_buffer_pdata *pdata, int dmabuf_fd, size_t size);
 };
 
 /**

@@ -17,6 +17,10 @@ namespace iio
         private static extern IIOPtr iio_buffer_stream_create_block(IntPtr buf_stream, uint size);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
+        private static extern IIOPtr iio_buffer_stream_create_block_from_dmabuf(IntPtr buf_stream,
+                    int dmabuf_fd, uint size);
+
+        [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
         private static extern void iio_block_destroy(IntPtr buf);
 
         [DllImport(IioLib.dllname, CallingConvention = CallingConvention.Cdecl)]
@@ -61,6 +65,30 @@ namespace iio
             if (!ptr)
             {
                 throw new IIOException("Unable to create iio.Block", ptr);
+            }
+
+            this.hdl = ptr.ptr;
+        }
+
+        /// <summary>Create a block backed by an existing DMABUF object.</summary>
+        /// <param name="buf_stream">The buffer stream the block belongs to.</param>
+        /// <param name="dmabuf_fd">File descriptor of the DMABUF object. It is duplicated,
+        /// so the caller keeps ownership of it.</param>
+        /// <param name="size">The size of the block, in bytes. It must not exceed the size
+        /// of the DMABUF object.</param>
+        /// <remarks>The block has no CPU mapping: <see cref="fill"/> and <see cref="read"/>
+        /// throw an <see cref="IIOException"/>.</remarks>
+        public Block(BufferStream buf_stream, int dmabuf_fd, uint size)
+        {
+            this.buf_stream = buf_stream;
+            this.size = size;
+            this.enqueued = false;
+            this.stream_block = false;
+
+            IIOPtr ptr = iio_buffer_stream_create_block_from_dmabuf(buf_stream.hdl, dmabuf_fd, size);
+            if (!ptr)
+            {
+                throw new IIOException("Unable to create iio.Block from DMABUF", ptr);
             }
 
             this.hdl = ptr.ptr;

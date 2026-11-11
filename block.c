@@ -84,6 +84,49 @@ err_free_block:
 	return iio_ptr(ret);
 }
 
+struct iio_block *iio_buffer_stream_create_block_from_dmabuf(
+		struct iio_buffer_stream *buf_stream, int dmabuf_fd, size_t size)
+{
+	const struct iio_device *dev = buf_stream->buf->dev;
+	const struct iio_backend_ops *ops = dev->ctx->ops;
+	struct iio_block_pdata *pdata;
+	struct iio_block *block;
+	size_t sample_size;
+	int ret;
+
+	if (dmabuf_fd < 0)
+		return iio_ptr(-EBADF);
+
+	if (!ops->create_block_from_dmabuf)
+		return iio_ptr(-ENOSYS);
+
+	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
+	if (sample_size == 0 || size < sample_size)
+		return iio_ptr(-EINVAL);
+
+	block = zalloc(sizeof(*block));
+	if (!block)
+		return iio_ptr(-ENOMEM);
+
+	pdata = ops->create_block_from_dmabuf(buf_stream->pdata, dmabuf_fd, size);
+	ret = iio_err(pdata);
+	if (ret) {
+		free(block);
+		return iio_ptr(ret);
+	}
+
+	block->pdata = pdata;
+	block->dmabuf_fd = ops->get_dmabuf_fd ? ops->get_dmabuf_fd(pdata) : -EINVAL;
+	block->buf_stream = buf_stream;
+	block->size = size;
+
+	iio_mutex_lock(buf_stream->lock);
+	buf_stream->nb_blocks++;
+	iio_mutex_unlock(buf_stream->lock);
+
+	return block;
+}
+
 void iio_block_destroy(struct iio_block *block)
 {
 	struct iio_buffer_stream *buf_stream = block->buf_stream;
@@ -203,11 +246,17 @@ int iio_block_dequeue(struct iio_block *block, bool nonblock)
 
 void *iio_block_start(const struct iio_block *block)
 {
+	if (!block->data)
+		return iio_ptr(-EACCES);
+
 	return block->data;
 }
 
 void *iio_block_end(const struct iio_block *block)
 {
+	if (!block->data)
+		return iio_ptr(-EACCES);
+
 	return (void *)((uintptr_t)block->data + block->size);
 }
 
@@ -219,6 +268,9 @@ void *iio_block_first(const struct iio_block *block, const struct iio_channel *c
 	const struct iio_channel *cur;
 	unsigned int i;
 	size_t len;
+
+	if (!block->data)
+		return iio_ptr(-EACCES);
 
 	/* Test if the block has samples for this channel */
 	if (!iio_channels_mask_test_bit(buf_stream->mask, chn->number))
@@ -260,6 +312,9 @@ ssize_t iio_block_foreach_sample(const struct iio_block *block,
 	const struct iio_device *dev = buf_stream->buf->dev;
 	size_t sample_size;
 	ssize_t processed = 0;
+
+	if (!block->data)
+		return -EACCES;
 
 	sample_size = iio_device_get_sample_size(dev, buf_stream->mask);
 	if (sample_size == 0)

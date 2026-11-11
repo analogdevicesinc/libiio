@@ -1821,6 +1821,15 @@ static struct iio_block_pdata *local_create_block(
 	return iio_ptr(-ENOSYS);
 }
 
+static struct iio_block_pdata *local_create_block_from_dmabuf(
+		struct iio_buffer_pdata *pdata, int dmabuf_fd, size_t size)
+{
+	if (WITH_LOCAL_DMABUF_API)
+		return local_create_dmabuf_from_fd(pdata, dmabuf_fd, size);
+
+	return iio_ptr(-ENOSYS);
+}
+
 static void local_free_block(struct iio_block_pdata *pdata)
 {
 	if (WITH_LOCAL_DMABUF_API && pdata->buf->dmabuf_supported)
@@ -1986,6 +1995,7 @@ static const struct iio_backend_ops local_ops = {
 	.reg_write = local_reg_write,
 	.refresh_format = local_refresh_format,
 	.ping = local_ping,
+	.create_block_from_dmabuf = local_create_block_from_dmabuf,
 };
 
 const struct iio_backend iio_local_backend = {
