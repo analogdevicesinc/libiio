@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <math.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/logging/log.h>
@@ -64,10 +65,23 @@ static const struct sensor_channel_map channel_map[] = {
 	{SENSOR_CHAN_AMBIENT_LIGHT, "illuminance",      NULL,      16, false},
 };
 
+struct iio_device_sensor_attr {
+	const char *name;
+	enum sensor_attribute attr;
+};
+
+struct iio_device_sensor_chan {
+	const enum sensor_channel channel;
+	const struct iio_device_sensor_attr *attrs;
+	size_t num_attrs;
+};
+
 struct iio_device_sensor_config {
 	const struct device *sensor_dev;
-	const enum sensor_channel *channels;
+	const struct iio_device_sensor_chan *channels;
 	size_t num_channels;
+	const struct iio_device_sensor_attr *attrs;
+	size_t num_attrs;
 };
 
 /* bulk fetch — one sensor_sample_fetch(SENSOR_CHAN_ALL) per round,
@@ -113,10 +127,10 @@ static int sensor_fetch_all(const struct device *dev)
 		/* Driver has no SENSOR_CHAN_ALL — fetch each channel individually */
 		for (size_t i = 0; i < config->num_channels; i++) {
 			int ch_ret = sensor_sample_fetch_chan(config->sensor_dev,
-								config->channels[i]);
+								config->channels[i].channel);
 			if (ch_ret < 0) {
 				LOG_ERR("Fetch channel %d: %d",
-					config->channels[i], ch_ret);
+					config->channels[i].channel, ch_ret);
 			}
 		}
 	} else if (ret < 0) {
@@ -127,10 +141,10 @@ static int sensor_fetch_all(const struct device *dev)
 	/* Populate cache for every configured channel */
 	for (size_t i = 0; i < config->num_channels; i++) {
 		ret = sensor_channel_get(config->sensor_dev,
-				config->channels[i], &data->cache[i]);
+				config->channels[i].channel, &data->cache[i]);
 		if (ret < 0) {
 			LOG_ERR("Get channel %d: %d",
-				config->channels[i], ret);
+				config->channels[i].channel, ret);
 			data->cache[i].val1 = 0;
 			data->cache[i].val2 = 0;
 		}
@@ -146,7 +160,7 @@ static int sensor_cache_index(const struct device *dev,
 	const struct iio_device_sensor_config *config = dev->config;
 
 	for (size_t i = 0; i < config->num_channels; i++) {
-		if (config->channels[i] == sensor_chan) {
+		if (config->channels[i].channel == sensor_chan) {
 			return (int)i;
 		}
 	}
@@ -168,12 +182,12 @@ static int iio_device_sensor_add_channels(const struct device *dev,
 	uint8_t type_counters[SENSOR_CHAN_COMMON_COUNT] = {0};
 
 	for (int index = 0; index < config->num_channels; index++) {
-		enum sensor_channel sensor_chan = config->channels[index];
-		const struct sensor_channel_map *map = find_channel_map(sensor_chan);
+		const struct iio_device_sensor_chan *channel = &config->channels[index];
+		const struct sensor_channel_map *map = find_channel_map(channel->channel);
 
 		if (!map) {
 			LOG_WRN("No mapping for sensor channel %d, skipping",
-				sensor_chan);
+				channel->channel);
 			continue;
 		}
 
@@ -181,7 +195,7 @@ static int iio_device_sensor_add_channels(const struct device *dev,
 			snprintk(id, sizeof(id), "%s_%s",
 				 map->iio_type, map->modifier);
 		} else {
-			uint8_t cnt = type_counters[sensor_chan]++;
+			uint8_t cnt = type_counters[channel->channel]++;
 
 			snprintk(id, sizeof(id), "%s%d", map->iio_type, cnt);
 		}
@@ -203,7 +217,7 @@ static int iio_device_sensor_add_channels(const struct device *dev,
 		}
 
 		iio_channel_set_pdata(iio_channel,
-			(struct iio_channel_pdata *)(intptr_t)sensor_chan);
+			(struct iio_channel_pdata *)(intptr_t)channel);
 
 		if (iio_channel_add_attr(iio_channel, raw_name, type, filename)) {
 			LOG_ERR("Could not add channel %d attr %s",
@@ -217,8 +231,24 @@ static int iio_device_sensor_add_channels(const struct device *dev,
 			return -EINVAL;
 		}
 
+		for (size_t attr_index = 0; attr_index < channel->num_attrs; attr_index++) {
+			if (iio_channel_add_attr(iio_channel, channel->attrs[attr_index].name, type, filename)) {
+				LOG_ERR("Could not add channel %d attr %s",
+					index, channel->attrs[attr_index].name);
+				return -EINVAL;
+			}
+		}
+
 		LOG_DBG("Added IIO channel %s for sensor channel %d",
-			id, sensor_chan);
+			id, channel->channel);
+	}
+
+	for (size_t dev_attr_i = 0; dev_attr_i < config->num_attrs; dev_attr_i++) {
+		if (iio_device_add_attr(iio_device, config->attrs[dev_attr_i].name, IIO_ATTR_TYPE_DEVICE)) {
+			LOG_ERR("Could not add device %d attr %s",
+				dev_attr_i, config->attrs[dev_attr_i].name);
+			return -EINVAL;
+		}
 	}
 
 	return 0;
@@ -274,32 +304,59 @@ static int iio_device_sensor_read_channel_scale(char *dst, size_t len)
 	return snprintk(dst, len, "%u.%03u", 0u, 1u) + 1;
 }
 
+static int iio_device_sensor_read_device_attr(const struct device *dev, enum sensor_channel channel, enum sensor_attribute attr, char *dst, size_t len)
+{
+	const struct iio_device_sensor_config *cfg = dev->config;
+	struct sensor_value val = {0};
+	int ret;
+
+	ret = sensor_attr_get(cfg->sensor_dev, channel, attr, &val);
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	return snprintk(dst, len, "%u.%06u", val.val1, val.val2) + 1;
+}
+
 static int iio_device_sensor_read_attr(const struct device *dev,
 		const struct iio_device *iio_device, const struct iio_attr *attr,
 		char *dst, size_t len)
 {
+	const struct iio_device_sensor_config *cfg = dev->config;
 	struct iio_device_sensor_data *data = dev->data;
-	enum sensor_channel sensor_chan;
+	const struct iio_device_sensor_chan *channel;
 
 	switch (attr->type) {
 	case IIO_ATTR_TYPE_CHANNEL:
-		sensor_chan = (enum sensor_channel)(intptr_t)
+		channel = (const struct iio_device_sensor_chan *)(intptr_t)
 			iio_channel_get_pdata(attr->iio.chn);
 
-		if (sensor_chan >= SENSOR_CHAN_COMMON_COUNT) {
-			LOG_ERR("Invalid sensor channel: %d", sensor_chan);
+		if (channel->channel >= SENSOR_CHAN_COMMON_COUNT) {
+			LOG_ERR("Invalid sensor channel: %d", channel->channel);
 			return -EINVAL;
 		}
 
 		if (!strcmp(attr->name, raw_name)) {
 			return iio_device_sensor_read_channel_raw(dev,
-					sensor_chan, dst, len);
+					channel->channel, dst, len);
 		} else if (!strcmp(attr->name, scale_name)) {
 			return iio_device_sensor_read_channel_scale(dst, len);
+		} else {
+			for (size_t i = 0; i < channel->num_attrs; i++) {
+				if (!strcmp(attr->name, channel->attrs[i].name)) {
+					return iio_device_sensor_read_device_attr(dev, channel->channel, channel->attrs[i].attr, dst, len);
+				}
+			}
 		}
 		break;
 
 	case IIO_ATTR_TYPE_DEVICE:
+		for (size_t i = 0; i < cfg->num_attrs; i++) {
+			if (!strcmp(attr->name, cfg->attrs[i].name)) {
+				return iio_device_sensor_read_device_attr(dev, SENSOR_CHAN_ALL, cfg->attrs[i].attr, dst, len);
+			}
+		}
 		break;
 
 	case IIO_ATTR_TYPE_BUFFER:
@@ -313,6 +370,84 @@ static int iio_device_sensor_read_attr(const struct device *dev,
 	}
 
 	LOG_ERR("Invalid attr: %s", attr->name);
+	return -EINVAL;
+}
+
+static int iio_device_sensor_write_device_attr(const struct device *dev, enum sensor_channel channel, enum sensor_attribute attr, const char *src, size_t len)
+{
+	// TODO: Configurable max RAW size
+	char buffer[32] = { 0 };
+	char *endptr = NULL;
+
+	const struct iio_device_sensor_config *cfg = dev->config;
+	struct sensor_value val = {0};
+	int ret;
+
+	/* Be extra cautious src is properly terminated before calling strtol */
+
+	strncpy(buffer, src, MIN(len, ARRAY_SIZE(buffer)) - 1);
+	buffer[31] = '\0';
+
+	val.val1 = strtol(buffer, &endptr, 10);
+
+	if (*endptr == '.') {
+		char *start = endptr + 1;
+		uint32_t frac = strtol(start, &endptr, 10);
+		if (*endptr != '\0') {
+			return -EINVAL;
+		}
+
+		size_t places = endptr - start;
+		val.val2 = (uint32_t)(((uint64_t)frac) * 1000000 / (pow(10, places)));
+	} else if (*endptr != '\0') {
+		return -EINVAL;
+	}
+
+	ret = sensor_attr_set(cfg->sensor_dev, channel, attr, &val);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return len;
+}
+
+static int iio_device_sensor_write_attr(const struct device *dev,
+		const struct iio_device *iio_device, const struct iio_attr *attr,
+		const char *src, size_t len)
+{
+	const struct iio_device_sensor_config *cfg = dev->config;
+	const struct iio_device_sensor_chan *channel;
+
+	switch (attr->type) {
+	case IIO_ATTR_TYPE_CHANNEL:
+		channel = (const struct iio_device_sensor_chan *)(intptr_t)
+			iio_channel_get_pdata(attr->iio.chn);
+
+		if (channel->channel >= SENSOR_CHAN_COMMON_COUNT) {
+			LOG_ERR("Invalid sensor channel: %d", channel->channel);
+			return -EINVAL;
+		}
+
+		for (size_t i = 0; i < channel->num_attrs; i++) {
+			if (!strcmp(attr->name, channel->attrs[i].name)) {
+				return iio_device_sensor_write_device_attr(dev, channel->channel, channel->attrs[i].attr, src, len);
+			}
+		}
+		break;
+
+	case IIO_ATTR_TYPE_DEVICE:
+		for (size_t i = 0; i < cfg->num_attrs; i++) {
+			if (!strcmp(attr->name, cfg->attrs[i].name)) {
+				return iio_device_sensor_write_device_attr(dev, SENSOR_CHAN_ALL, cfg->attrs[i].attr, src, len);
+			}
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	LOG_ERR("Invalid attr");
 	return -EINVAL;
 }
 
@@ -332,14 +467,58 @@ static int iio_device_sensor_init(const struct device *dev)
 static DEVICE_API(iio_device, iio_device_sensor_driver_api) = {
 	.add_channels   = iio_device_sensor_add_channels,
 	.read_attr      = iio_device_sensor_read_attr,
+	.write_attr     = iio_device_sensor_write_attr,
 };
 
 #define DT_DRV_COMPAT iio_sensor
 
+#define IIO_DEVICE_SENSOR_ATTR_INST(n, prop, idx)				\
+	(struct iio_device_sensor_attr) { 					\
+		.attr = DT_PROP_BY_IDX(n, prop, idx),				\
+		.name = DT_PROP_BY_IDX(n, attr_names, idx),			\
+	}
+
+#define IIO_DEVICE_SENSOR_CHANNEL_PROP(n, prop, idx)				\
+	(struct iio_device_sensor_chan) { 					\
+		.channel = DT_PROP_BY_IDX(n, prop, idx),			\
+	}
+
+#define IIO_DEVICE_SENSOR_CHANNEL_CHILD_ATTRS(n)				\
+	static const struct iio_device_sensor_attr				\
+		iio_device_sensor_attrs_child_##n[] =				\
+	{ DT_FOREACH_PROP_ELEM_SEP(n, attrs, IIO_DEVICE_SENSOR_ATTR_INST, (,)) };
+
+#define IIO_DEVICE_SENSOR_CHANNEL_CHILD(n)					\
+	(struct iio_device_sensor_chan) { 					\
+		.channel = DT_PROP(n, channel),					\
+		.attrs = iio_device_sensor_attrs_child_##n,			\
+		.num_attrs = ARRAY_SIZE(iio_device_sensor_attrs_child_##n),	\
+	}
+
+
 #define IIO_DEVICE_SENSOR_INIT(inst)						\
-									\
-static const enum sensor_channel iio_device_sensor_channels_##inst[] =		\
-	DT_INST_PROP(inst, sensor_channels);					\
+										\
+COND_CODE_1(DT_INST_CHILD_NUM_STATUS_OKAY(inst), (), (				\
+	DT_INST_FOREACH_CHILD_STATUS_OKAY(inst,					\
+		IIO_DEVICE_SENSOR_CHANNEL_CHILD_ATTRS)				\
+))										\
+BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, sensor_channels, 0)			\
+		!= DT_INST_CHILD_NUM_STATUS_OKAY(inst),				\
+	     "Set either sensor-channels or assign channel child nodes");	\
+static const struct iio_device_sensor_chan iio_device_sensor_channels_##inst[] =\
+	{									\
+		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sensor_channels), (	\
+		DT_INST_FOREACH_PROP_ELEM_SEP(inst, sensor_channels, IIO_DEVICE_SENSOR_CHANNEL_PROP, (,))),	\
+		(DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(inst, IIO_DEVICE_SENSOR_CHANNEL_CHILD, (,))))		\
+	};									\
+BUILD_ASSERT(ARRAY_SIZE(iio_device_sensor_channels_##inst) > 0,			\
+	     "One or more sensor channels must be set");			\
+										\
+BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, attrs, 0)				\
+		== DT_INST_PROP_LEN_OR(inst, attr_names, 0),			\
+	     "The attr and attr-names property lengths must match");		\
+static const struct iio_device_sensor_attr iio_device_sensor_attrs_##inst[] =	\
+	{ DT_INST_FOREACH_PROP_ELEM_SEP(inst, attrs, IIO_DEVICE_SENSOR_ATTR_INST, ( , )) };	\
 										\
 static struct sensor_value							\
 	iio_device_sensor_cache_##inst[ARRAY_SIZE(				\
@@ -350,11 +529,13 @@ static struct iio_device_sensor_data iio_device_sensor_data_##inst = {		\
 	.fetched      = false,							\
 };										\
 										\
-static const struct iio_device_sensor_config				\
+static const struct iio_device_sensor_config					\
 		iio_device_sensor_config_##inst = {				\
 	.sensor_dev  = DEVICE_DT_GET(DT_INST_PHANDLE(inst, sensor_device)),	\
 	.channels    = iio_device_sensor_channels_##inst,			\
 	.num_channels = ARRAY_SIZE(iio_device_sensor_channels_##inst),		\
+	.attrs       = iio_device_sensor_attrs_##inst,				\
+	.num_attrs   = ARRAY_SIZE(iio_device_sensor_attrs_##inst),		\
 };										\
 										\
 IIO_DEVICE_DT_INST_DEFINE(inst,							\

@@ -5,6 +5,7 @@
  */
 
 #include <dt-bindings/iio/sensor-channels.h>
+#include <dt-bindings/iio/sensor-attrs.h>
 
 / {
 	iio-context {
@@ -12,11 +13,24 @@
 			compatible = "iio,sensor";
 			io-name = "adxl345";
 			sensor-device = <&adxl345_pmod_acl>;
-			sensor-channels = <
-				IIO_SENSOR_CHAN_ACCEL_X
-				IIO_SENSOR_CHAN_ACCEL_Y
-				IIO_SENSOR_CHAN_ACCEL_Z
-			>;
+
+			accel_x {
+				channel = <IIO_SENSOR_CHAN_ACCEL_X>;
+				attrs = <IIO_SENSOR_ATTR_SAMPLING_FREQUENCY>;
+				attr-names = "sampling_frequency";
+			};
+
+			accel_y {
+				channel = <IIO_SENSOR_CHAN_ACCEL_Y>;
+				attrs = <IIO_SENSOR_ATTR_SAMPLING_FREQUENCY>;
+				attr-names = "sampling_frequency";
+			};
+
+			accel_z {
+				channel = <IIO_SENSOR_CHAN_ACCEL_Z>;
+				attrs = <IIO_SENSOR_ATTR_SAMPLING_FREQUENCY>;
+				attr-names = "sampling_frequency";
+			};
 		};
 	};
 };
