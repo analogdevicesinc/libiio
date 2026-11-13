@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		adxl345_mikroe_accel_click {
+			compatible = "iio,sensor";
+			io-name = "adxl345";
+			sensor-device = <&adxl345_mikroe_accel_click>;
+			sensor-channels = <
+				IIO_SENSOR_CHAN_ACCEL_X
+				IIO_SENSOR_CHAN_ACCEL_Y
+				IIO_SENSOR_CHAN_ACCEL_Z
+			>;
+		};
+	};
+};
