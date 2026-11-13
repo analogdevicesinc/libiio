@@ -2,9 +2,10 @@
 # SPDX-License-Identifier: MIT
 
 tests:
-  libiio.lock:
+  libiio.lib.lock:
     tags:
       - libiio
+      - lib
       - lock
     platform_allow:
       - native_sim

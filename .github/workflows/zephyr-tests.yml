@@ -204,5 +204,5 @@ jobs:
         working-directory: libiio/zephyr
         run: |
           west twister -p native_sim -v --force-color --inline-logs \
-            -T samples --test sample.iiod.usb.pytest
+            -T tests --test libiio.iiod.transport.usb
 

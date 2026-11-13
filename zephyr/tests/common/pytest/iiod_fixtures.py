@@ -1,6 +1,8 @@
 # Copyright (c) 2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
+"""Host libiio fixtures for a DUT's IIOD server, imported by each conftest.py."""
+
 import ctypes
 import glob
 import os
@@ -11,6 +13,9 @@ import time
 import iio
 import pytest
 from twister_harness import DeviceAdapter
+
+# Default CONFIG_LIBIIO_IIOD_NETWORK_PORT.
+IIOD_PORT = 30431
 
 
 def pytest_addoption(parser):
@@ -33,22 +38,21 @@ def iiod_context(dut: DeviceAdapter, request):
         yield from _network_context(dut)
 
 
-def _network_context(dut: DeviceAdapter):
-    # Poll port 30431 directly until the IIOD server is accepting connections.
-    # Waiting for a specific DUT log line is unreliable: the startup messages
-    # are emitted in ~20 ms and the server then blocks in accept(), so if pytest
-    # starts scanning after that point it will never see them.
-    deadline = time.monotonic() + 30.0
+def wait_for_network(port, timeout_s=30.0):
+    """Wait for the IIOD server to accept connections on port."""
+    deadline = time.monotonic() + timeout_s
     while time.monotonic() < deadline:
         try:
-            s = socket.create_connection(('127.0.0.1', 30431), timeout=1.0)
-            s.close()
-            break
+            with socket.create_connection(('127.0.0.1', port), timeout=1.0):
+                return
         except OSError:
             time.sleep(0.1)
-    else:
-        raise TimeoutError('IIOD network server did not start within 30 seconds')
-    ctx = iio.Context('ip:127.0.0.1')
+    raise TimeoutError(f'IIOD network server did not start within {timeout_s:.0f} seconds')
+
+
+def _network_context(dut: DeviceAdapter):
+    wait_for_network(IIOD_PORT)
+    ctx = iio.Context(f'ip:127.0.0.1:{IIOD_PORT}')
     yield ctx
     del ctx  # close TCP connection before DUT teardown
     dut.base_timeout = 2.0
@@ -252,20 +256,9 @@ def _ensure_zeth_interface():
 
 
 def _usb_context(dut: DeviceAdapter):
-    """
-    One-time host setup NOT performed by this fixture (see README.rst):
-      - `sudo apt install linux-tools-generic linux-cloud-tools-generic`
-      - a udev rule granting non-root access to VID 0456
-        (/etc/udev/rules.d/90-libiio-usb.rules)
-      - passwordless sudo for modprobe/usbip/net-setup.sh, e.g.:
-          dimlilic ALL=(root) NOPASSWD: /usr/sbin/modprobe vhci-hcd, \\
-            /usr/lib/linux-tools/*/usbip *, \\
-            /path/to/zephyr-orion1/tools/net-tools/net-setup.sh *
+    """Attach the native_sim DUT over USB/IP and open a usb: context.
 
-    The TAP interface itself is automated (_ensure_zeth_interface()).
-    Uses an infinite context-creation timeout: real transfers over this
-    virtual UDC<->UHC<->USB/IP<->vhci_hcd chain can legitimately take
-    several seconds even when healthy.
+    Uses an infinite timeout: the virtual UDC/UHC/USB-IP chain is slow.
     """
     usbip = _find_usbip_binary()
 
