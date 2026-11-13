@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+description: Fake iio device, to be used as a mock or stub in tests.
+
+compatible: "iio,fake-iio-device"
+
+include: iio,iio-device.yaml
+
+properties:
+  fake-fail-init:
+    type: boolean
+    description: Fail initialization, so the device is not ready.
