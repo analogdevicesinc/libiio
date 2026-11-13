@@ -1,0 +1,39 @@
+diff --git a/src/engines/dpdk/daqiri_dpdk_engine.cpp b/src/engines/dpdk/daqiri_dpdk_engine.cpp
+index 1b24d04..5bd25ff 100644
+--- a/src/engines/dpdk/daqiri_dpdk_engine.cpp
++++ b/src/engines/dpdk/daqiri_dpdk_engine.cpp
+@@ -21,10 +21,11 @@
+ #include <cmath>
+ #include <complex>
+ #include <chrono>
+ #include <iostream>
+ #include <cstdio>
++#include <cstdlib>
+ #include <limits>
+ #include <map>
+ #include <set>
+ #include <sys/time.h>
+ #include <thread>
+@@ -2344,12 +2345,20 @@ void DpdkEngine::initialize() {
+   };
+ 
+   if (loopback_ != LoopbackType::LOOPBACK_TYPE_SW) {
+     for (const auto& name : ifs) {
+       strncpy(_argv[arg++], "-a", max_arg_size - 1);
+-      const int dv_flow_en = interface_has_ecpri(name) ? 1 : 2;
+-      if (dv_flow_en == 1) {
++      int dv_flow_en = interface_has_ecpri(name) ? 1 : 2;
++      if (const char* forced = std::getenv("DAQIRI_MLX5_DV_FLOW_EN")) {
++        if (std::strcmp(forced, "1") == 0 || std::strcmp(forced, "2") == 0) {
++          dv_flow_en = forced[0] - '0';
++          DAQIRI_LOG_INFO("mlx5 dv_flow_en forced to {} by DAQIRI_MLX5_DV_FLOW_EN", dv_flow_en);
++        } else {
++          DAQIRI_LOG_WARN("Ignoring DAQIRI_MLX5_DV_FLOW_EN='{}': must be 1 or 2", forced);
++        }
++      }
++      if (interface_has_ecpri(name)) {
+         DAQIRI_LOG_WARN(
+             "Interface '{}' has eCPRI RX flows: switching mlx5 to firmware steering "
+             "(dv_flow_en=1). HW steering (dv_flow_en=2) does not honor the eCPRI flow item on "
+             "this NIC; async/template dynamic RX flows are unavailable on this port.",
+             name);
