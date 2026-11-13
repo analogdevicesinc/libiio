@@ -1,0 +1,46 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI raw-engine software loopback (no NIC): one host-hugepage RX region,
+# one RX queue, one UDP flow. Needs hugepages. Used by daqiri-probe-raw.
+# DAQIRI implements loopback "sw" only in its DPDK engine (no NIC needed).
+%YAML 1.2
+---
+daqiri:
+  cfg:
+    version: 1
+    stream_type: "raw"
+    engine: "dpdk"
+    master_core: 2
+    debug: false
+    log_level: "info"
+    loopback: "sw"
+
+    memory_regions:
+    - name: "Data_RX"
+      kind: "huge"
+      affinity: 0
+      num_bufs: 4096
+      buf_size: 9216
+
+    interfaces:
+    - name: "loopback_ports"
+      address: "loopback"
+      rx:
+        queues:
+        - name: "rx_q_0"
+          id: 0
+          cpu_core: 4
+          timeout_us: 1000
+          batch_size: 1024
+          memory_regions:
+          - "Data_RX"
+        flows:
+        - name: "flow_4991"
+          id: 0
+          action:
+            type: queue
+            id: 0
+          match:
+            udp_dst: 4991

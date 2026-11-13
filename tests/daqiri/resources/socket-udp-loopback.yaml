@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI socket engine for the daqiri: loopback tests (data=udp).
+# One UDP server interface on 127.0.0.1:25101. The socket is connect()ed to
+# remote_addr, so the kernel only delivers datagrams sent from
+# 127.0.0.1:25102: test senders must bind that address.
+daqiri:
+  cfg:
+    version: 1
+    stream_type: socket
+    master_core: 0
+    memory_regions:
+    - name: HOST_MR
+      kind: host
+      affinity: 0
+      num_bufs: 64
+      buf_size: 9216
+    interfaces:
+    - name: data
+      address: 127.0.0.1
+      socket_config:
+        mode: server
+        local_addr: 'udp://127.0.0.1:25101'
+        remote_addr: 'udp://127.0.0.1:25102'
+        max_payload_size: 9216
+      rx:
+        queues:
+        - name: rx0
+          id: 0
+          cpu_core: 0
+          batch_size: 8
+          memory_regions:
+          - HOST_MR

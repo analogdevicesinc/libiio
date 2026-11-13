@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI socket engine for the daqiri_lifecycle_enable_fails test: as
+# socket-udp-loopback.yaml, one UDP server interface on 127.0.0.1:25101 whose
+# socket is connect()ed to 127.0.0.1:25102, but with max_payload_size 1250.
+# The backend then asks for 1234-byte payloads (1250 less the datagram
+# header), the max_payload whose stream iiod-emu's mock provider fails to
+# start (START_FAILS in iiod-emu/udp-mock.c): the setup succeeds, then
+# ENABLE_BUFFER fails with -EADDRINUSE.
+daqiri:
+  cfg:
+    version: 1
+    stream_type: socket
+    master_core: 0
+    memory_regions:
+    - name: HOST_MR
+      kind: host
+      affinity: 0
+      num_bufs: 64
+      buf_size: 9216
+    interfaces:
+    - name: data
+      address: 127.0.0.1
+      socket_config:
+        mode: server
+        local_addr: 'udp://127.0.0.1:25101'
+        remote_addr: 'udp://127.0.0.1:25102'
+        max_payload_size: 1250
+      rx:
+        queues:
+        - name: rx0
+          id: 0
+          cpu_core: 0
+          batch_size: 8
+          memory_regions:
+          - HOST_MR

@@ -1,0 +1,35 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI socket engine for the rcvbuf_from_yaml case of daqiri_udp_loopback:
+# socket-udp-loopback-1472.yaml with 4608 packet buffers of 2048 bytes, 9 MiB
+# in all. Without rcvbuf= the backend asks that much of the socket's receive
+# buffer (num_bufs * buf_size, between 4 and 64 MiB).
+daqiri:
+  cfg:
+    version: 1
+    stream_type: socket
+    master_core: 0
+    memory_regions:
+    - name: HOST_MR
+      kind: host
+      affinity: 0
+      num_bufs: 4608
+      buf_size: 2048
+    interfaces:
+    - name: data
+      address: 127.0.0.1
+      socket_config:
+        mode: server
+        local_addr: 'udp://127.0.0.1:25101'
+        remote_addr: 'udp://127.0.0.1:25102'
+        max_payload_size: 1472
+      rx:
+        queues:
+        - name: rx0
+          id: 0
+          cpu_core: 0
+          batch_size: 8
+          memory_regions:
+          - HOST_MR

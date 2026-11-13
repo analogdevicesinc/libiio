@@ -1,0 +1,47 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI socket engine for data=udp from the ADRV9002 + ZCU102 board (stage 1)
+# over its 10G link (lane 0) to the host: the host is 192.0.2.2, the board
+# 192.0.2.1, with an MTU of 9000 on the link.
+#
+# The tuple rule. The engine binds local_addr and connect()s its UDP socket to
+# remote_addr, so the kernel hands it only the datagrams sent from exactly that
+# address and port:
+#  - local_addr is where the board must send. The backend asks for its address
+#    (unless the URI gives udp_dst=) and its port, 4991.
+#  - remote_addr is where the board must send from: its IP address and the
+#    source port of its UDP sender (the interpreter's source_port, 4991). The
+#    setup's answer names the board's source; when it is not remote_addr the
+#    buffer does not open (-EADDRNOTAVAIL), since this socket would never
+#    receive the stream.
+#  - The payload asked for is capped by buf_size and by the MTU of the
+#    interface that has local_addr's address: 9000 - 28 - 16 = 8956 bytes,
+#    which the board answers with 8944 for 4-byte samples.
+daqiri:
+  cfg:
+    version: 1
+    stream_type: socket
+    master_core: 3
+    memory_regions:
+    - name: HOST_MR
+      kind: host
+      affinity: 0
+      num_bufs: 4096
+      buf_size: 9216
+    interfaces:
+    - name: data
+      address: 192.0.2.2
+      socket_config:
+        mode: server
+        local_addr: 'udp://192.0.2.2:4991'
+        remote_addr: 'udp://192.0.2.1:4991'
+      rx:
+        queues:
+        - name: rx0
+          id: 0
+          cpu_core: 2
+          batch_size: 32
+          memory_regions:
+          - HOST_MR
