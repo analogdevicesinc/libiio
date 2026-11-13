@@ -2,7 +2,7 @@
 import os
 
 manfolder = os.path.join(os.path.dirname(__file__), "..","build", "share","man")
-page = ['iio_attr','iio_info','iio_genxml','iio_rwdev','iio_reg','iio_stresstest']
+page = ['iio_attr','iio_info','iio_genxml','iio_rwdev','iio_reg','iio_stresstest','iio_daqiri_bench']
 
 tools = {}
 
