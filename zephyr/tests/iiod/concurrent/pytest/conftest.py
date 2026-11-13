@@ -1,12 +1,17 @@
 # Copyright (c) 2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
-import socket
+import sys
 import time
+from pathlib import Path
 
 import iio
 import pytest
 from twister_harness import DeviceAdapter
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'common' / 'pytest'))
+
+from iiod_fixtures import wait_for_network  # noqa: E402
 
 # Must match CONFIG_LIBIIO_IIOD_NETWORK_PORT in prj.conf.
 IIOD_PORT = 30441
@@ -18,22 +23,7 @@ CLIENT_MAX = 4
 
 @pytest.fixture(scope='session')
 def iiod_ready(dut: DeviceAdapter):
-    """Block until the DUT's iiod server accepts connections.
-
-    Poll the port rather than match a log line: startup completes in ~20 ms and
-    the server then blocks in accept(), so a later scan never sees the messages.
-    """
-    deadline = time.monotonic() + 30.0
-    while time.monotonic() < deadline:
-        try:
-            with socket.create_connection(('127.0.0.1', IIOD_PORT), timeout=1.0):
-                pass
-            break
-        except OSError:
-            time.sleep(0.1)
-    else:
-        raise TimeoutError('IIOD network server did not start within 30 seconds')
-
+    wait_for_network(IIOD_PORT)
     yield
     dut.base_timeout = 2.0
 

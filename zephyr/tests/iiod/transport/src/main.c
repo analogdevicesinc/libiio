@@ -1,10 +1,8 @@
 /*
- * Copyright (c) 2025 Analog Devices, Inc.
+ * Copyright (c) 2025-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: MIT
  */
-
-#include <stdio.h>
 
 int main(void)
 {
