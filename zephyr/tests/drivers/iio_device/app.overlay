@@ -1,0 +1,98 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	io_test: io-test {
+		compatible = "iio,io-channels";
+		io-channels = <&adc_emul 0>, <&adc_emul 1>, <&adc_emul 2>, <&adc_emul 3>;
+		io-channel-names = "voltage0", "voltage1", "voltage2", "voltage3";
+		io-name = "io-test";
+	};
+
+	adc_emul: adc {
+		compatible = "zephyr,adc-emul";
+		nchannels = <4>;
+		ref-internal-mv = <3300>;
+		ref-external1-mv = <5000>;
+		#io-channel-cells = <1>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		channel@0 {
+			reg = <0>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <12>;
+			zephyr,vref-mv = <3300>;
+		};
+
+		channel@1 {
+			reg = <1>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <16>;
+			zephyr,vref-mv = <3300>;
+		};
+
+		channel@2 {
+			reg = <2>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_INTERNAL";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <12>;
+		};
+
+		channel@3 {
+			reg = <3>;
+			zephyr,gain = "ADC_GAIN_1";
+			zephyr,reference = "ADC_REF_EXTERNAL1";
+			zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+			zephyr,resolution = <12>;
+			zephyr,vref-mv = <5000>;
+		};
+	};
+
+	iio-sensor-0 {
+		compatible = "iio,sensor";
+		sensor-device = <&sensor0>;
+		sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X IIO_SENSOR_CHAN_ACCEL_Y
+				   IIO_SENSOR_CHAN_DIE_TEMP IIO_SENSOR_CHAN_PRESS
+				   IIO_SENSOR_CHAN_RPM>;
+		io-name = "sensor0";
+	};
+
+	iio-sensor-1 {
+		compatible = "iio,sensor";
+		sensor-device = <&sensor1>;
+		sensor-channels = <IIO_SENSOR_CHAN_VOLTAGE IIO_SENSOR_CHAN_VOLTAGE
+				   IIO_SENSOR_CHAN_CURRENT>;
+		io-name = "sensor1";
+	};
+
+	iio-sensor-2 {
+		compatible = "iio,sensor";
+		sensor-device = <&dead_sensor>;
+		sensor-channels = <IIO_SENSOR_CHAN_DIE_TEMP>;
+		io-name = "dead";
+	};
+
+	sensor0: sensor-0 {
+		compatible = "zephyr,generic-emul-sensor";
+	};
+
+	sensor1: sensor-1 {
+		compatible = "zephyr,generic-emul-sensor";
+	};
+
+	dead_sensor: sensor-2 {
+		compatible = "zephyr,generic-emul-sensor";
+		negated-init-rc = <5>;
+	};
+};

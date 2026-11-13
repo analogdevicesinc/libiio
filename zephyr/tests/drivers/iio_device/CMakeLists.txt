@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+cmake_minimum_required(VERSION 3.20.0)
+find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
+project(libiio_iio_device)
+
+target_sources(app PRIVATE src/io_channels.c src/sensor.c)

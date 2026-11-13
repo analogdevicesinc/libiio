@@ -1,3 +1,6 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
 sample:
   description: iiod server sample
   name: iiod
@@ -25,7 +28,6 @@ tests:
       - usbd
     extra_args:
       - SNIPPET=iiod-usb
-    extra_configs:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
 
@@ -34,7 +36,6 @@ tests:
       - usbd
     extra_args:
       - SNIPPET=iiod-cdc-acm
-    extra_configs:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
 
@@ -43,7 +44,6 @@ tests:
       - serial
     extra_args:
       - SNIPPET=iiod-console
-    extra_configs:
       - CONFIG_LIBIIO_IIOD_ADC_EMUL=y
       - CONFIG_LIBIIO_IIOD_SENSOR_EMUL=y
     platform_allow:
@@ -54,7 +54,6 @@ tests:
       - serial
     extra_args:
       - SNIPPET=iiod-console
-    extra_configs:
       - CONFIG_LIBIIO_IIOD_MULTI_SENSOR_EMUL=y
     platform_allow:
       - apard32690/max32690/m4
