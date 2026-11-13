@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: MIT
  */
 
+#include <dt-bindings/iio/sensor-channels.h>
+
 / {
 	io_test: io-test {
 		compatible = "iio,io-channels";
@@ -55,5 +57,42 @@
 			zephyr,resolution = <12>;
 			zephyr,vref-mv = <5000>;
 		};
+	};
+
+	iio-sensor-0 {
+		compatible = "iio,sensor";
+		sensor-device = <&sensor0>;
+		sensor-channels = <IIO_SENSOR_CHAN_ACCEL_X IIO_SENSOR_CHAN_ACCEL_Y
+				   IIO_SENSOR_CHAN_DIE_TEMP IIO_SENSOR_CHAN_PRESS
+				   IIO_SENSOR_CHAN_RPM>;
+		io-name = "sensor0";
+	};
+
+	iio-sensor-1 {
+		compatible = "iio,sensor";
+		sensor-device = <&sensor1>;
+		sensor-channels = <IIO_SENSOR_CHAN_VOLTAGE IIO_SENSOR_CHAN_VOLTAGE
+				   IIO_SENSOR_CHAN_CURRENT>;
+		io-name = "sensor1";
+	};
+
+	iio-sensor-2 {
+		compatible = "iio,sensor";
+		sensor-device = <&dead_sensor>;
+		sensor-channels = <IIO_SENSOR_CHAN_DIE_TEMP>;
+		io-name = "dead";
+	};
+
+	sensor0: sensor-0 {
+		compatible = "zephyr,generic-emul-sensor";
+	};
+
+	sensor1: sensor-1 {
+		compatible = "zephyr,generic-emul-sensor";
+	};
+
+	dead_sensor: sensor-2 {
+		compatible = "zephyr,generic-emul-sensor";
+		negated-init-rc = <5>;
 	};
 };
