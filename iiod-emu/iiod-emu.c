@@ -20,6 +20,14 @@
 /* Must come after network.h, which pulls in winsock2.h. */
 #include "network.h"
 
+#ifdef IIOD_EMU_UDP
+#include <iio/iio-backend.h>
+#include <iiod/udp-stream.h>
+
+#include "../iio-private.h" /* the context's ops, for --udp-mock-fail-disable */
+#include "udp-stream.h"
+#endif
+
 #ifdef _WIN32
 #include <windows.h>
 #define strncasecmp _strnicmp
@@ -105,6 +113,21 @@ static void setup_signals(void)
 static const struct option options[] = {
 	{ "help", no_argument, NULL, 'h' },
 	{ "port", required_argument, NULL, 'p' },
+#ifdef IIOD_EMU_UDP
+	{ "udp", no_argument, NULL, EMU_UDP_OPT_UDP },
+	{ "udp-from", required_argument, NULL, EMU_UDP_OPT_FROM },
+	{ "udp-pps", required_argument, NULL, EMU_UDP_OPT_PPS },
+	{ "udp-drop-every", required_argument, NULL, EMU_UDP_OPT_DROP_EVERY },
+	{ "udp-drop-list", required_argument, NULL, EMU_UDP_OPT_DROP_LIST },
+	{ "udp-drop-prob", required_argument, NULL, EMU_UDP_OPT_DROP_PROB },
+	{ "udp-seed", required_argument, NULL, EMU_UDP_OPT_SEED },
+	{ "udp-reorder-window", required_argument, NULL, EMU_UDP_OPT_REORDER_WINDOW },
+	{ "udp-dup-every", required_argument, NULL, EMU_UDP_OPT_DUP_EVERY },
+	{ "udp-json", required_argument, NULL, EMU_UDP_OPT_JSON },
+	{ "udp-count", required_argument, NULL, EMU_UDP_OPT_COUNT },
+	{ "udp-mock-provider", required_argument, NULL, EMU_UDP_OPT_MOCK_PROVIDER },
+	{ "udp-mock-fail-disable", required_argument, NULL, EMU_UDP_OPT_MOCK_FAIL_DISABLE },
+#endif
 	{ NULL, 0, NULL, 0 },
 };
 
@@ -137,6 +160,9 @@ static void usage(void)
 	       "\t-h, --help\t\tDisplay this help message\n"
 	       "\t-p, --port <port>\tPort to listen on (default: %d)\n",
 			DEFAULT_PORT);
+#ifdef IIOD_EMU_UDP
+	emu_udp_usage();
+#endif
 }
 
 static bool uri_is_allowed(const char *uri)
@@ -289,6 +315,34 @@ static int spawn_client(struct iiod_emu *emu, emu_socket sock, const char *peer)
 	return 0;
 }
 
+#ifdef IIOD_EMU_UDP
+/* With --udp, the sample files sit next to the XML of an emu: URI */
+static bool udp_cfg_is_valid(const struct emu_udp_cfg *cfg, const char *uri)
+{
+	if (cfg->stream_opt && !cfg->udp) {
+		fprintf(stderr, "The --udp-* options need --udp.\n\n");
+		return false;
+	}
+
+	if (cfg->udp && cfg->mock_log) {
+		fprintf(stderr, "--udp and --udp-mock-provider exclude each other.\n\n");
+		return false;
+	}
+
+	if (cfg->mock_disables && !cfg->mock_log) {
+		fprintf(stderr, "--udp-mock-fail-disable needs --udp-mock-provider.\n\n");
+		return false;
+	}
+
+	if (cfg->udp && strncmp(uri, "emu:", strlen("emu:"))) {
+		fprintf(stderr, "--udp streams the sample files of an emu: URI, not %s\n\n", uri);
+		return false;
+	}
+
+	return true;
+}
+#endif
+
 int main(int argc, char **argv)
 {
 	struct iio_context_params params = { .log_level = LEVEL_INFO };
@@ -299,6 +353,13 @@ int main(int argc, char **argv)
 	char err_str[256];
 	const char *uri;
 	int c, err;
+#ifdef IIOD_EMU_UDP
+	struct emu_udp_mock *mock = NULL;
+	struct emu_udp_cfg udp_cfg;
+	struct emu_udp *udp = NULL;
+
+	emu_udp_cfg_init(&udp_cfg);
+#endif
 
 	/*
 	 * Our progress messages are useless if they sit in a buffer until we
@@ -315,31 +376,38 @@ int main(int argc, char **argv)
 		case 'p':
 			if (!parse_port(optarg, &port)) {
 				fprintf(stderr, "Invalid port: %s\n\n", optarg);
-				usage();
-				return EXIT_FAILURE;
+				goto out_usage;
 			}
 			break;
 		default:
-			usage();
-			return EXIT_FAILURE;
+#ifdef IIOD_EMU_UDP
+			if (emu_udp_is_option(c)) {
+				if (emu_udp_parse_option(&udp_cfg, c, optarg))
+					goto out_usage;
+				break;
+			}
+#endif
+			goto out_usage;
 		}
 	}
 
 	if (optind + 1 != argc) {
 		fprintf(stderr, "Expected exactly one context URI.\n\n");
-		usage();
-		return EXIT_FAILURE;
+		goto out_usage;
 	}
 
 	uri = argv[optind];
 
-	if (!uri_is_allowed(uri)) {
-		usage();
-		return EXIT_FAILURE;
-	}
+	if (!uri_is_allowed(uri))
+		goto out_usage;
+
+#ifdef IIOD_EMU_UDP
+	if (!udp_cfg_is_valid(&udp_cfg, uri))
+		goto out_usage;
+#endif
 
 	if (emu_network_init())
-		return EXIT_FAILURE;
+		goto out_free_udp_cfg;
 
 	err = iiod_init();
 	if (err) {
@@ -363,6 +431,39 @@ int main(int argc, char **argv)
 		goto out_mutex_destroy;
 	}
 
+#ifdef IIOD_EMU_UDP
+	/* Before the XML is made: clients learn about UDP mode from it. The mock
+	 * provider advertises it too, so that the daqiri: backend, which only
+	 * sends the setup to a server that does, can run against it. */
+	if (udp_cfg.udp || udp_cfg.mock_log) {
+		err = iio_context_add_attr(emu.ctx, "iiod,udp-stream", "1");
+		if (err) {
+			iio_strerror(-err, err_str, sizeof(err_str));
+			fprintf(stderr, "Unable to advertise UDP mode: %s\n", err_str);
+			goto out_ctx_destroy;
+		}
+	}
+
+	if (udp_cfg.udp) {
+		udp = emu_udp_create(&udp_cfg, uri + strlen("emu:"));
+		if (!udp) {
+			fprintf(stderr, "Unable to set up UDP mode\n");
+			goto out_ctx_destroy;
+		}
+	}
+
+	if (udp_cfg.mock_log) {
+		mock = emu_udp_mock_create(udp_cfg.mock_log);
+		if (!mock)
+			goto out_ctx_destroy;
+		/* The DISABLE_BUFFERs that fail: the emulated device's own
+		 * ops, wrapped, before anything uses them */
+		if (udp_cfg.mock_disables)
+			emu.ctx->ops = emu_udp_mock_device_ops(
+					mock, emu.ctx->ops, udp_cfg.mock_fail_disable);
+	}
+#endif
+
 	emu.xml = iiod_get_xml_zstd(emu.ctx, &emu.xml_len);
 	if (!emu.xml) {
 		fprintf(stderr, "Unable to serialize the context\n");
@@ -380,6 +481,16 @@ int main(int argc, char **argv)
 
 	printf("Emulating %u device(s) from %s\n", iio_context_get_devices_count(emu.ctx), uri);
 	printf("Listening on port %u; connect with: iio_info -u ip:127.0.0.1:%u\n", port, port);
+
+#ifdef IIOD_EMU_UDP
+	if (udp) {
+		iiod_udp_stream_set_ops(&emu_udp_ops, udp);
+		printf("UDP sample mode on\n");
+	} else if (mock) {
+		iiod_udp_stream_set_ops(&emu_udp_mock_ops, mock);
+		printf("UDP mock provider on, logging to %s\n", udp_cfg.mock_log);
+	}
+#endif
 
 	/*
 	 * Not any earlier: nothing above looks at <stop>, so a handler installed
@@ -428,10 +539,18 @@ int main(int argc, char **argv)
 	}
 
 	emu_socket_close(srv);
+	/* Every client gone, every buffer and its stream released */
 	reap_clients(&emu, true);
+#ifdef IIOD_EMU_UDP
+	iiod_udp_stream_set_ops(NULL, NULL);
+#endif
 out_free_xml:
 	free(emu.xml);
 out_ctx_destroy:
+#ifdef IIOD_EMU_UDP
+	emu_udp_destroy(udp);
+	emu_udp_mock_destroy(mock);
+#endif
 	iio_context_destroy(emu.ctx);
 out_mutex_destroy:
 	iio_mutex_destroy(emu.lock);
@@ -439,6 +558,14 @@ out_iiod_cleanup:
 	iiod_cleanup();
 out_network_deinit:
 	emu_network_deinit();
+out_free_udp_cfg:
+#ifdef IIOD_EMU_UDP
+	emu_udp_cfg_free(&udp_cfg);
+#endif
 
 	return ret;
+
+out_usage:
+	usage();
+	goto out_free_udp_cfg;
 }
