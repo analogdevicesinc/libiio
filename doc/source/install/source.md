@@ -211,6 +211,7 @@ Cmake Options          | Default | Depends on    | Description                  
 `ENABLE_IPV6`          |  ON | Networking    | Define if you want to enable IPv6 support |
 `WITH_LOCAL_BACKEND`   |  ON | Linux         | Enables local support with iiod  |
 `WITH_LOCAL_CONFIG`    |  ON | Local backend | Read local context attributes from /etc/libiio.ini |
+`WITH_DAQIRI_BACKEND`  | OFF | Linux, modules, DAQIRI, CUDA toolkit | Build the DAQIRI backend module `libiio-daqiri.so` (see the [DAQIRI backend](../daqiri-backend.md) page) |
 
 
 There are a few options, which are experimental, which should be left to their default settings:
