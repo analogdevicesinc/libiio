@@ -5,6 +5,7 @@ set(IIO_UTILS_TARGETS
     iio_info
     iio_attr
     iio_rwdev
+    iio_daqiri_bench
     iio_reg
     iio_event
     iio_ping)
