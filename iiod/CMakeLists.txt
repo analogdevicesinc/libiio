@@ -36,7 +36,7 @@ if (WITH_IIOD_V0_COMPAT)
                  ${CMAKE_CURRENT_BINARY_DIR}/parser.c)
     add_flex_bison_dependency(lexer parser)
 
-    target_sources(iiod PRIVATE ops.c ${BISON_parser_OUTPUTS}
+    target_sources(iiod PRIVATE ops.c ops-common.c ${BISON_parser_OUTPUTS}
                                 ${FLEX_lexer_OUTPUTS})
 
     # license checks needs header files at cmake time, so build them now.

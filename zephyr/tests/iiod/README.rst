@@ -59,3 +59,44 @@ can connect over TCP:
    west twister -p native_sim --integration -T samples/iiod/ \
        --inline-logs --test sample.iiod.uart.pytest
 
+libiio v0 Client Compatibility
+------------------------------
+
+Each transport runs the same ``test_iiod.py`` tests against every combination
+of server build (``CONFIG_LIBIIO_IIOD_V0_COMPAT`` and, with it, the v0 parser)
+and client generation:
+
+======================================  ======  =======  ======  ===========================
+Scenario suffix                         Compat  Parser   Client  Expected
+======================================  ======  =======  ======  ===========================
+``.pytest``                             y       LITE     v1      tests pass
+``.no_v0_compat.pytest``                n       -        v1      tests pass
+``.v0_client.pytest``                   y       LITE     v0      tests pass
+``.v0_client.no_v0_compat.pytest``      n       -        v0      context creation is refused
+``.grammar.pytest``                     y       GRAMMAR  v1      tests pass
+``.v0_client.grammar.pytest``           y       GRAMMAR  v0      tests pass
+======================================  ======  =======  ======  ===========================
+
+``conftest.py`` fails the run unless the build matches ``--iiod-v0-compat``
+and ``--iiod-v0-parser`` (checked in ``zephyr/.config`` and by the presence of
+``ascii_interpreter()`` and, for GRAMMAR, ``yyparse()`` in ``zephyr.elf``), and
+unless the loaded libiio is the requested generation. The GRAMMAR scenarios
+generate the flex/bison parser at build time, so flex and bison must be
+installed.
+
+The v0 scenarios need a real libiio v0 client. Build v0.26 into its own prefix and 
+point ``LIBIIO_V0_PREFIX`` at it:
+
+.. code-block:: console
+
+   git clone --depth 1 --branch v0.26 https://github.com/analogdevicesinc/libiio.git libiio-v0
+   cmake -S libiio-v0 -B libiio-v0/build -DCMAKE_INSTALL_PREFIX=$HOME/libiio-v0 \
+       -DWITH_IIOD=OFF -DWITH_LOCAL_BACKEND=OFF -DHAVE_DNS_SD=OFF -DWITH_ZSTD=OFF
+   cmake --build libiio-v0/build -j$(nproc)
+   cmake --install libiio-v0/build
+   mkdir -p $HOME/libiio-v0/python
+   cp libiio-v0/bindings/python/iio.py $HOME/libiio-v0/python/
+
+   export LIBIIO_V0_PREFIX=$HOME/libiio-v0
+   west twister -p native_sim -T tests/iiod --integration --exclude-tag usb-hostreq
+

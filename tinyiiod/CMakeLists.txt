@@ -4,6 +4,9 @@ project(tinyiiod C)
 add_library(
     tinyiiod STATIC tinyiiod.c ops-stubs.c ${CMAKE_SOURCE_DIR}/iiod/responder.c
                     ${CMAKE_SOURCE_DIR}/iiod/rw.c)
+# The v0 ASCII protocol front end (ascii-ops.c) is only built on Zephyr; host
+# tinyiiod stays binary-only even when WITH_IIOD_V0_COMPAT is enabled for iiod.
+target_compile_definitions(tinyiiod PRIVATE WITH_TINYIIOD_V0_COMPAT=0)
 if (MSVC)
     target_compile_definitions(tinyiiod PRIVATE _CRT_SECURE_NO_WARNINGS)
 endif ()
