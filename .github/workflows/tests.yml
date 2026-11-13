@@ -26,6 +26,8 @@ jobs:
             cmake .. -DWITH_TESTS=ON -DTESTS_DEBUG=ON -DWITH_GCOV=ON -DWITH_EMU_BACKEND=ON -DWITH_IIOD_EMU=ON
             make
             make coverage
+        - name: DAQIRI backend unit tests
+          run: ctest --test-dir build -L '^daqiri$' --output-on-failure
 
         # - name: Upload coverage to Codecov
         #     uses: codecov/codecov-action@v1
