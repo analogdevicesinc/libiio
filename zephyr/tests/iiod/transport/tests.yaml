@@ -7,14 +7,14 @@ common:
   tags:
     - libiio
     - iiod
-  platform_allow:
-    - native_sim
   harness: pytest
 
 tests:
   libiio.iiod.transport.network:
     extra_args:
       - SNIPPET=iiod-network
+    platform_allow:
+      - native_sim
     integration_platforms:
       - native_sim
     timeout: 120
@@ -28,6 +28,8 @@ tests:
   libiio.iiod.transport.uart:
     extra_args:
       - SNIPPET=iiod-console
+    platform_allow:
+      - native_sim
     integration_platforms:
       - native_sim
     harness_config:
@@ -41,6 +43,8 @@ tests:
     extra_args:
       - SNIPPET=iiod-console
       - CONFIG_LIBIIO_MULTITHREADING=y
+    platform_allow:
+      - native_sim
     integration_platforms:
       - native_sim
     timeout: 120
@@ -54,10 +58,27 @@ tests:
   # Requires usbip, vhci-hcd, a udev rule for VID 0456 and passwordless sudo.
   libiio.iiod.transport.usb:
     tags: usb-hostreq
+    platform_allow:
+      - native_sim
     extra_args:
       - SNIPPET=iiod-usb
     timeout: 60
     harness_config:
+      pytest_root:
+        - pytest/test_iiod.py
+      pytest_dut_scope: session
+      pytest_args:
+        - --iiod-transport=usb
+
+  # The board's USB device port must be cabled to the host.
+  libiio.iiod.transport.usb.hw:
+    extra_args:
+      - SNIPPET=iiod-usb
+    platform_allow:
+      - apard32690/max32690/m4
+    timeout: 60
+    harness_config:
+      fixture: iio_usb
       pytest_root:
         - pytest/test_iiod.py
       pytest_dut_scope: session
