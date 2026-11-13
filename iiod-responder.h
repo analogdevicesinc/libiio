@@ -66,6 +66,9 @@ enum iiod_opcode {
 
 	IIOD_OP_NOP,
 
+	/* UDP sample stream setup for an open buffer (iiod-udp-stream.h) */
+	IIOD_OP_UDP_STREAM_SETUP,
+
 	IIOD_NB_OPCODES,
 };
 
