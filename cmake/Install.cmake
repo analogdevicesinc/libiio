@@ -210,3 +210,7 @@ endif ()
 if (WITH_EMU_BACKEND_DYNAMIC)
     install(TARGETS iio-emu LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/libiio)
 endif ()
+if (WITH_DAQIRI_BACKEND)
+    install(TARGETS iio-daqiri
+            LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/libiio)
+endif ()

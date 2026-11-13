@@ -183,6 +183,7 @@ Cmake Options          | Default | Depends on    | Description                  
 `WITH_LOCAL_CONFIG`    |  ON | Local backend | Read local context attributes from /etc/libiio.ini |
 `WITH_EMU_BACKEND`     | OFF | libxml2       | Enable the emulation backend for XML-based device simulation |
 `WITH_EMU_BACKEND_DYNAMIC` |  ON | Modules + emu backend | Compile the emulation backend as a module |
+`WITH_DAQIRI_BACKEND`  | OFF | Linux, modules, DAQIRI, CUDA toolkit | Build the DAQIRI backend module `libiio-daqiri.so` (see `CI/daqiri/README.md`) |
 
 `iiod-emu` serves an XML device description over TCP/IP, so that clients can be
 tested against emulated devices without real hardware. It builds without the
