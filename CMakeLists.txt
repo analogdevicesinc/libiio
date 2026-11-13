@@ -270,8 +270,23 @@ if (BUILD_SHARED_LIBS)
             target_link_libraries(iio PRIVATE dl)
         endif ()
 
-        file(TO_NATIVE_PATH "${CMAKE_INSTALL_FULL_LIBDIR}/libiio/"
-             IIO_MODULES_DIR)
+        # Lets test builds load modules from the build tree; the directory is
+        # otherwise fixed at configure time.
+        set(IIO_MODULES_DIR_OVERRIDE
+            ""
+            CACHE PATH "Load modules from here instead of the install dir")
+        mark_as_advanced(IIO_MODULES_DIR_OVERRIDE)
+        if (IIO_MODULES_DIR_OVERRIDE)
+            set(IIO_MODULES_DIR "${IIO_MODULES_DIR_OVERRIDE}")
+            # dynamic.c appends the file name directly
+            if (NOT IIO_MODULES_DIR MATCHES "[/\\\\]$")
+                string(APPEND IIO_MODULES_DIR "/")
+            endif ()
+            file(TO_NATIVE_PATH "${IIO_MODULES_DIR}" IIO_MODULES_DIR)
+        else ()
+            file(TO_NATIVE_PATH "${CMAKE_INSTALL_FULL_LIBDIR}/libiio/"
+                 IIO_MODULES_DIR)
+        endif ()
         string(REPLACE "\\" "\\\\" IIO_MODULES_DIR ${IIO_MODULES_DIR})
     endif ()
 endif ()
