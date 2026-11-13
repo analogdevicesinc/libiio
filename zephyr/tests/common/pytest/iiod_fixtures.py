@@ -32,6 +32,8 @@ def iiod_context(dut: DeviceAdapter, request):
     transport = request.config.getoption('--iiod-transport')
     if transport == 'uart':
         yield from _uart_context(dut)
+    elif transport == 'usb' and dut.device_config.type == 'hardware':
+        yield from _attached_usb_context()
     elif transport == 'usb':
         yield from _usb_context(dut)
     else:
@@ -253,6 +255,15 @@ def _ensure_zeth_interface():
             return
         time.sleep(0.2)
     pytest.fail('zeth interface did not come up after `net-setup.sh start`')
+
+
+def _attached_usb_context():
+    """Open a usb: context on a board the hardware map's post-flash script attached."""
+    bus_dev = _wait_for_attached_bus_dev(_USB_VID, timeout_s=30.0)
+    time.sleep(1.0)  # udev applies its MODE rule after the node appears
+    ctx = _create_context_with_infinite_timeout(f'usb:{bus_dev}.0')
+    yield ctx
+    del ctx
 
 
 def _usb_context(dut: DeviceAdapter):
