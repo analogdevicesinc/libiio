@@ -1,0 +1,77 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+name: DAQIRI backend
+permissions:
+  contents: read
+  packages: read
+
+on: [push, pull_request]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  software:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    container:
+      image: ghcr.io/tfcollins/libiio-daqiri-ci:latest
+    # daqiri_engine_raw_flows (loopback label) checks the flow rules of an
+    # ibverbs YAML, which only a DAQIRI with the raw engines parses. The image
+    # above still has the socket engine only: it predates the "dpdk ibverbs"
+    # build of CI/daqiri/Dockerfile, and daqiri-ci-image.yml rebuilds it only
+    # when CI/daqiri changes on the main branch. Until then ctest reports that
+    # test as skipped. Once the image is rebuilt with the raw engines, enable
+    # this, so that an image without them fails the job instead:
+    # env:
+    #   DAQIRI_REQUIRE_RAW_ENGINES: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Configure
+        run: |
+          cmake -S . -B build \
+            -DWITH_MODULES=ON -DWITH_DAQIRI_BACKEND=ON -DWITH_TESTS=ON \
+            -DWITH_EMU_BACKEND=ON -DWITH_EMU_BACKEND_DYNAMIC=OFF \
+            -DWITH_IIOD_EMU=ON -DWITH_GCOV=OFF \
+            -DCUDAToolkit_ROOT=/usr/local/cuda \
+            -DIIO_MODULES_DIR_OVERRIDE=$GITHUB_WORKSPACE/build/
+      - name: Build
+        run: cmake --build build -j"$(nproc)"
+      - name: Unit tests
+        run: ctest --test-dir build -L '^daqiri$' --output-on-failure
+      # The emulator tests and the loopback tests share 127.0.0.1:30431 and
+      # :25101: one test at a time
+      - name: Emulator tests
+        run: ctest --test-dir build -L daqiri-emu -j1 --output-on-failure
+      - name: Loopback tests
+        run: ctest --test-dir build -L daqiri-loopback -j1 --output-on-failure
+      - name: Upload test logs
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: daqiri-testing
+          path: build/Testing
+
+  unit-no-daqiri:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      # Everything the default configure needs: the USB, DNS-SD, ZSTD and
+      # iiod (libaio, flex, bison) defaults stop configuration without them.
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            cmake build-essential pkg-config libxml2-dev libzstd-dev \
+            libusb-1.0-0-dev libserialport-dev libavahi-client-dev libaio-dev \
+            flex bison
+      - name: Configure and build
+        run: |
+          cmake -S . -B build -DWITH_TESTS=ON
+          cmake --build build -j"$(nproc)"
+      - name: Unit tests
+        run: ctest --test-dir build -L '^daqiri$' --output-on-failure

@@ -1,0 +1,44 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+name: DAQIRI CI image
+permissions:
+  contents: read
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master, main]
+    paths:
+      - 'CI/daqiri/**'
+      - '.github/workflows/daqiri-ci-image.yml'
+
+jobs:
+  image:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/tfcollins/libiio-daqiri-ci
+    steps:
+      - uses: actions/checkout@v7
+      - name: Compute tag
+        id: tag
+        run: echo "ref=$(cut -c1-12 CI/daqiri/DAQIRI_REF)" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: CI/daqiri/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.tag.outputs.ref }}-cuda13.4
+            ${{ env.IMAGE }}:latest
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
