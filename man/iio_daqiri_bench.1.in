@@ -1,0 +1,164 @@
+.\" Copyright (c) 2026 Analog Devices Inc.
+.\"
+.\" %%%LICENSE_START(GPLv2+_DOC_FULL)
+.\" This is free documentation; you can redistribute it and/or
+.\" modify it under the terms of the GNU General Public License as
+.\" published by the Free Software Foundation; either version 2 of
+.\" the License, or (at your option) any later version.
+.\"
+.\" The GNU General Public License's references to "object code"
+.\" and "executables" are to be interpreted as the output of any
+.\" document formatting or typesetting system, including
+.\" intermediate and printed output.
+.\"
+.\" This manual is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public
+.\" License along with this manual; if not, see
+.\" <http://www.gnu.org/licenses/>.
+.\" %%%LICENSE_END
+.\"
+.TH iio_daqiri_bench 1 "@CMAKE_DATE@" "libiio-@LIBIIO_VERSION_MAJOR@.@LIBIIO_VERSION_MINOR@" "LibIIO Utilities"
+.IX iio_daqiri_bench
+.SH NAME
+iio_daqiri_bench \- measure the receive throughput of an IIO buffer
+.SH SYNOPSIS
+.B iio_daqiri_bench
+[
+.I options
+]
+.B \-d
+.I device
+.B \-s
+.I block_bytes
+.B \-T
+.I seconds
+[\-c <ch1,ch2>] [\-n <blocks>] [\-\-check ramp|none] [\-j <file.json>]
+.SH DESCRIPTION
+.B iio_daqiri_bench
+queues a number of blocks on the first input buffer of a device, starts the
+stream, and dequeues and re-queues them for the requested time, reporting the
+byte and block rates, the dequeue latency, the CPU use and, for
+.B daqiri:
+contexts, the data path the buffer took and the buffer counters.
+.PP
+It only uses the public libiio API, so the same run works against any backend:
+compare
+.B daqiri:
+with
+.B ip:
+on the same sender.
+.PP
+The clock starts when the first block is dequeued. That block is checked but
+not counted, so the time spent waiting for the sender to start is not part of
+the rate. Dequeue latency percentiles cover every dequeue, the first one
+included. The CPU percentage is the process total (user plus system, all
+threads) over the measured time; on Linux, the figure of every thread follows.
+.PP
+The counters are the
+.B daqiri_*
+buffer attributes. They are read right after the stream started and again at
+the end, and the report holds the difference, so packets that were dropped
+before the stream started are not counted. They are shown only when the buffer
+has the
+.B daqiri_rx_*
+attributes.
+.SH OPTIONS
+##COMMON_COMMANDS_START##
+##COMMON_COMMANDS_STOP##
+##COMMON_OPTION_START##
+##COMMON_OPTION_STOP##
+.TP
+.B \-d, \-\-device <device>
+The device to receive from (required).
+.TP
+.B \-c, \-\-channels <ch1,ch2>
+Comma separated channels to enable. They must be scan elements of the first
+buffer. The default is all of them.
+.TP
+.B \-s, \-\-block\-size <bytes>
+Size of a block in bytes (required). It must be a multiple of the sample size.
+.TP
+.B \-n, \-\-blocks <count>
+Number of blocks queued (default: 8).
+.TP
+.B \-T, \-\-duration <seconds>
+How long to measure, from the first block (required). Unlike in the other
+utilities,
+.B \-T
+is not the context timeout: use
+.B \-\-timeout
+for that.
+.TP
+.B \-k, \-\-check ramp|none
+.B ramp
+verifies the ramp16_le test pattern (sample n has I = n & 0x7FFF and
+Q = (0x8000 - n) & 0xFFFF, little-endian 16-bit words, as the test pattern of
+the board's UDP framer sends them; see ramp16_le in tests/daqiri/gen_golden.py)
+on host-order int16 I/Q pairs, and counts the samples that do not follow it.
+It needs 4-byte samples. After a dequeue error (lost data) the pattern is
+joined again from the next block. The default is
+.BR none .
+.TP
+.B \-j, \-\-json <file>
+Also write the result to this file as JSON.
+.SH OUTPUT
+The text report holds
+.I data_path
+(for
+.B daqiri:
+contexts: the
+.B daqiri_data_path
+buffer attribute,
+.B udp
+or
+.BR tcp ,
+the data path settled when the buffer was opened),
+.IR bytes ,
+.IR blocks ,
+.IR gbps ,
+.IR blocks_per_s ,
+.IR dequeue_p50_ms ,
+.IR dequeue_p99_ms ,
+.I cpu_pct
+(\fBn/a\fR when the platform cannot tell) and, with
+.BR "\-\-check ramp" ,
+.IR bad_samples .
+.PP
+The JSON file is an object with
+.IR schema_version " (1),"
+.IR uri ,
+.IR device ,
+.I data_path
+(\fBnull\fR when the buffer has no \fBdaqiri_data_path\fR),
+.IR block_bytes ,
+.IR duration_s ,
+.IR bytes ,
+.IR blocks ,
+.IR gbps ,
+.IR blocks_per_s ,
+.I dequeue_ms
+(\fBp50\fR, \fBp99\fR),
+.I cpu_pct
+(\-1 when unknown),
+.I counters
+(the \fBdaqiri_*\fR attributes; the \fBdaqiri_rx_*\fR and \fBdaqiri_blocks_*\fR
+ones as differences, except \fBdaqiri_rx_socket_buffer\fR, a size; the others
+as read) and
+.I check
+(\fBmode\fR, \fBbad_samples\fR).
+.SH RETURN VALUE
+Returns 0 when the run completed, and a non-zero exit code when the device or
+channels are not found, the buffer cannot be opened, no block arrived, or a
+dequeue failed.
+.SH EXAMPLES
+.nf
+iio_daqiri_bench \-u "daqiri:192.168.2.1,data=udp,yaml=/etc/daqiri.yaml" \\
+    \-d cf\-ad9361\-lpc \-s 1440 \-T 5 \-\-check ramp \-j perf.json
+iio_daqiri_bench \-u ip:192.168.2.1 \-d cf\-ad9361\-lpc \-s 65536 \-T 3
+.fi
+.SH SEE ALSO
+.BR iio_rwdev (1)
