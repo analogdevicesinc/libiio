@@ -250,4 +250,5 @@ LIBIIO_1.1 {
 global:
 	iio_free;
 	iio_strndup;
+	iiod_client_udp_stream_setup;
 } LIBIIO_1.0;
