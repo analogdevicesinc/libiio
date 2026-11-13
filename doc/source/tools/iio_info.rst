@@ -78,6 +78,13 @@ OPTIONS
             ('0' none [default], 'x' Xon Xoff, 'r' RTSCTS, or 'd'
             DTRDSR)
 
+   daqiri:[address][:port][,key=value]
+      when compiled with the DAQIRI backend: the network address of an
+      iiod, as for **ip:**, with the samples of the buffers received as
+      UDP datagrams through NVIDIA DAQIRI where the server supports it.
+      The keys are listed on the DAQIRI backend page of the libiio
+      documentation.
+
    local:
       with no address part.
 

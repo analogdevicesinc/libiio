@@ -1,8 +1,13 @@
-# Convert man pages to reStructuredText
+# Copyright (c) 2024-2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+"""Convert man pages to reStructuredText."""
 import os
 
 manfolder = os.path.join(os.path.dirname(__file__), "..","build", "share","man")
-page = ['iio_attr','iio_info','iio_genxml','iio_rwdev','iio_reg','iio_stresstest']
+page = ['iio_attr', 'iio_info', 'iio_genxml', 'iio_rwdev', 'iio_reg',
+        'iio_stresstest', 'iio_daqiri_bench']
 
 tools = {}
 
