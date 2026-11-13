@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014 Analog Devices, Inc.
+ * Copyright (C) 2014-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -78,6 +78,12 @@ struct buffer_entry {
 	uint32_t *words;
 	uint16_t idx;
 	bool is_tx;
+
+	/* UDP sample stream (udp-stream.h): the provider's state, a setup that
+	 * succeeded and no enable has used yet, and a stream that start() started
+	 * and stop() has not stopped */
+	void *udp_priv;		    /* cppcheck-suppress unusedStructMember */
+	bool udp_setup, udp_active; /* cppcheck-suppress unusedStructMember */
 
 	SLIST_HEAD(BlockList, block_entry) blocklist;
 	struct iio_mutex *lock;
