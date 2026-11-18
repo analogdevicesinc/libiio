@@ -28,44 +28,44 @@ COMMANDS
 --------
 
 The iio_attr utility has a few main options, which control what the main utility of the application is.
+   **-d, --device-attr**
+      Read and Write IIO device attributes
 
-**-d, --device-attr**
-   Read and Write IIO device attributes
+   **-c --channel-attr**
+      Read and Write IIO channel attributes
 
-**-c --channel-attr**
-   Read and Write IIO channel attributes
+   **-B --buffer-attr**
+      Read and Write IIO Buffer attributes
 
-**-B --buffer-attr**
-   Read and Write IIO Buffer attributes
+   **-C --context-attr**
+      Read and Write IIO Context attributes
 
-**-C --context-attr**
-   Read and Write IIO Context attributes
+   **-D --debug-attr**
+      Read and Write IIO Debug attributes
 
-**-D --debug-attr**
-   Read and Write IIO Debug attributes
+   **-E --event-attr**
+      Read and Write IIO device event attributes
 
-**-E --event-attr**
-   Read and Write IIO device event attributes
+   **-e --channel-event-attr**
+      Read and Write IIO channel event attributes
 
-**-e --channel-event-attr**
-   Read and Write IIO channel event attributes
+   **-h, --help**
+      Tells *iio_attr* to display some help, and then quit.
 
-**-h, --help**
-   Tells *iio_attr* to display some help, and then quit.
+   **-V, --version**
+      Prints the version information for this particular copy of
+      *iio_attr* and the version of the libiio library it is using. This
+      is useful for knowing if the version of the library and *iio_attr*
+      on your system are up to date. This is also useful when reporting
+      bugs.
 
-**-V, --version**
-   Prints the version information for this particular copy of *iio_attr*
-   and the version of the libiio library it is using. This is useful for
-   knowing if the version of the library and *iio_attr* on your system
-   are up to date. This is also useful when reporting bugs.
-
-**-S, --scan [backends]**
-   Scan for available IIO contexts, optional arg of specific backend(s)
-   'ip', 'usb' or 'ip,usb'. Specific options for USB include Vendor ID,
-   Product ID to limit scanning to specific devices 'usb=0456:b673'.
-   vid,pid are hexadecimal numbers (no prefix needed), "\*" (match any
-   for pid only) If no argument is given, it checks all that are
-   available.
+   **-S, --scan [backends]**
+      Scan for available IIO contexts, optional arg of specific
+      backend(s) 'ip', 'usb' or 'ip,usb'. Specific options for USB
+      include Vendor ID, Product ID to limit scanning to specific
+      devices 'usb=0456:b673'. vid,pid are hexadecimal numbers (no
+      prefix needed), "\*" (match any for pid only) If no argument is
+      given, it checks all that are available.
 
 OPTIONS
 -------

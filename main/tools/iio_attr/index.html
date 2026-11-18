@@ -8,11 +8,11 @@
 
     <title>iio_attr &#8212; libiio v1.0 documentation</title>
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8e8a900e" />
-    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=a3ee7af8" />
+    <link rel="stylesheet" type="text/css" href="../../_static/app.min.css?v=07ad7716" />
     <link rel="stylesheet" type="text/css" href="../../_static/tabs.css?v=4c969af8" />
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=748bb8f3" />
     <script src="../../_static/tabs.js?v=3ee01567"></script>
-    <script async="async" src="../../_static/app.umd.js?v=048c1170"></script>
+    <script async="async" src="../../_static/app.umd.js?v=2fe15c61"></script>
     <link rel="index" title="Index" href="../../genindex/" />
     <link rel="search" title="Search" href="../../search/" />
     <link rel="next" title="iio_info" href="../iio_info/" />
@@ -269,8 +269,8 @@ attempt to write the new value to the attribute.</p>
 </section>
 <section id="commands">
 <h2>COMMANDS<a class="headerlink" href="#commands" title="Link to this heading"></a></h2>
-<p>The iio_attr utility has a few main options, which control what the main utility of the application is.</p>
 <dl class="simple">
+<dt>The iio_attr utility has a few main options, which control what the main utility of the application is.</dt><dd><dl class="simple">
 <dt><strong>-d, –device-attr</strong></dt><dd><p>Read and Write IIO device attributes</p>
 </dd>
 <dt><strong>-c –channel-attr</strong></dt><dd><p>Read and Write IIO channel attributes</p>
@@ -287,17 +287,20 @@ attempt to write the new value to the attribute.</p>
 </dd>
 <dt><strong>-h, –help</strong></dt><dd><p>Tells <em>iio_attr</em> to display some help, and then quit.</p>
 </dd>
-<dt><strong>-V, –version</strong></dt><dd><p>Prints the version information for this particular copy of <em>iio_attr</em>
-and the version of the libiio library it is using. This is useful for
-knowing if the version of the library and <em>iio_attr</em> on your system
-are up to date. This is also useful when reporting bugs.</p>
+<dt><strong>-V, –version</strong></dt><dd><p>Prints the version information for this particular copy of
+<em>iio_attr</em> and the version of the libiio library it is using. This
+is useful for knowing if the version of the library and <em>iio_attr</em>
+on your system are up to date. This is also useful when reporting
+bugs.</p>
 </dd>
-<dt><strong>-S, –scan [backends]</strong></dt><dd><p>Scan for available IIO contexts, optional arg of specific backend(s)
-‘ip’, ‘usb’ or ‘ip,usb’. Specific options for USB include Vendor ID,
-Product ID to limit scanning to specific devices ‘usb=0456:b673’.
-vid,pid are hexadecimal numbers (no prefix needed), “*” (match any
-for pid only) If no argument is given, it checks all that are
-available.</p>
+<dt><strong>-S, –scan [backends]</strong></dt><dd><p>Scan for available IIO contexts, optional arg of specific
+backend(s) ‘ip’, ‘usb’ or ‘ip,usb’. Specific options for USB
+include Vendor ID, Product ID to limit scanning to specific
+devices ‘usb=0456:b673’. vid,pid are hexadecimal numbers (no
+prefix needed), “*” (match any for pid only) If no argument is
+given, it checks all that are available.</p>
+</dd>
+</dl>
 </dd>
 </dl>
 </section>
