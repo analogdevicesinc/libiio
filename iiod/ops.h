@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014 Analog Devices, Inc.
+ * Copyright (C) 2014-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -147,6 +147,7 @@ int usb_transfer_dmabuf(int ep_fd, int fd, uint64_t size);
 
 int binary_parse(struct parser_pdata *pdata);
 
+void print_value(struct parser_pdata *pdata, long value);
 void enable_binary(struct parser_pdata *pdata);
 
 int open_dev(struct parser_pdata *pdata, struct iio_device *dev, size_t samples_count,

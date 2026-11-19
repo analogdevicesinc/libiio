@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2024 Analog Devices, Inc.
+ * Copyright (C) 2024-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -155,6 +155,7 @@ int iiod_interpreter(struct iio_context *ctx, struct iiod_pdata *pdata,
 			.xml_zstd_len = xml_zstd_len,
 			.readfd = iiod_readfd,
 			.writefd = iiod_writefd,
+			.binary = !WITH_TINYIIOD_V0_COMPAT,
 		},
 		.read_cb = read_cb,
 		.write_cb = write_cb,
@@ -166,7 +167,11 @@ int iiod_interpreter(struct iio_context *ctx, struct iiod_pdata *pdata,
 	if (!iiod_locks_created || !buflist_lock || !evlist_lock)
 		return -EINVAL;
 
-	binary_parse(&iiod_ctx.parser_pdata);
+	if (WITH_TINYIIOD_V0_COMPAT)
+		ascii_interpreter(&iiod_ctx.parser_pdata);
+
+	if (iiod_ctx.parser_pdata.binary)
+		binary_parse(&iiod_ctx.parser_pdata);
 
 	return ret;
 }
