@@ -24,33 +24,41 @@ jobs:
           - image: ubuntu:22.04
             platform-flag: ''
             artifact-name: Ubuntu-22.04-arm64v8
+            distro-version: +Ubuntu22
           - image: arm32v7/ubuntu:22.04
             platform-flag: '--platform linux/arm/v7'
             artifact-name: Ubuntu-22.04-arm32v7
+            distro-version: +Ubuntu22
 
           # Ubuntu 26.04
           - image: ubuntu:26.04
             platform-flag: ''
             artifact-name: Ubuntu-26.04-arm64v8
+            distro-version: +Ubuntu26
           - image: arm32v7/ubuntu:26.04
             platform-flag: '--platform linux/arm/v7'
             artifact-name: Ubuntu-26.04-arm32v7
+            distro-version: +Ubuntu26
 
           # Debian 12 (bookworm)
           - image: debian:bookworm
             platform-flag: ''
             artifact-name: Debian-12-arm64
+            distro-version: +Debian12
           - image: arm32v7/debian:bookworm
             platform-flag: '--platform linux/arm/v7'
             artifact-name: Debian-12-armhf
+            distro-version: +Debian12
 
           # Debian 13 (trixie)
           - image: debian:trixie
             platform-flag: ''
             artifact-name: Debian-13-arm64
+            distro-version: +Debian13
           - image: arm32v7/debian:trixie
             platform-flag: '--platform linux/arm/v7'
             artifact-name: Debian-13-armhf
+            distro-version: +Debian13
     steps:
       - uses: actions/checkout@v7
         with:
@@ -59,6 +67,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: analogdevicesinc/shared-actions
+          ref: 242aa00e8eed98e2bd0ee663a9a0597ebec69d89
           path: shared-actions
           fetch-depth: 1
 
@@ -78,6 +87,7 @@ jobs:
             -e DEBIAN_FRONTEND=noninteractive \
             -e GITHUB_WORKSPACE="${{ github.workspace }}" \
             -e VERSION="${{ steps.version.outputs.version }}" \
+            -e VERSION_SUFFIX="${{ matrix.distro-version }}" \
             -e WORKING_DIRECTORY="${{ github.workspace }}" \
             -e IGNORE_PATH="shared-actions" \
             "${{ matrix.image }}" sleep infinity
@@ -101,15 +111,19 @@ jobs:
           - image: ubuntu:22.04
             arch: ppc64le
             artifact-name: Ubuntu-22.04-ppc64le
+            distro-version: +Ubuntu22
           - image: ubuntu:22.04
             arch: s390x
             artifact-name: Ubuntu-22.04-s390x
+            distro-version: +Ubuntu22
           - image: ubuntu:26.04
             arch: ppc64le
             artifact-name: Ubuntu-26.04-ppc64le
+            distro-version: +Ubuntu26
           - image: ubuntu:26.04
             arch: s390x
             artifact-name: Ubuntu-26.04-s390x
+            distro-version: +Ubuntu26
     steps:
       - uses: actions/checkout@v7
         with:
@@ -118,6 +132,7 @@ jobs:
       - uses: actions/checkout@v7
         with:
           repository: analogdevicesinc/shared-actions
+          ref: 242aa00e8eed98e2bd0ee663a9a0597ebec69d89
           path: shared-actions
           fetch-depth: 1
 
@@ -140,6 +155,7 @@ jobs:
             -e DEBIAN_FRONTEND=noninteractive \
             -e GITHUB_WORKSPACE="${{ github.workspace }}" \
             -e VERSION="${{ steps.version.outputs.version }}" \
+            -e VERSION_SUFFIX="${{ matrix.distro-version }}" \
             -e WORKING_DIRECTORY="${{ github.workspace }}" \
             -e IGNORE_PATH="shared-actions" \
             "${{ matrix.image }}" sleep infinity

@@ -1,7 +1,7 @@
 Source: libiio
 Section: libs
 Priority: optional
-Maintainer: Engineerzone <linux@analog.com>
+Maintainer: Analog Devices Maintainers <linux@analog.com>
 Build-Depends: debhelper-compat (= 13), cmake, libxml2-dev, bison, flex,
  libcdk5-dev, libaio-dev, libusb-1.0-0-dev, libzstd-dev,
  libserialport-dev, libavahi-client-dev
