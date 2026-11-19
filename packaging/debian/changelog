@@ -2,4 +2,4 @@ libiio (@VERSION@) UNRELEASED; urgency=low
 
   * CI release.
 
- -- EngineerZone <linux@analog.com>  @DATE@
+ -- Analog Devices Maintainers <linux@analog.com>  @DATE@

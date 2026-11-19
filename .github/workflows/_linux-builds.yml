@@ -23,12 +23,15 @@ jobs:
           - image: ubuntu:22.04
             artifact-name: Linux-Ubuntu-22.04
             deb: true
+            distro-version: +Ubuntu22
           - image: ubuntu:24.04
             artifact-name: Linux-Ubuntu-24.04
             deb: true
+            distro-version: +Ubuntu24
           - image: ubuntu:26.04
             artifact-name: Linux-Ubuntu-26.04
             deb: true
+            distro-version: +Ubuntu26
           - image: fedora:42
             artifact-name: Linux-Fedora-42
           - image: fedora:44
@@ -36,9 +39,11 @@ jobs:
           - image: debian:bookworm
             artifact-name: Linux-Debian-12
             deb: true
+            distro-version: +Debian12
           - image: debian:trixie
             artifact-name: Linux-Debian-13
             deb: true
+            distro-version: +Debian13
           - image: opensuse/leap:15.6
             artifact-name: Linux-openSUSE-15.6
           - image: opensuse/leap:16.0
@@ -105,11 +110,12 @@ jobs:
           version=$(grep -oP '(?<=VERSION )[0-9]+\.[0-9]+\.[0-9]+' CMakeLists.txt)
           echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
-      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
+      - uses: analogdevicesinc/shared-actions/deb-generator-action@242aa00e8eed98e2bd0ee663a9a0597ebec69d89
         if: matrix.deb
         id: deb
         with:
           version: ${{ steps.version.outputs.version }}
+          version-suffix: ${{ matrix.distro-version }}
 
       - name: Build with Examples
         if: matrix.artifact-name == 'Linux-Ubuntu-24.04'
