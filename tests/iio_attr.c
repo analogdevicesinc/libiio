@@ -7,6 +7,10 @@
  *         Robin Getz <robin.getz@analog.com>
  * */
 
+#ifdef _MSC_VER
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
 #include <errno.h>
 #include <getopt.h>
 #include <iio.h>
@@ -86,6 +90,45 @@ eek:
 	return ret;
 }
 
+static void *read_input_file(const char *path, size_t *len)
+{
+	FILE *f;
+	long size;
+	void *buf;
+
+	f = fopen(path, "rb"); /* Flawfinder: ignore */
+	if (!f) {
+		fprintf(stderr, "%s: unable to open input file '%s': %s\n",
+				MY_NAME, path, strerror(errno));
+		return NULL;
+	}
+
+	if (fseek(f, 0, SEEK_END) < 0 || (size = ftell(f)) < 0) {
+		fprintf(stderr, "%s: unable to determine size of '%s'\n",
+				MY_NAME, path);
+		fclose(f);
+		return NULL;
+	}
+	if (size == 0) {
+		fprintf(stderr, "%s: input file '%s' is empty\n", MY_NAME, path);
+		fclose(f);
+		return NULL;
+	}
+	rewind(f);
+
+	buf = xmalloc((size_t)size, MY_NAME);
+	if (fread(buf, 1, (size_t)size, f) != (size_t)size) {
+		fprintf(stderr, "%s: unable to read '%s'\n", MY_NAME, path);
+		free(buf);
+		fclose(f);
+		return NULL;
+	}
+
+	fclose(f);
+	*len = (size_t)size;
+	return buf;
+}
+
 static inline const char *get_label_or_name_or_id(const struct iio_device *dev)
 {
 	const char *label, *name;
@@ -102,12 +145,14 @@ static inline const char *get_label_or_name_or_id(const struct iio_device *dev)
 }
 
 static int dump_device_attributes(const struct iio_device *dev,
-		const char *attr, const char *wbuf, enum verbosity quiet)
+		const char *attr, const char *wbuf,
+		const void *wraw, size_t wraw_len, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	bool writing = wbuf || wraw;
 
-	if (!wbuf || quiet == ATTR_VERBOSE) {
+	if (!writing || quiet == ATTR_VERBOSE) {
 		if (quiet == ATTR_VERBOSE) {
 			printf("%s ", iio_device_is_trigger(dev) ? "trig" : "dev");
 			printf("'%s'", get_label_or_name_or_id(dev));
@@ -125,17 +170,28 @@ static int dump_device_attributes(const struct iio_device *dev,
 			printf("ERROR: %s\n", buf);
 		}
 	}
-	if (wbuf) {
-		gen_function("device", "dev", attr, wbuf);
-		ret = iio_device_attr_write(dev, attr, wbuf);
+	if (writing) {
+		if (wraw) {
+			ret = iio_device_attr_write_raw(dev, attr, wraw, wraw_len);
+		} else {
+			gen_function("device", "dev", attr, wbuf);
+			ret = iio_device_attr_write(dev, attr, wbuf);
+		}
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_device_attributes(dev, attr, NULL, quiet);
+			if (wraw && (size_t)ret < wraw_len)
+				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
+						attr, (long)ret, wraw_len);
+			dump_device_attributes(dev, attr, NULL, NULL, 0, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			if (wraw)
+				printf("ERROR: %s while writing '%s' with %zu bytes from file\n",
+						buf, attr, wraw_len);
+			else
+				printf("ERROR: %s while writing '%s' with '%s'\n",
+						buf, attr, wbuf);
 		}
 	}
 	free(buf);
@@ -144,12 +200,14 @@ static int dump_device_attributes(const struct iio_device *dev,
 }
 
 static int dump_buffer_attributes(const struct iio_device *dev,
-				  const char *attr, const char *wbuf, enum verbosity quiet)
+				  const char *attr, const char *wbuf,
+				  const void *wraw, size_t wraw_len, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	bool writing = wbuf || wraw;
 
-	if (!wbuf || quiet == ATTR_VERBOSE ) {
+	if (!writing || quiet == ATTR_VERBOSE ) {
 		gen_function("device_buffer", "dev", attr, NULL);
 		ret = iio_device_buffer_attr_read(dev, attr, buf, BUF_SIZE);
 
@@ -170,17 +228,28 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 		}
 	}
 
-	if (wbuf) {
-		gen_function("device_buffer", "dev", attr, wbuf);
-		ret = iio_device_buffer_attr_write(dev, attr, wbuf);
+	if (writing) {
+		if (wraw) {
+			ret = iio_device_buffer_attr_write_raw(dev, attr, wraw, wraw_len);
+		} else {
+			gen_function("device_buffer", "dev", attr, wbuf);
+			ret = iio_device_buffer_attr_write(dev, attr, wbuf);
+		}
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_buffer_attributes(dev, attr, NULL, quiet);
+			if (wraw && (size_t)ret < wraw_len)
+				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
+						attr, (long)ret, wraw_len);
+			dump_buffer_attributes(dev, attr, NULL, NULL, 0, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			if (wraw)
+				printf("ERROR: %s while writing '%s' with %zu bytes from file\n",
+						buf, attr, wraw_len);
+			else
+				printf("ERROR: %s while writing '%s' with '%s'\n",
+						buf, attr, wbuf);
 		}
 	}
 
@@ -189,12 +258,14 @@ static int dump_buffer_attributes(const struct iio_device *dev,
 }
 
 static int dump_debug_attributes(const struct iio_device *dev,
-				  const char *attr, const char *wbuf, enum verbosity quiet)
+				  const char *attr, const char *wbuf,
+				  const void *wraw, size_t wraw_len, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
+	bool writing = wbuf || wraw;
 
-	if (!wbuf || quiet == ATTR_VERBOSE) {
+	if (!writing || quiet == ATTR_VERBOSE) {
 		gen_function("device_debug", "dev", attr, NULL);
 		ret = iio_device_debug_attr_read(dev, attr, buf, BUF_SIZE);
 
@@ -216,17 +287,28 @@ static int dump_debug_attributes(const struct iio_device *dev,
 		}
 	}
 
-	if (wbuf) {
-		gen_function("device_debug", "dev", attr, wbuf);
-		ret = iio_device_debug_attr_write(dev, attr, wbuf);
+	if (writing) {
+		if (wraw) {
+			ret = iio_device_debug_attr_write_raw(dev, attr, wraw, wraw_len);
+		} else {
+			gen_function("device_debug", "dev", attr, wbuf);
+			ret = iio_device_debug_attr_write(dev, attr, wbuf);
+		}
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_debug_attributes(dev, attr, NULL, quiet);
+			if (wraw && (size_t)ret < wraw_len)
+				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
+						attr, (long)ret, wraw_len);
+			dump_debug_attributes(dev, attr, NULL, NULL, 0, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("ERROR: %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			if (wraw)
+				printf("ERROR: %s while writing '%s' with %zu bytes from file\n",
+						buf, attr, wraw_len);
+			else
+				printf("ERROR: %s while writing '%s' with '%s'\n",
+						buf, attr, wbuf);
 		}
 	}
 
@@ -235,13 +317,15 @@ static int dump_debug_attributes(const struct iio_device *dev,
 }
 
 static int dump_channel_attributes(const struct iio_device *dev,
-		struct iio_channel *ch, const char *attr, const char *wbuf, enum verbosity quiet)
+		struct iio_channel *ch, const char *attr, const char *wbuf,
+		const void *wraw, size_t wraw_len, enum verbosity quiet)
 {
 	ssize_t ret = 0;
 	char *buf = xmalloc(BUF_SIZE, MY_NAME);
 	const char *type_name;
+	bool writing = wbuf || wraw;
 
-	if (!wbuf || quiet == ATTR_VERBOSE) {
+	if (!writing || quiet == ATTR_VERBOSE) {
 		if (iio_channel_is_output(ch))
 			type_name = "output";
 		else
@@ -272,17 +356,28 @@ static int dump_channel_attributes(const struct iio_device *dev,
 			printf("ERROR: %s\n", buf);
 		}
 	}
-	if (wbuf) {
-		gen_function("channel", "ch", attr, wbuf);
-		ret = iio_channel_attr_write(ch, attr, wbuf);
+	if (writing) {
+		if (wraw) {
+			ret = iio_channel_attr_write_raw(ch, attr, wraw, wraw_len);
+		} else {
+			gen_function("channel", "ch", attr, wbuf);
+			ret = iio_channel_attr_write(ch, attr, wbuf);
+		}
 		if (ret > 0) {
 			if (quiet == ATTR_VERBOSE)
 				printf("wrote %li bytes to %s\n", (long)ret, attr);
-			dump_channel_attributes(dev, ch, attr, NULL, quiet);
+			if (wraw && (size_t)ret < wraw_len)
+				fprintf(stderr, "WARNING: short write on '%s': %li of %zu bytes accepted\n",
+						attr, (long)ret, wraw_len);
+			dump_channel_attributes(dev, ch, attr, NULL, NULL, 0, quiet);
 		} else {
 			iio_strerror(-(int)ret, buf, BUF_SIZE);
-			printf("error %s while writing '%s' with '%s'\n",
-					buf, attr, wbuf);
+			if (wraw)
+				printf("error %s while writing '%s' with %zu bytes from file\n",
+						buf, attr, wraw_len);
+			else
+				printf("error %s while writing '%s' with '%s'\n",
+						buf, attr, wbuf);
 		}
 	}
 	free(buf);
@@ -294,6 +389,7 @@ static const struct option options[] = {
 	{"quiet", no_argument, 0, 'q'},
 	{"verbose", no_argument, 0, 'v'},
 	{"generate-code", required_argument, 0, 'g'},
+	{"input-file", no_argument, 0, 'f'},
 	/* Channel qualifiers */
 	{"input-channel", no_argument, 0, 'i'},
 	{"output-channel", no_argument, 0, 'o'},
@@ -312,12 +408,14 @@ static const char *options_descriptions[] = {
 		"\t\t\t\t-c [device] [channel] [attr] [value]\n"
 		"\t\t\t\t-B [device] [attr] [value]\n"
 		"\t\t\t\t-D [device] [attr] [value]\n"
-		"\t\t\t\t-C [attr]"),
+		"\t\t\t\t-C [attr]\n"
+		"\t\t\t\t(add -f to interpret the trailing [value] as a path and write its raw bytes)"),
 	/* help */
 	"Ignore case distinctions.",
 	"Return result only.",
 	"Verbose, say what is going on",
 	"Generate code.",
+	"Treat the trailing [value] argument as a path; write its raw bytes via the _raw variant.",
 	/* Channel qualifiers */
 	"Filter Input Channels only.",
 	"Filter Output Channels only.",
@@ -330,7 +428,7 @@ static const char *options_descriptions[] = {
 	"Read/Write debug attributes.",
 };
 
-#define MY_OPTS "CdcBDiosIqvg:"
+#define MY_OPTS "CdcBDiosIqvg:f"
 int main(int argc, char **argv)
 {
 	char **argw;
@@ -348,6 +446,9 @@ int main(int argc, char **argv)
 		debug_found = false, channel_found = false ;
 	unsigned int i;
 	char *wbuf = NULL;
+	bool from_file = false;
+	void *wraw = NULL;
+	size_t wraw_len = 0;
 	struct option *opts;
 	int ret = EXIT_FAILURE;
 
@@ -433,6 +534,9 @@ int main(int argc, char **argv)
 			}
 			gen_code = true;
 			gen_file = optarg;
+			break;
+		case 'f':
+			from_file = true;
 			break;
 		case '?':
 			printf("Unknown argument '%c'\n", c);
@@ -562,6 +666,25 @@ int main(int argc, char **argv)
 		return EXIT_FAILURE;
 	if (attr_index && !argw[attr_index])
 		return EXIT_FAILURE;
+	if (from_file) {
+		if (search_context) {
+			fprintf(stderr, "-f is not supported for context attributes\n");
+			return EXIT_FAILURE;
+		}
+		if (gen_code) {
+			fprintf(stderr, "Can't combine -f with --generate-code\n");
+			return EXIT_FAILURE;
+		}
+		if (!wbuf) {
+			fprintf(stderr, "-f requires a trailing [value] argument naming the input file\n");
+			return EXIT_FAILURE;
+		}
+		wraw = read_input_file(wbuf, &wraw_len);
+		wbuf = NULL;
+		if (!wraw)
+			return EXIT_FAILURE;
+	}
+
 	/* check for wildcards */
 	if (((device_index && (!strcmp(".", argw[device_index]) ||
 				strchr(argw[device_index], '*'))) ||
@@ -569,9 +692,10 @@ int main(int argc, char **argv)
 				strchr(argw[channel_index], '*'))) ||
 			(attr_index && (!strcmp(".", argw[attr_index])  ||
 				strchr(argw[attr_index], '*'))))) {
-		if (gen_code || wbuf) {
+		if (gen_code || wbuf || wraw) {
 			printf("can't %s with wildcard match\n",
 					gen_code ? "generate code" : "write value");
+			free(wraw);
 			return EXIT_FAILURE;
 		}
 		/* Force verbose mode */
@@ -783,8 +907,9 @@ int main(int argc, char **argv)
 					attr_found = true;
 					gen_ch(ch);
 					ret = dump_channel_attributes(dev, ch, attr, wbuf,
+								wraw, wraw_len,
 								attr_index ? quiet : ATTR_VERBOSE);
-					if (wbuf && ret < 0)
+					if ((wbuf || wraw) && ret < 0)
 						write_err = true;
 					else if (ret < 0 && attr_index)
 						read_err = true;
@@ -813,8 +938,9 @@ int main(int argc, char **argv)
 					found_err = false;
 					attr_found = true;
 					ret = dump_device_attributes(dev, attr, wbuf,
+							       wraw, wraw_len,
 							       attr_index ? quiet : ATTR_VERBOSE);
-					if (wbuf && ret < 0)
+					if ((wbuf || wraw) && ret < 0)
 						write_err = true;
 					else if (ret < 0 && attr_index)
 						read_err = true;
@@ -842,8 +968,9 @@ int main(int argc, char **argv)
 						found_err = false;
 						attr_found = true;
 						ret = dump_buffer_attributes(dev, attr, wbuf,
+									  wraw, wraw_len,
 									  attr_index ? quiet : ATTR_VERBOSE);
-						if (wbuf && ret < 0)
+						if ((wbuf || wraw) && ret < 0)
 							write_err = true;
 						else if (ret < 0 && attr_index)
 							read_err = true;
@@ -868,8 +995,9 @@ int main(int argc, char **argv)
 						attr_found = true;
 						debug_found = true;
 						ret = dump_debug_attributes(dev, attr, wbuf,
+								      wraw, wraw_len,
 								      attr_index ? quiet : ATTR_VERBOSE);
-						if (wbuf && ret < 0)
+						if ((wbuf || wraw) && ret < 0)
 							write_err = true;
 						else if (ret < 0 && attr_index)
 							read_err = true;
@@ -906,6 +1034,7 @@ int main(int argc, char **argv)
 	}
 
 	free_argw(argc, argw);
+	free(wraw);
 
 	if ((!dev_found && device_index) || (!ctx_found && search_context) ||
 			(!channel_found && channel_index) || (!attr_found && attr_index) ||
