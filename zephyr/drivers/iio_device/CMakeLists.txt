@@ -8,3 +8,4 @@ zephyr_iterable_section(NAME iio_device_info KVMA RAM_REGION GROUP RODATA_REGION
 
 zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIO_DEVICE_IO_CHANNELS io_channels.c)
 zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIO_DEVICE_SENSOR sensor.c)
+zephyr_library_sources_ifdef(CONFIG_LIBIIO_IIO_DEVICE_ONE_BIT_ADC_DAC one_bit_adc_dac.c)

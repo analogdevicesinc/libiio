@@ -4,6 +4,7 @@
 menu "Drivers"
 
 rsource "adc/Kconfig"
+rsource "gpio/Kconfig"
 rsource "iio_device/Kconfig"
 
 endmenu

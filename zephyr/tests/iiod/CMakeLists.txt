@@ -18,6 +18,11 @@ if(CONFIG_LIBIIO_IIOD_MULTI_SENSOR_EMUL)
   list(APPEND EXTRA_CONF_FILE sensor-emul.conf)
 endif()
 
+if(CONFIG_LIBIIO_IIOD_ONE_BIT_ADC_DAC_EMUL)
+  list(APPEND EXTRA_DTC_OVERLAY_FILE one-bit-adc-dac-emul.overlay)
+  list(APPEND EXTRA_CONF_FILE one-bit-adc-dac-emul.conf)
+endif()
+
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(iiod)
 
