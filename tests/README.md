@@ -15,12 +15,12 @@ The CI pipeline runs the **API tests** automatically on every push. All API test
 
 ## Who else can run the tests and how?
 
-Any developer can run the tests locally after building with `-DTESTS=ON`:
+Any developer can run the tests locally after building with `-DWITH_TESTS=ON`:
 
 
 ```bash
 mkdir build && cd build
-cmake -DTESTS=ON ..
+cmake -DWITH_TESTS=ON ..
 make
 ```
 
