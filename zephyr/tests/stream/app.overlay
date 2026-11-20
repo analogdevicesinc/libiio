@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: MIT
+ */
+
+#include <dt-bindings/iio/sensor-channels.h>
+
+/ {
+	iio-context {
+		/* Decodes only SENSOR_CHAN_ACCEL_XYZ, exercising the per-axis fallback */
+		iio-sensors {
+			xyz-only {
+				compatible = "iio,sensor";
+				sensor-device = <&xyz_only_accel>;
+				sensor-channels = <
+					IIO_SENSOR_CHAN_ACCEL_X
+					IIO_SENSOR_CHAN_ACCEL_Y
+					IIO_SENSOR_CHAN_ACCEL_Z
+				>;
+				io-name = "xyz-only";
+				buffer-block-count = <2>;
+				buffer-block-size-max = <256>;
+			};
+		};
+	};
+
+	xyz_only_accel: xyz-only-accel {
+		compatible = "vnd,xyz-only-accel";
+		status = "okay";
+	};
+};

@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+tests:
+  libiio.stream:
+    tags:
+      - libiio
+      - stream
+      - streaming
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
