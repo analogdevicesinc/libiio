@@ -2,11 +2,11 @@
 
 `capi/` is libiio's port to [CAPI](https://github.com/analogdevicesinc/capi),
 the Common API of ADI's embedded software: it serves an application's devices
-to libiio clients (`iio_info`, `iio_attr`, `iio_rwdev`), from the MCU the
-application runs on.
+to libiio clients (`iio_info`, `iio_attr`, `iio_rwdev`) over a `capi_uart`,
+from the MCU the application runs on.
 
 ```
-app main.c ──► iio_capi_device_register() ──► libiio/capi: backend ──► libiio clients
+app main.c ──► iio_capi_device_register() ──► libiio/capi: backend ──► iiod/uart ──► capi_uart ──► host
 ```
 
 A device is a `struct iio_capi_device`: its name and its ops
@@ -25,6 +25,23 @@ The application registers its devices with `iio_capi_device_register()`
 before the context is created. `iio_capi_set_context_attrs()` gives the
 context's attributes (`hw_model`, `fw_version` ...). The context reports
 CAPI's version and commit as its backend version.
+
+## Serving the context
+
+Once its devices are registered, the application hands an initialized
+`capi_uart` to `iiod_uart_run()` (`include/iiod_uart.h`), which serves them to
+one client after another, on the caller's thread; the host connects with the
+URI `serial:<port>,<baud>`. Receive is interrupt driven when the `capi_uart`
+supports it (the application routes the UART's interrupt vector to
+`capi_uart_isr()`); otherwise it polls the receive FIFO, which can lose bytes
+under streaming. `idle`, which may be NULL, is the application's own work,
+called while no byte from the host is waiting.
+
+```c
+capi_uart_init(&uart, &uart_cfg);
+iio_capi_device_register(&my_device);
+return iiod_uart_run(uart, NULL);
+```
 
 ## Using it
 
@@ -53,8 +70,10 @@ target_link_libraries(<app> PRIVATE libiio::capi)
 capi/
 ├── module.yml              # this directory as the CAPI package libiio (a middleware)
 ├── CMakeLists.txt          # libiio's core + this port, as libiio::capi
+├── iiod/uart.c             # transport: capi_uart, interrupt-driven receive, one session per client
 ├── backend.c               # the "capi:" backend: context, attributes, buffers, registers
 └── include/
+    ├── iiod_uart.h         # iiod_uart_run()
     ├── iio_device.h        # the device API backend.c serves; iio_capi_set_context_attrs()
     └── iio-config.h
 ```
