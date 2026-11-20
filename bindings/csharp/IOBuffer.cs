@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2015 Analog Devices, Inc.
+ * Copyright (C) 2014-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -154,6 +154,16 @@ namespace iio
         {
             ThrowIfDisposed();
             return new Block(this, size);
+        }
+
+        /// <summary>Create a block backed by an existing DMABUF object.</summary>
+        /// <param name="dmabuf_fd">File descriptor of the DMABUF object. It is duplicated,
+        /// so the caller keeps ownership of it.</param>
+        /// <param name="size">The size of the block, in bytes.</param>
+        public Block create_block(int dmabuf_fd, uint size)
+        {
+            ThrowIfDisposed();
+            return new Block(this, dmabuf_fd, size);
         }
 
         /// <summary>Gets the step size for this buffer stream.</summary>
