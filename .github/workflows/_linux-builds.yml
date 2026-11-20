@@ -116,6 +116,8 @@ jobs:
         with:
           version: ${{ steps.version.outputs.version }}
           version-suffix: ${{ matrix.distro-version }}
+          ignore-path: |
+            build
 
       - name: Build with Examples
         if: matrix.artifact-name == 'Linux-Ubuntu-24.04'
