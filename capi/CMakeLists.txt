@@ -95,7 +95,8 @@ add_library(
     ${LIBIIO_CAPI_ROOT}/iiod/responder.c
     ${LIBIIO_CAPI_ROOT}/iiod-responder.c
     ${LIBIIO_CAPI_ROOT}/iiod/rw.c
-    backend.c)
+    backend.c
+    iiod/uart.c)
 
 add_library(libiio::capi ALIAS libiio_capi)
 
