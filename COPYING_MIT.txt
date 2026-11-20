@@ -27,6 +27,9 @@ attr.h
 backend.c
 block.c
 buffer.c
+capi/backend.c
+capi/include/iio-config.h
+capi/include/iio_device.h
 channel.c
 context.c
 device.c
