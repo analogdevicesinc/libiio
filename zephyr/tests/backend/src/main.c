@@ -10,6 +10,7 @@
 #include <zephyr/version.h>
 #include <zephyr/ztest.h>
 #include <iio/iio.h>
+#include <iio/iio-backend.h>
 
 #include <iio_device_fake.h>
 
@@ -146,6 +147,59 @@ ZTEST(libiio_backend, test_write_error_is_returned)
 	iio_device_fake_write_attr_fake.return_val = -EINVAL;
 
 	zassert_equal(iio_attr_write_raw(fake0_raw(), "7", 2), -EINVAL);
+}
+
+ZTEST(libiio_backend, test_devices_without_scan_elements_have_no_buffer)
+{
+	zassert_equal(iio_device_get_buffers_count(find_device("fake0")), 0);
+}
+
+static bool first_scan_is_output;
+
+/* One non-scan channel, then two scan elements. */
+static int add_scan_channels(const struct device *dev, struct iio_device *iio_device)
+{
+	static const struct iio_data_format fmt = {.length = 16, .bits = 16};
+
+	if (iio_err(iio_device_add_channel(iio_device, 0, "voltage0", NULL, NULL, false, false,
+					   &fmt)) ||
+	    iio_err(iio_device_add_channel(iio_device, 1, "voltage1", NULL, NULL,
+					   first_scan_is_output, true, &fmt)) ||
+	    iio_err(iio_device_add_channel(iio_device, 2, "voltage2", NULL, NULL, false, true,
+					   &fmt))) {
+		return -ENOMEM;
+	}
+
+	return 0;
+}
+
+static void check_buffer_direction(bool output)
+{
+	const struct iio_device *dev;
+	struct iio_context *scan_ctx;
+
+	first_scan_is_output = output;
+	iio_device_fake_add_channels_fake.custom_fake = add_scan_channels;
+
+	scan_ctx = iio_create_context(NULL, "zephyr:");
+	zassert_false(iio_err(scan_ctx), "iio_create_context: %d", iio_err(scan_ctx));
+
+	dev = iio_context_find_device(scan_ctx, "fake0");
+	zassert_not_null(dev);
+	zassert_equal(iio_device_get_buffers_count(dev), 1);
+	zassert_equal(iio_buffer_is_output(iio_device_get_buffer(dev, 0)), output);
+
+	iio_context_destroy(scan_ctx);
+}
+
+ZTEST(libiio_backend, test_scan_elements_get_an_input_buffer)
+{
+	check_buffer_direction(false);
+}
+
+ZTEST(libiio_backend, test_first_scan_element_sets_the_direction)
+{
+	check_buffer_direction(true);
 }
 
 ZTEST(libiio_backend, test_devices_have_no_trigger)
