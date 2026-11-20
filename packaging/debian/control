@@ -11,7 +11,7 @@ Homepage: https://github.com/analogdevicesinc/libiio
 Package: libiio
 Architecture: @ARCHITECTURE@
 Depends: ${shlibs:Depends}, ${misc:Depends}
-Provides: libiio0, libiio-dev, libiio-utils, iiod
+Provides: libiio0 (= ${binary:Version}), libiio-dev (= ${binary:Version}), libiio-utils (= ${binary:Version}), iiod (= ${binary:Version})
 Conflicts: libiio0, libiio-dev, libiio-utils, iiod
 Replaces: libiio0, libiio-dev, libiio-utils, iiod
 Description: Library for interfacing with IIO devices
