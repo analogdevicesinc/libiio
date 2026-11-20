@@ -123,7 +123,8 @@ add_library(
     ${LIBIIO_CAPI_ROOT}/iiod/responder.c
     ${LIBIIO_CAPI_ROOT}/iiod-responder.c
     ${LIBIIO_CAPI_ROOT}/iiod/rw.c
-    backend.c)
+    backend.c
+    iiod/uart.c)
 
 add_library(libiio::capi ALIAS libiio_capi)
 
@@ -155,7 +156,8 @@ target_compile_definitions(
             HAVE_DNS_SD=0
             WITH_MODULES=0
             # libiio's own logs go to stdout/stderr, which may be the IIOD
-            # UART: off. This port logs through CAPI_LOG.
+            # UART: off (iiod_uart_run() also turns the responder's off).
+            # This port logs through CAPI_LOG.
             DEFAULT_LOG_LEVEL=1
             LIBIIO_VERSION_MAJOR=${LIBIIO_CAPI_VERSION_MAJOR}
             LIBIIO_VERSION_MINOR=${LIBIIO_CAPI_VERSION_MINOR}

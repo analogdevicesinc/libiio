@@ -28,8 +28,10 @@ backend.c
 block.c
 buffer.c
 capi/backend.c
+capi/iiod/uart.c
 capi/include/iio-config.h
 capi/include/iio_device.h
+capi/include/iiod_uart.h
 channel.c
 context.c
 device.c
