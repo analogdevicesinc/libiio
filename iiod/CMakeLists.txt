@@ -24,6 +24,14 @@ target_include_directories(iiod PRIVATE ${CMAKE_CURRENT_BINARY_DIR}
                                         ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_definitions(iiod PRIVATE _GNU_SOURCE)
 
+# The UDP sample stream provider sends with sendmmsg()
+if (CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    target_sources(iiod PRIVATE udp-provider.c)
+    target_compile_definitions(iiod PRIVATE WITH_IIOD_UDP_PROVIDER=1)
+else ()
+    target_compile_definitions(iiod PRIVATE WITH_IIOD_UDP_PROVIDER=0)
+endif ()
+
 iio_option(WITH_IIOD_V0_COMPAT "Build support for Libiio v0.x protocol" ON
            "POSIX")
 if (WITH_IIOD_V0_COMPAT)
