@@ -56,6 +56,7 @@ ports with the loopback tests, so run them one at a time:
 | `daqiri_udp_emu_prompt_stop` | at one datagram per second, DISABLE, CLOSE_BUFFER and a lost connection stop the stream at once |
 | `daqiri_udp_provider_contract` | the responder's rules for providers, against the logging mock provider (`--udp-mock-provider`; with the hidden `--udp-mock-fail-disable <n>` as well, the device's buffer answers the first `<n>` `DISABLE_BUFFER`s with `-ETIMEDOUT`, and the mock logs every one) |
 | `daqiri_udp_setup_short_tail` | a setup answer cut short: the client gives up without the late bytes landing in memory it no longer owns |
+| `daqiri_udp_iiod_provider` | `iiod --udp-port 25102 --udp-block-size 5824` serving the emulated context (`with_iiod.sh`), seen from a plain UDP socket on 127.0.0.1:25101: the context advertises `iiod,udp-stream`; refused setups; payload sizing; every datagram's source, header, sequence order and payload against the sample file, with blocks of four datagrams (missing numbers are counted, not failed: nothing paces the provider); a setup refused while a stream is active; silence after the disable; an enable without a setup sends nothing; a second setup on the same open buffer restarts the sequence under a new stream ID; another payload size is accepted after a stream and refused (`-EBUSY`) while one is pending; a lost connection stops the stream and frees the buffer. Built where `iiod` is, on Linux, with the emu backend built in |
 
 ## Loopback tests (label `daqiri-loopback`)
 
@@ -110,6 +111,13 @@ command may read. Set `IIOD_EMU` to the `iiod-emu` binary
 (`build-daqiri/iiod-emu/iiod-emu`). It waits for the emulator's `Listening on
 port` line, and refuses to run when the port is taken (the emulator cannot
 bind it); it needs no `nc`.
+
+`with_iiod.sh [--iiod-args <arg>... --] <xml> <cmd...>` does the same with
+`iiod -u emu:<xml>`; set `IIOD` to the `iiod` binary. `iiod` does not say
+when it listens, so the command retries its first connection; if `iiod` has
+exited by the end (it cannot bind a port another server holds), the run
+fails. It kills an `iiod` that has not exited two seconds after SIGTERM:
+without an Avahi daemon, `iiod`'s DNS-SD thread keeps it for minutes.
 
 ## The reference server by hand
 

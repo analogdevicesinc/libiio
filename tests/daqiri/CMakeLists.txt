@@ -562,6 +562,52 @@ if (WITH_IIOD_EMU
     endif ()
 endif ()
 
+# iiod's own UDP sample stream provider (iiod --udp-port, Linux only), with
+# iiod serving the emulated context: its datagrams checked from a plain UDP
+# socket, as those of iiod-emu --udp above, hence the same locks. The sample
+# file is longer than a block (four datagrams of 1456 bytes), which the
+# emulated device fills with at most one wrap, and no whole number of
+# samples, datagrams or blocks.
+if (WITH_IIOD
+    AND WITH_EMU_BACKEND
+    AND NOT WITH_EMU_BACKEND_DYNAMIC
+    AND CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(IIOD_UDP_FIXTURE ${CMAKE_CURRENT_BINARY_DIR}/iiod-udp-provider)
+    string(
+        RANDOM
+        LENGTH 20011
+        RANDOM_SEED 2026 _iiod_udp_samples)
+    file(WRITE ${IIOD_UDP_FIXTURE}/cf-ad9361-lpc_buf0.bin
+         "${_iiod_udp_samples}")
+    configure_file(${XMLS}/fmcomms2.xml ${IIOD_UDP_FIXTURE}/fmcomms2.xml
+                   COPYONLY)
+
+    add_executable(test_udp_iiod_provider test_udp_iiod_provider.c emu_client.c)
+    target_link_libraries(test_udp_iiod_provider PRIVATE iio)
+    target_include_directories(test_udp_iiod_provider
+                               PRIVATE ${CMAKE_SOURCE_DIR}/tests/api)
+    target_compile_definitions(test_udp_iiod_provider PRIVATE TESTS_DEBUG)
+    add_dependencies(test_udp_iiod_provider iiod)
+
+    add_test(
+        NAME daqiri_udp_iiod_provider
+        COMMAND
+            ${CMAKE_CURRENT_SOURCE_DIR}/with_iiod.sh --iiod-args --udp-port
+            25102 --udp-block-size 5824 -- ${IIOD_UDP_FIXTURE}/fmcomms2.xml
+            $<TARGET_FILE:test_udp_iiod_provider>
+            ${IIOD_UDP_FIXTURE}/cf-ad9361-lpc_buf0.bin)
+    set_tests_properties(
+        daqiri_udp_iiod_provider
+        PROPERTIES LABELS
+                   daqiri-emu
+                   ENVIRONMENT
+                   "IIOD=$<TARGET_FILE:iiod>"
+                   RESOURCE_LOCK
+                   "iiod-emu-30431;daqiri-udp-25101"
+                   TIMEOUT
+                   60)
+endif ()
+
 # Unit tests of the framing objects (iio_daqiri_framing, top-level
 # CMakeLists): libc only, they need neither libiio's daqiri module nor the
 # DAQIRI SDK, so they are built whenever tests are. test_udp_header,
