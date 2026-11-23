@@ -1,6 +1,15 @@
-add_definitions(-UNDEBUG)
+# Keep assert() in the tests of every build type. These are directory
+# properties, set directly: CMake 4.5 reports add_definitions() and the other
+# directory-scope commands as developer warnings, which CI turns into errors.
+set_property(
+    DIRECTORY
+    APPEND
+    PROPERTY COMPILE_OPTIONS -UNDEBUG)
 if (TESTS_DEBUG)
-    add_definitions(-DTESTS_DEBUG)
+    set_property(
+        DIRECTORY
+        APPEND
+        PROPERTY COMPILE_DEFINITIONS TESTS_DEBUG)
 endif ()
 add_subdirectory(hardware)
 add_subdirectory(api)
