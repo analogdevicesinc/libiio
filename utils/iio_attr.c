@@ -2,7 +2,7 @@
 /*
  * iio_attr - part of the Industrial I/O (IIO) utilities
  *
- * Copyright (C) 2014 - 2020 Analog Devices, Inc.
+ * Copyright (C) 2014 - 2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  *         Robin Getz <robin.getz@analog.com>
  * */
@@ -76,7 +76,7 @@ static bool str_match(const char *haystack, char *needle, bool ignore)
 	} else if ((first == '*') && (last == '*')) {
 		/*  '*key*'  */
 		ncpy[strlen(ncpy) - 1] = 0;
-		ret = strstr(hcpy, &ncpy[1]);
+		ret = strstr(hcpy, &ncpy[1]) != NULL;
 	} else if ((first == '*') && (last != '*')) {
 		/*  '*key'  */
 		idx = strstr(hcpy, &ncpy[1]);
