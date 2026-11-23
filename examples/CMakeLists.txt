@@ -78,9 +78,9 @@ if (PTHREAD_LIBRARIES
 endif ()
 
 if (HAS_CDK_CSTRING2)
-    include_directories(${LIBCKD_INCLUDE_DIR})
     project(iio-monitor C)
     add_executable(iio-monitor iio-monitor.c)
+    target_include_directories(iio-monitor PRIVATE ${LIBCKD_INCLUDE_DIR})
     target_link_libraries(iio-monitor iio ${PTHREAD_LIBRARIES}
                           ${CURSES_LIBRARY} ${CDK_LIBRARY})
     set(IIO_EXAMPLES_TARGETS ${IIO_EXAMPLES_TARGETS} iio-monitor)
