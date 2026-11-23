@@ -144,8 +144,8 @@ if (WITH_SYSTEMD)
         CACHE PATH "default install path for systemd unit files")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.service.cmakein
                    ${PROJECT_BINARY_DIR}/init/iiod.service)
-    install(FILES ${PROJECT_BINARY_DIR}/init/iiod.service
-            DESTINATION ${SYSTEMD_UNIT_INSTALL_DIR})
+    iio_install_system_path(FILES ${PROJECT_BINARY_DIR}/init/iiod.service
+                            DESTINATION ${SYSTEMD_UNIT_INSTALL_DIR})
 endif ()
 
 iio_option(WITH_SYSVINIT "Enable installation of SysVinit script for iiod" OFF
@@ -156,7 +156,7 @@ if (WITH_SYSVINIT)
         CACHE PATH "default install path for SysVinit scripts")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.init.cmakein
                    ${PROJECT_BINARY_DIR}/init/iiod)
-    install(
+    iio_install_system_path(
         FILES ${PROJECT_BINARY_DIR}/init/iiod
         PERMISSIONS OWNER_EXECUTE OWNER_WRITE OWNER_READ
         DESTINATION ${SYSVINIT_INSTALL_DIR})
@@ -170,8 +170,8 @@ if (WITH_UPSTART)
         CACHE PATH "default install path for upstart conf files")
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/init/iiod.conf.cmakein
                    ${PROJECT_BINARY_DIR}/init/iiod.conf)
-    install(FILES ${PROJECT_BINARY_DIR}/init/iiod.conf
-            DESTINATION ${UPSTART_CONF_INSTALL_DIR})
+    iio_install_system_path(FILES ${PROJECT_BINARY_DIR}/init/iiod.conf
+                            DESTINATION ${UPSTART_CONF_INSTALL_DIR})
 endif ()
 
 if (WITH_GCOV)

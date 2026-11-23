@@ -1,3 +1,6 @@
+# Copyright (c) 2020-2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
 # ----------------------------------
 # Options affecting listfile parsing
 # ----------------------------------
@@ -10,6 +13,9 @@ with section("parse"):
                                      'EXCLUDE': '*',
                                      'JS': '*',
                                      'PY': '*'}},
+    'iio_install_system_path': { 'kwargs': { 'DESTINATION': 1,
+                                             'FILES': '*',
+                                             'PERMISSIONS': '*'}},
     'pkg_find': {'kwargs': {'PKG': '*'}}}
 
   # Specify variable tags.

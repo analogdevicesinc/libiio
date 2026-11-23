@@ -39,6 +39,21 @@ macro (iio_option variable help_text value group)
     endif ()
 
 endmacro ()
+# install() for files that belong at a fixed system location (udev rules, init
+# scripts) regardless of CMAKE_INSTALL_PREFIX. CMake >= 4.4 reports absolute
+# DESTINATIONs as an author diagnostic, which -Werror=dev turns into an error;
+# here the absolute path is intended, so silence it for these calls only.
+function (iio_install_system_path)
+    if (COMMAND cmake_diagnostic)
+        cmake_diagnostic(PUSH)
+        cmake_diagnostic(SET CMD_INSTALL_ABSOLUTE_DESTINATION IGNORE)
+    endif ()
+    install(${ARGN})
+    if (COMMAND cmake_diagnostic)
+        cmake_diagnostic(POP)
+    endif ()
+endfunction ()
+
 function (enable_coverage TARGET_NAME)
     target_compile_options(${TARGET_NAME} PRIVATE -O0 -g --coverage)
     target_link_options(${TARGET_NAME} PRIVATE --coverage)
