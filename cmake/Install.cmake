@@ -176,8 +176,9 @@ if (WITH_USB_BACKEND AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
 
         configure_file(libiio.rules.cmakein
                        ${CMAKE_CURRENT_BINARY_DIR}/90-libiio.rules @ONLY)
-        install(FILES ${CMAKE_CURRENT_BINARY_DIR}/90-libiio.rules
-                DESTINATION ${UDEV_RULES_INSTALL_DIR})
+        iio_install_system_path(
+            FILES ${CMAKE_CURRENT_BINARY_DIR}/90-libiio.rules
+            DESTINATION ${UDEV_RULES_INSTALL_DIR})
     endif ()
 endif ()
 
@@ -192,8 +193,9 @@ if (WITH_IIOD AND CMAKE_SYSTEM_NAME MATCHES "^Linux")
             /lib/udev/rules.d
             CACHE PATH "default install path for udev rules")
 
-        install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/99-iiod-hotplug.rules
-                DESTINATION ${UDEV_RULES_INSTALL_DIR})
+        iio_install_system_path(
+            FILES ${CMAKE_CURRENT_SOURCE_DIR}/99-iiod-hotplug.rules
+            DESTINATION ${UDEV_RULES_INSTALL_DIR})
     endif ()
 endif ()
 
