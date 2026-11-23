@@ -105,8 +105,7 @@ if (MCS_EXECUTABLE)
     set(LIBIIO_CS_PC "${CMAKE_CURRENT_BINARY_DIR}/libiio-sharp-${VERSION}.pc")
     configure_file(${LIBIIO_CS_PC_IN} ${LIBIIO_CS_PC} @ONLY)
     if (NOT SKIP_INSTALL_ALL)
-        install(FILES ${LIBIIO_CS_PC}
-                DESTINATION "${CMAKE_INSTALL_PREFIX}/lib/pkgconfig")
+        install(FILES ${LIBIIO_CS_PC} DESTINATION lib/pkgconfig)
     endif ()
 
     set(LIBIIO_CS_DLL_CONFIG_IN
@@ -115,9 +114,8 @@ if (MCS_EXECUTABLE)
         "${CMAKE_CURRENT_BINARY_DIR}/libiio-sharp.dll.config")
     configure_file(${LIBIIO_CS_DLL_CONFIG_IN} ${LIBIIO_CS_DLL_CONFIG} @ONLY)
     if (NOT SKIP_INSTALL_ALL)
-        install(
-            FILES ${LIBIIO_CS_DLL_CONFIG}
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
+        install(FILES ${LIBIIO_CS_DLL_CONFIG}
+                DESTINATION lib/cli/libiio-sharp-${VERSION})
     endif ()
 
     set(LIBIIO_CS_INFO_IN ${CMAKE_CURRENT_SOURCE_DIR}/AssemblyInfo.cs.in)
@@ -153,9 +151,8 @@ if (MCS_EXECUTABLE)
             set(DEBUG_SYMBOLS_FILE
                 "${CMAKE_CURRENT_BINARY_DIR}/libiio-sharp.pdb")
         endif ()
-        install(
-            FILES ${LIBIIO_CS_DLL} ${DEBUG_SYMBOLS_FILE}
-            DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION})
+        install(FILES ${LIBIIO_CS_DLL} ${DEBUG_SYMBOLS_FILE}
+                DESTINATION lib/cli/libiio-sharp-${VERSION})
     endif ()
 
     add_subdirectory(tests)
@@ -192,9 +189,7 @@ if (DOTNET_EXECUTABLE)
     if (NOT SKIP_INSTALL_ALL)
         install(
             FILES ${LIBIIO_CS_NET_DLL}
-            DESTINATION
-                ${CMAKE_INSTALL_PREFIX}/lib/cli/libiio-sharp-${VERSION}/${LIBIIO_CS_NET_TFM}
-        )
+            DESTINATION lib/cli/libiio-sharp-${VERSION}/${LIBIIO_CS_NET_TFM})
     endif ()
 else ()
     message(STATUS ".NET SDK not found: skipping the .NET bindings variant")
