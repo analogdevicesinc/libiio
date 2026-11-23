@@ -5,7 +5,7 @@ foreach (TEST_SRC ${TEST_SOURCES})
 
     add_executable(${TEST_NAME} ${TEST_SRC})
 
-    target_link_libraries(${TEST_NAME} LINK_PRIVATE iio)
+    target_link_libraries(${TEST_NAME} LINK_PRIVATE iio iio_tests_config)
 
     add_test(
         NAME ${TEST_NAME}

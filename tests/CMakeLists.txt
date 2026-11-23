@@ -1,7 +1,10 @@
-add_definitions(-UNDEBUG)
+# Flags shared by every test executable: keep assert() live in all build types.
+add_library(iio_tests_config INTERFACE)
+target_compile_options(iio_tests_config INTERFACE -UNDEBUG)
 if (TESTS_DEBUG)
-    add_definitions(-DTESTS_DEBUG)
+    target_compile_definitions(iio_tests_config INTERFACE TESTS_DEBUG)
 endif ()
+
 add_subdirectory(hardware)
 add_subdirectory(api)
 add_subdirectory(utils)

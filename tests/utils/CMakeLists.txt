@@ -3,7 +3,8 @@ if (WITH_UTILS AND WITH_XML_BACKEND)
     find_package(Python3 COMPONENTS Interpreter)
     if (Python3_Interpreter_FOUND)
         add_executable(test_iio_attr_cli test_iio_attr.c)
-        target_link_libraries(test_iio_attr_cli PRIVATE iio iio_utils_helper)
+        target_link_libraries(test_iio_attr_cli PRIVATE iio iio_utils_helper
+                                                        iio_tests_config)
         target_include_directories(test_iio_attr_cli
                                    PRIVATE ${CMAKE_SOURCE_DIR}/utils)
         set_target_properties(
