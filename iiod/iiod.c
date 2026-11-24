@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2014 Analog Devices, Inc.
+ * Copyright (C) 2014-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -16,6 +16,7 @@
 #include "debug.h"
 #include "ops.h"
 #include "thread-pool.h"
+#include "udp-provider.h"
 #include "xml-zstd.h"
 
 #define MY_NAME "iiod"
@@ -27,6 +28,9 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint, const char *u
 		uint16_t port, unsigned int nb_pipes, int ep0_fd);
 
 bool server_demux;
+
+/* The UDP sample stream provider is registered (--udp-port) */
+static bool udp_stream_enabled;
 
 struct thread_pool *main_thread_pool;
 
@@ -44,6 +48,8 @@ static const struct option options[] = {
 	{ "serial", required_argument, 0, 's' },
 	{ "port", required_argument, 0, 'p' },
 	{ "uri", required_argument, 0, 'u' },
+	{ "udp-port", required_argument, 0, 'U' },
+	{ "udp-block-size", required_argument, 0, 'B' },
 	{ 0, 0, 0, 0 },
 };
 
@@ -61,6 +67,10 @@ static const char *options_descriptions[] = {
 	 "\n\t\t\t    'usb:1.2.3', or 'usb:'"
 	 "\n\t\t\t    'serial:/dev/ttyUSB0,115200,8n1'"
 	 "\n\t\t\t    'local:' (default)"),
+	("Serve UDP sample streams, sent from the given UDP port."
+	 "\n\t\t\tWithout it, UDP stream requests are refused."),
+	("Size in bytes of the blocks UDP sample streams are read in"
+	 "\n\t\t\t(default = " STRINGIFY(IIOD_UDP_PROVIDER_DEFAULT_BLOCK_SIZE) ")."),
 };
 
 static void usage(void)
@@ -140,10 +150,12 @@ int main(int argc, char **argv)
 	int c, option_index = 0;
 	char *ffs_mountpoint = NULL;
 	char *uart_params = NULL;
-	uint16_t port = IIOD_PORT;
+	uint16_t port = IIOD_PORT, udp_port = 0;
+	size_t udp_block_size = IIOD_UDP_PROVIDER_DEFAULT_BLOCK_SIZE;
 	int ret, ep0_fd = 0;
 
-	while ((c = getopt_long(argc, argv, "+hVdDF:n:s:p:u:", options, &option_index)) != -1) {
+	/* Flawfinder: ignore */
+	while ((c = getopt_long(argc, argv, "+hVdDF:n:s:p:u:U:B:", options, &option_index)) != -1) {
 		switch (c) {
 		case 'd':
 			iiod_params.log_level = LEVEL_DEBUG;
@@ -191,6 +203,28 @@ int main(int argc, char **argv)
 		case 'u':
 			uri = optarg;
 			break;
+		case 'U':
+			if (!WITH_IIOD_UDP_PROVIDER) {
+				IIO_ERROR("IIOD was not compiled with UDP sample stream support.\n");
+				return EXIT_FAILURE;
+			}
+
+			val = strtoul(optarg, &end, 10);
+			if (optarg == end || (end && *end != '\0') || val > 0xFFFF || val < 1) {
+				IIO_ERROR("--udp-port: Invalid port number\n");
+				return EXIT_FAILURE;
+			}
+			udp_port = (uint16_t)val;
+			break;
+		case 'B':
+			errno = 0;
+			val = strtol(optarg, &end, 10);
+			if (optarg == end || (end && *end != '\0') || val < 1 || errno == ERANGE) {
+				IIO_ERROR("--udp-block-size: Invalid parameter\n");
+				return EXIT_FAILURE;
+			}
+			udp_block_size = (size_t)val;
+			break;
 		case 'h':
 			usage();
 			return EXIT_SUCCESS;
@@ -220,6 +254,17 @@ int main(int argc, char **argv)
 		ep0_fd = ret;
 	}
 
+	if (WITH_IIOD_UDP_PROVIDER && udp_port) {
+		ret = iiod_udp_provider_init(udp_port, udp_block_size);
+		if (ret) {
+			IIO_PERROR(ret, "Unable to set up the UDP sample stream provider");
+			thread_pool_destroy(main_thread_pool);
+			return EXIT_FAILURE;
+		}
+
+		udp_stream_enabled = true;
+	}
+
 	set_handler(SIGHUP, sig_handler);
 	set_handler(SIGPIPE, sig_handler);
 	set_handler(SIGINT, sig_handler);
@@ -232,6 +277,9 @@ int main(int argc, char **argv)
 
 		ret = start_iiod(uri, ffs_mountpoint, uart_params, port, nb_pipes, ep0_fd);
 	} while (!ret && restart_usr1);
+
+	if (WITH_IIOD_UDP_PROVIDER && udp_port)
+		iiod_udp_provider_exit();
 
 	thread_pool_destroy(main_thread_pool);
 
@@ -262,6 +310,17 @@ static int start_iiod(const char *uri, const char *ffs_mountpoint, const char *u
 	if (iio_err(ctx)) {
 		IIO_PERROR(iio_err(ctx), "Unable to create local context");
 		return EXIT_FAILURE;
+	}
+
+	/* Clients only send the setup command to a server that advertises it:
+	 * an older iiod drops the connection on a command it does not know */
+	if (udp_stream_enabled) {
+		ret = iio_context_add_attr(ctx, "iiod,udp-stream", "1");
+		if (ret) {
+			IIO_PERROR(ret, "Unable to advertise UDP sample streams");
+			ret = EXIT_FAILURE;
+			goto out_destroy_context;
+		}
 	}
 
 	ret = init_device_pdata(ctx);

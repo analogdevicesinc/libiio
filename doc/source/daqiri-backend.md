@@ -425,9 +425,52 @@ at zero; with `--udp-drop-every 100`, `daqiri_rx_lost_packets` grows by what
 the emulator dropped. Unpaced, the emulator outruns a loopback socket and the
 host's blocks, which shows as losses and overruns. Without `--udp` the
 emulator refuses the setup command with `-ENOTSUP` and logs it, as an `iiod`
-built from this libiio does (an older `iiod` drops the connection on a command
-it does not know); the backend never sends it there, since nothing is
-advertised.
+built from this libiio does without `--udp-port` (an older `iiod` drops the
+connection on a command it does not know); the backend never sends it there,
+since nothing is advertised.
+
+(daqiri-iiod-provider)=
+
+## `iiod` as the sender: `--udp-port`
+
+On Linux, `iiod --udp-port <port>` serves UDP sample mode itself. It
+advertises `iiod,udp-stream`, answers the setup command and, while a buffer
+is enabled, has a thread read blocks from the device and send each as a run
+of datagrams from that UDP port. Without the option nothing changes: the
+command is refused and samples go over TCP.
+
+| Option | Meaning |
+|---|---|
+| `-U`, `--udp-port <port>` | Serve UDP sample mode, the datagrams sent from this port: the port of the YAML's `remote_addr`. |
+| `-B`, `--udp-block-size <bytes>` | Size of the blocks read from the device, default 1048576, rounded down to a whole number of datagrams. |
+
+```
+# on the board
+iiod --udp-port 25102
+
+# on the host; the YAML's remote_addr is <board>:25102
+iio_daqiri_bench -u "daqiri:<board>,data=udp,yaml=<yaml>" \
+    -d <device> -s 65536 -n 64 -T 10
+```
+
+What to expect of it:
+
+- **It is a software sender.** Every sample is copied on the board's
+  processor, so it is no faster than `iiod` over TCP there:
+  [Four paths on one boot](#daqiri-performance-paths) has the figures. It
+  gives a board without a sender in the FPGA the datagram path, not more
+  throughput.
+- **Nothing paces it.** When the device produces samples faster than the
+  thread sends them, the device overruns between blocks. The datagram
+  sequence has no gap then, so the backend reports no loss, but the samples
+  of one block do not follow those of the block before.
+- **Input buffers only.** A setup on an output buffer is refused with
+  `-ENOTSUP`.
+- **A new payload size needs a stream or a reopen.** The blocks are queued at
+  the setup. Until a stream has run, or the buffer is closed, a setup for
+  another payload size is refused with `-EBUSY`.
+- **The payload size** is the largest multiple of 16 bytes and of the sample
+  set that is at most the backend's limit and 65488 bytes.
 
 (daqiri-performance)=
 
@@ -436,16 +479,17 @@ advertised.
 Measured on one board over two links, 10 Gbit/s and 1 Gbit/s. Most of the
 runs have every sample sent by software on the board's ARM processor; two
 sets, [UDP sample mode from the PL](#daqiri-performance-pl) and
-[TCP and PL UDP on one boot](#daqiri-performance-paths), have the FPGA frame
+[Four paths on one boot](#daqiri-performance-paths), have the FPGA frame
 and send the converter's samples. Three things limit what these figures say:
 
-- **The software UDP rows are the emulator, not `iiod`.** `iiod` has the
-  setup command and the provider hook, but no provider: it refuses the
-  command. The only software sender is the reference server,
-  `iiod-emu --udp`, so those rows are the emulator running on the board and
-  sending its sample file, not converter data. Figures for a UDP provider in
-  `iiod` come with the follow-up change that adds one. The TCP rows include
-  the real `iiod` serving the converter.
+- **Most software UDP rows are the emulator, not `iiod`.** When they were
+  taken `iiod` had the setup command and the provider hook but no provider,
+  and refused the command. Those rows are the reference server,
+  `iiod-emu --udp`, running on the board and sending its sample file, not
+  converter data. One later set,
+  [Four paths on one boot](#daqiri-performance-paths), has an `iiod` with a
+  software provider (`--udp-port`) send the converter's samples from the ARM.
+  The TCP rows include the real `iiod` serving the converter.
 - **On the 10 Gbit/s link the Ethernet MAC is in the PL.** The board's 10G
   ports are a Corundum NIC in the FPGA, which Linux drives as an ordinary
   network device (`mqnic`). In the software runs the PL takes no part in
@@ -704,53 +748,92 @@ and 3. Three more things came out of these runs:
 
 (daqiri-performance-paths)=
 
-### TCP and PL UDP on one boot (the converter)
+### Four paths on one boot (the converter)
 
 One boot of the PL sender's image, one cable, one sample stream: the
 converter's `voltage0_i,voltage0_q` at 250 MSPS, 1000 MB/s (8.0 Gbit/s) of
 samples, over the 10 Gbit/s link with an MTU of 9000. Every run carries live
-converter samples; nothing is checked but the datagram sequence. The two
+converter samples; nothing is checked but the datagram sequence. The four
 paths:
 
-- TCP: the image's `iiod` (libiio 0.26) read through `ip:`.
-- PL UDP, `daqiri:`: the FPGA framer of the section above, with its test
-  pattern off, received by this backend through the DAQIRI socket engine.
+1. TCP: the image's `iiod` (libiio 0.26) read through `ip:`.
+2. Software UDP, plain socket: `iiod` of this revision, started with
+   `--udp-port 4991`, cuts the kernel's 1 MiB blocks into datagrams in a
+   thread on the ARM. The receiver is a 200-line test program: the
+   `iiod-client` API over TCP for the setup, `recvmmsg()` on an ordinary UDP
+   socket, the payloads copied into blocks. No DAQIRI.
+3. Software UDP, `daqiri:`: the same `iiod`, received by this backend through
+   the DAQIRI socket engine.
+4. PL UDP, `daqiri:`: the FPGA framer of the section above, with its test
+   pattern off.
 
 Each row is the median of three 10-second runs, taken twice: with the host
-as it was, and with the tuning of the section above. 16, 64 and 256 blocks
-are queued for 1 MiB, 64 KiB and 16 KiB blocks. "ARM busy" is the whole
-board in cores of four, of which 1.2 are the image's desktop session;
-"server" is the sending process; "host CPU" is the receiving process and
-"host busy" the whole host in cores, both with the tuning. All 54 runs
-completed.
+as it was, and with the tuning of the section above (for the plain receiver,
+the same cores and a 64 MiB `SO_RCVBUF`). 16, 64 and 256 blocks are queued
+for 1 MiB, 64 KiB and 16 KiB blocks. "ARM busy" is the whole board in cores
+of four, of which 1.2 are the image's desktop session; "server" is the
+sending process; "host CPU" is the receiving process and "host busy" the
+whole host in cores, both with the tuning. All 126 runs completed.
 
 | Path | Datagram | Block | Untuned, Gbit/s (MB/s) | Tuned, Gbit/s (MB/s) | Lost, untuned | Lost, tuned | ARM busy | Server | Host CPU | Host busy |
 |---|---|---|---|---|---|---|---|---|---|---|
-| TCP, `ip:` (`iiod` 0.26) | n/a | 16 KiB | 0.18 (22) | 0.20 (25) | n/a | n/a | 1.9 | 0.7 | 13% | 0.3 |
-| TCP, `ip:` (`iiod` 0.26) | n/a | 64 KiB | 0.28 (35) | 0.29 (36) | n/a | n/a | 1.9 | 0.7 | 7% | 0.3 |
-| TCP, `ip:` (`iiod` 0.26) | n/a | 1 MiB | 0.49 (61) | 0.48 (61) | n/a | n/a | 2.2 | 1.0 | 8% | 0.2 |
-| PL UDP, `daqiri:` | 8944 B | 16 KiB | 8.00 (1000) | 8.00 (1000) | none | none | 1.2 | 0.0 | 65% | 1.1 |
-| PL UDP, `daqiri:` | 8944 B | 64 KiB | 8.00 (1000) | 8.00 (1000) | none | none | 1.2 | 0.0 | 63% | 1.0 |
-| PL UDP, `daqiri:` | 8944 B | 1 MiB | 8.00 (1000) | 8.00 (1000) | none | none | 1.2 | 0.0 | 58% | 1.0 |
-| PL UDP, `daqiri:` | 1456 B | 16 KiB | 6.38 (797) | 8.00 (1000) | 19.5% to 31.6% | none | 1.2 | 0.0 | 145% | 2.5 |
-| PL UDP, `daqiri:` | 1456 B | 64 KiB | 6.67 (834) | 8.00 (1000) | 4.4% to 16.9% | none | 1.2 | 0.0 | 131% | 2.3 |
-| PL UDP, `daqiri:` | 1456 B | 1 MiB | 7.85 (981) | 8.00 (1000) | none to 26.2% | none | 1.2 | 0.0 | 116% | 2.3 |
+| 1. TCP, `ip:` (`iiod` 0.26) | n/a | 16 KiB | 0.18 (22) | 0.20 (25) | n/a | n/a | 1.9 | 0.7 | 13% | 0.3 |
+| 1. TCP, `ip:` (`iiod` 0.26) | n/a | 64 KiB | 0.28 (35) | 0.29 (36) | n/a | n/a | 1.9 | 0.7 | 7% | 0.3 |
+| 1. TCP, `ip:` (`iiod` 0.26) | n/a | 1 MiB | 0.49 (61) | 0.48 (61) | n/a | n/a | 2.2 | 1.0 | 8% | 0.2 |
+| 2. Software UDP, plain socket | 8944 B | 16 KiB | 0.50 (63) | 0.50 (62) | none | none | 2.2 | 1.0 | 7% | 0.2 |
+| 2. Software UDP, plain socket | 8944 B | 64 KiB | 0.50 (63) | 0.50 (62) | none | none | 2.2 | 1.0 | 7% | 0.3 |
+| 2. Software UDP, plain socket | 8944 B | 1 MiB | 0.50 (62) | 0.50 (62) | none | none | 2.2 | 1.0 | 7% | 0.3 |
+| 2. Software UDP, plain socket | 1456 B | 16 KiB | 0.28 (35) | 0.38 (47) | none | none | 2.3 | 1.1 | 12% | 0.5 |
+| 2. Software UDP, plain socket | 1456 B | 64 KiB | 0.38 (48) | 0.38 (48) | none to 0.003% | none | 2.3 | 1.0 | 12% | 0.4 |
+| 2. Software UDP, plain socket | 1456 B | 1 MiB | 0.38 (48) | 0.38 (47) | none to 0.017% | none | 2.2 | 1.0 | 12% | 0.4 |
+| 3. Software UDP, `daqiri:` | 8944 B | 16 KiB | 0.50 (62) | 0.50 (62) | none | none | 2.1 | 1.0 | 30% | 0.5 |
+| 3. Software UDP, `daqiri:` | 8944 B | 64 KiB | 0.50 (62) | 0.50 (62) | none | none | 2.2 | 1.0 | 26% | 0.4 |
+| 3. Software UDP, `daqiri:` | 8944 B | 1 MiB | 0.50 (62) | 0.50 (62) | none | none | 2.2 | 1.0 | 24% | 0.4 |
+| 3. Software UDP, `daqiri:` | 1456 B | 16 KiB | 0.38 (47) | 0.38 (48) | none | none | 2.3 | 1.1 | 35% | 0.7 |
+| 3. Software UDP, `daqiri:` | 1456 B | 64 KiB | 0.38 (47) | 0.38 (47) | none | none | 2.3 | 1.1 | 32% | 0.6 |
+| 3. Software UDP, `daqiri:` | 1456 B | 1 MiB | 0.38 (47) | 0.38 (47) | none | none | 2.3 | 1.1 | 31% | 0.6 |
+| 4. PL UDP, `daqiri:` | 8944 B | 16 KiB | 8.00 (1000) | 8.00 (1000) | none | none | 1.2 | 0.0 | 65% | 1.1 |
+| 4. PL UDP, `daqiri:` | 8944 B | 64 KiB | 8.00 (1000) | 8.00 (1000) | none | none | 1.2 | 0.0 | 63% | 1.0 |
+| 4. PL UDP, `daqiri:` | 8944 B | 1 MiB | 8.00 (1000) | 8.00 (1000) | none | none | 1.2 | 0.0 | 58% | 1.0 |
+| 4. PL UDP, `daqiri:` | 1456 B | 16 KiB | 6.38 (797) | 8.00 (1000) | 19.5% to 31.6% | none | 1.2 | 0.0 | 145% | 2.5 |
+| 4. PL UDP, `daqiri:` | 1456 B | 64 KiB | 6.67 (834) | 8.00 (1000) | 4.4% to 16.9% | none | 1.2 | 0.0 | 131% | 2.3 |
+| 4. PL UDP, `daqiri:` | 1456 B | 1 MiB | 7.85 (981) | 8.00 (1000) | none to 26.2% | none | 1.2 | 0.0 | 116% | 2.3 |
 
-- **The PL sender delivers the converter's whole rate, sixteen times what
-  `iiod` reaches over TCP.** 1000 MB/s against 61 MB/s with 1 MiB blocks,
-  and TCP falls to 22 MB/s with 16 KiB blocks. Over TCP one ARM core is full
-  in `iiod`, and the device overruns between blocks: most samples never
-  leave the board. With the PL sender the board's load is what it is when
-  idle.
-- **Only 1456-byte datagrams need the tuning.** 8944-byte datagrams arrive
-  whole at 8.0 Gbit/s on the untuned host. 1456-byte datagrams lose up to
-  32% there, in the NIC's receive ring, and fail up to 929 blocks per run;
-  with the tuning they lose none, with one failed block in nine runs.
-- **TCP does not need it.** The tuning changes the TCP figures by 0.02
-  Gbit/s at most: the limit is on the board.
-- **The host pays for small datagrams.** The receiving process takes 58% to
-  65% of a core with 8944-byte datagrams and 116% to 145% with 1456-byte
-  ones, against 7% to 13% for TCP at a sixteenth of the rate.
+- **Software UDP from `iiod` is no faster than TCP from `iiod`.** 0.50 Gbit/s
+  in 8944-byte datagrams against 0.49 Gbit/s over TCP with 1 MiB blocks, and
+  0.38 Gbit/s in 1456-byte datagrams. In each case one ARM core is full in
+  the sending process. It does win with small blocks: the datagram stream
+  does not depend on the client's block size, where TCP falls to 0.18 Gbit/s
+  with 16 KiB blocks.
+- **Most samples never leave the board on the software paths.** The
+  converter produces 1000 MB/s and `iiod` sends 62 MB/s: the device overruns
+  between blocks. The datagram sequence has no gap, so "lost" is none; the
+  stream is whole datagrams of contiguous samples with jumps between kernel
+  blocks, as over TCP.
+- **The receiver does not matter at this rate.** The plain socket and
+  `daqiri:` deliver the same 0.50 and 0.38 Gbit/s, with or without the
+  tuning. The plain receiver uses less CPU (7% to 12% of a core against 24%
+  to 35%): the socket engine's worker polls. Its only losses were up to
+  0.017% in two untuned runs with the default socket buffer.
+- **The PL sender is sixteen times faster and the only path that needs the
+  tuning.** 8944-byte datagrams arrive whole at 8.0 Gbit/s on the untuned
+  host. 1456-byte datagrams lose up to 32% there, in the NIC's receive ring,
+  and fail up to 929 blocks per run; with the tuning they lose none, with
+  one failed block in nine runs.
+- **In a few runs the software sender ran at three quarters of its rate.**
+  Eight of the 36 runs with 1456-byte datagrams delivered 0.28 to
+  0.31 Gbit/s instead of 0.38, and three of the 36 with 8944-byte datagrams
+  0.46 instead of 0.50, for the whole run. The cause was not looked for.
+
+The first software UDP stream left the image's capture path dead: the next
+buffer, over TCP or UDP, from either `iiod`, got no sample. The design has a
+data offload core between the channel packer and the DMA, and disabling the
+buffer while the DMA held queued blocks left that core waiting for a
+read-out that never ended (`FSM_DBG` 0x810 instead of 0x101) until its
+`RESETN` register was toggled. Stopping the stock `iio_readdev` with a
+signal in mid capture did the same, one time in three. The provider now
+takes its queued blocks back before the buffer is disabled; with that, the
+core was idle after every one of the 126 runs.
 
 ### Reading the figures
 
@@ -763,10 +846,9 @@ completed.
   sample mode makes one system call per datagram.
 - The bottleneck of the real path is `iiod` reading the converter and writing
   the socket on the ARM: 0.45 to 0.49 Gbit/s over TCP, on either link. A UDP
-  provider in `iiod` that still copies every sample on the ARM would meet
-  the same limit; the follow-up change that adds one has the figures. UDP
-  sample mode is meant for senders that keep the ARM out of the sample
-  path.
+  provider in `iiod`, which still copies every sample on the ARM, meets the
+  same limit: 0.50 Gbit/s. UDP sample mode is meant for senders that keep
+  the ARM out of the sample path.
 - With the sender in the PL the same board delivers 8.0 Gbit/s to the
   application, sixteen times what `iiod` reaches over TCP, with no loss and
   no ARM load. That figure is the converter's rate for one I/Q pair, not a

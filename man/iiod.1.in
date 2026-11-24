@@ -61,6 +61,18 @@ Run iiod on the specified UART.
 Port to listen on (default = 30431).
 Using --port 0 will pick an ephemeral port (dynamic / unused in the range between 32768–60999).
 .TP
+.B \-U, \-\-udp\-port <arg>
+Serve UDP sample streams (Linux only), with the datagrams sent from the given
+UDP port. Without this option, a client's request for a UDP sample stream is
+refused and samples are served over the connection as usual.
+See
+.B UDP SAMPLE STREAMS
+below.
+.TP
+.B \-B, \-\-udp\-block\-size <arg>
+Size in bytes of the blocks that UDP sample streams are read in from the
+device (default = 1048576). It is rounded down to a whole number of datagrams.
+.TP
 .B \-u, \-\-uri
 The Uniform Resource Identifier
 .I (uri)
@@ -96,6 +108,37 @@ would normally be configured as '8n1' this is controlled by:
 .IP local:
 with no address part. This is the default.
 .RE
+.SH UDP SAMPLE STREAMS
+With
+.BR \-\-udp\-port ,
+the context that
+.B iiod
+serves carries the attribute
+.I iiod,udp-stream
+and a client may ask for the samples of an input buffer as UDP datagrams,
+which is what the
+.I daqiri:
+backend of Libiio does. Everything else, the request included, still goes
+through the network connection.
+.PP
+The client names the address and port the datagrams go to and the largest
+payload it accepts.
+.B iiod
+answers with the source address and port, a stream identifier and the payload
+size: the largest multiple of 16 bytes and of the sample size that fits. While
+the buffer is enabled, a thread reads blocks from the device and sends each as
+a run of datagrams made of a 16-byte header (version, flags, payload length,
+stream identifier, 64-bit sequence number) and that many bytes of samples.
+The datagrams are neither encrypted nor authenticated.
+.PP
+Nothing paces the stream. When the device produces samples faster than they
+can be sent, it overruns between blocks: the sequence numbers show no gap, but
+the samples of one block do not follow those of the block before. Only input
+buffers are served. A request for another payload size is refused with EBUSY
+while the blocks of an earlier request are still queued, which they are until
+a stream has run or the buffer is closed.
+.PP
+.B iiod \-\-udp\-port 25102
 .TP
 
 .SH RETURN VALUE
