@@ -50,6 +50,9 @@ jobs:
             artifact-name: Linux-openSUSE-16.0
     container:
       image: ${{ matrix.image }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
+
     steps:
       - name: Install dependencies
         run: |
@@ -113,27 +116,8 @@ jobs:
         id: deb
         with:
           version: ${{ steps.version.outputs.version }}
-          ignore-path: bindings/*/packaging
-
-      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
-        if: matrix.deb
-        with:
-          version: ${{ steps.version.outputs.version }}
-          working-directory: bindings/python
           version-suffix: ${{ matrix.version-suffix }}
 
-      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
-        if: matrix.deb
-        with:
-          version: ${{ steps.version.outputs.version }}
-          working-directory: bindings/cpp
-          version-suffix: ${{ matrix.version-suffix }}
-      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
-        if: matrix.deb
-        with:
-          version: ${{ steps.version.outputs.version }}
-          working-directory: bindings/csharp
-          version-suffix: ${{ matrix.version-suffix }}
       - name: Kernel check
         if: matrix.artifact-name == 'Linux-Ubuntu-22.04' && github.event_name == 'pull_request'
         run: ./CI/azure/check_kernel.sh

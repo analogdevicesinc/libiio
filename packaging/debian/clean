@@ -1,0 +1,6 @@
+bindings/csharp/AssemblyInfo.cs
+bindings/csharp/libiio-sharp.dll
+bindings/csharp/libiio-sharp.dll.config
+bindings/csharp/libiio-sharp-*.pc
+bindings/python/pylibiio.egg-info/
+.pybuild/

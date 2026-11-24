@@ -1,10 +1,57 @@
 #!/usr/bin/make -f
+
+VERSION    := $(shell dpkg-parsechangelog -S Version | cut -d- -f1)
+MAJOR      := $(firstword $(subst ., ,$(VERSION)))
+ASMVERSION := $(shell echo $(VERSION) | sed 's/[~+].*//')
+
+CS_DIR     := bindings/csharp
+CS_SOURCES := Attr.cs Channel.cs Context.cs Device.cs IOBuffer.cs \
+              Trigger.cs IioLib.cs ScanContext.cs UTF8Marshaler.cs AssemblyInfo.cs
+TMP        := debian/tmp
+CS_CLI     := $(TMP)/usr/lib/cli/libiio-sharp-$(VERSION)
+
+PY_DIR     := bindings/python
+
+export PYBUILD_SYSTEM  = distutils
+export PYBUILD_DISABLE = test
+
+# Core libiio is built by CMake (its only build system). Bindings use no CMake:
+# python via pybuild (setup.py), cpp via cp, csharp via mcs.
 %:
-	dh $@ --buildsystem=cmake
+	dh $@ --buildsystem=cmake --with python3 --with cli
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
-		-DCPP_BINDINGS=ON \
 		-DWITH_SERIAL_BACKEND=ON \
-		-DWITH_EMU_BACKEND=ON \
-		-DWITH_MAN=ON
+		-DWITH_MAN=ON \
+		-DUDEV_RULES_INSTALL_DIR=/usr/lib/udev/rules.d
+	# C#: generate the files CMake would otherwise template.
+	cd $(CS_DIR) && sed 's/@LIBIIO_CS_VERSION@/$(ASMVERSION).0.0/' AssemblyInfo.cs.in > AssemblyInfo.cs
+	cd $(CS_DIR) && sed -e 's#@CMAKE_INSTALL_PREFIX@#/usr#g' -e 's/@VERSION@/$(VERSION)/g' \
+		libiio-sharp.pc.cmakein > libiio-sharp-$(VERSION).pc
+	cd $(CS_DIR) && sed 's/@LIBIIO_VERSION_MAJOR@/$(MAJOR)/g' \
+		libiio-sharp.dll.config.cmakein > libiio-sharp.dll.config
+
+override_dh_auto_build:
+	dh_auto_build
+	cd $(CS_DIR) && mcs /target:library /out:libiio-sharp.dll /keyfile:key.snk $(CS_SOURCES)
+	dh_auto_build --buildsystem=pybuild --sourcedirectory=$(PY_DIR)
+
+override_dh_clideps:
+	dh_clideps --exclude-moduleref=libiio
+
+override_dh_missing:
+	dh_missing --list-missing
+
+override_dh_auto_install:
+	dh_auto_install
+	# C++ header-only binding
+	install -D -m0644 bindings/cpp/iiopp.h $(TMP)/usr/include/iiopp.h
+	# C# assembly + dllmap config + pkg-config
+	install -d $(CS_CLI)
+	install -m0644 $(CS_DIR)/libiio-sharp.dll $(CS_CLI)/libiio-sharp.dll
+	install -m0644 $(CS_DIR)/libiio-sharp.dll.config $(CS_CLI)/libiio-sharp.dll.config
+	install -D -m0644 $(CS_DIR)/libiio-sharp-$(VERSION).pc \
+		$(TMP)/usr/lib/pkgconfig/libiio-sharp-$(VERSION).pc
+	# Python module
+	dh_auto_install --buildsystem=pybuild --sourcedirectory=$(PY_DIR) --destdir=$(CURDIR)/$(TMP)
