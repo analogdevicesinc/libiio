@@ -31,6 +31,11 @@ would normally be configured as '8n1' this is controlled by:
 ('0' none [default], 'x' Xon Xoff, 'r' RTSCTS, or 'd' DTRDSR)
 .RE
 .RE
+.IP daqiri:[address][:port][,key=value]
+when compiled with the DAQIRI backend: the network address of an iiod, as for
+\fBip:\fP, with the samples of the buffers received as UDP datagrams through NVIDIA
+DAQIRI where the server supports it. The keys are listed on the DAQIRI backend
+page of the libiio documentation.
 .IP local:
 with no address part.
 .RE

@@ -47,7 +47,7 @@ jobs:
         run: |
           set -e
           mkdir build && cd build
-          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCSHARP_BINDINGS=ON -DCSHARP_DOTNET_TFM=net8.0 -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON
+          cmake .. -DCMAKE_BUILD_TYPE=${{ inputs.build-type }} -Werror=dev -DCOMPILE_WARNING_AS_ERROR=ON -DCSHARP_BINDINGS=ON -DCSHARP_DOTNET_TFM=net8.0 -DWITH_SERIAL_BACKEND=ON -DWITH_EMU_BACKEND=ON -DINSTALL_UDEV_RULE=OFF
           make -j$(nproc)
 
       - name: Pack the NuGet package

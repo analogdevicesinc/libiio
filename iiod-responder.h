@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2021 Analog Devices, Inc.
+ * Copyright (C) 2021-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 
@@ -65,6 +65,9 @@ enum iiod_opcode {
 	IIOD_OP_REFRESH_FORMAT,
 
 	IIOD_OP_NOP,
+
+	/* UDP sample stream setup for an open buffer (iiod-udp-stream.h) */
+	IIOD_OP_UDP_STREAM_SETUP,
 
 	IIOD_NB_OPCODES,
 };

@@ -1,0 +1,62 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI ibverbs engine configuration for test_engine_udp_endpoint. It is only
+# ever parsed, never initialised: the test checks what the engine shim makes of
+# the flow rules (dq_yaml_udp_endpoint), the UDP endpoint that the backend
+# would ask a board to stream to. The PCI address is one that no host has, so
+# that no network interface stands in for the flows' destination addresses.
+# Two queues, each with the flow that steers to it, listed in the other order;
+# every port and address differs from its byte-swapped self, so that a swap
+# shows.
+%YAML 1.2
+---
+daqiri:
+  cfg:
+    version: 1
+    stream_type: "raw"
+    engine: "ibverbs"
+    master_core: 3
+    memory_regions:
+    - name: "Data_RX"
+      kind: "huge"
+      affinity: 0
+      num_bufs: 4096
+      buf_size: 9216
+    interfaces:
+    - name: "data"
+      address: "0000:ff:1f.7"
+      rx:
+        queues:
+        - name: "rx_q_0"
+          id: 0
+          cpu_core: 2
+          batch_size: 32
+          memory_regions:
+          - "Data_RX"
+        - name: "rx_q_1"
+          id: 1
+          cpu_core: 4
+          batch_size: 32
+          memory_regions:
+          - "Data_RX"
+        flows:
+        - name: "flow_q1"
+          id: 0
+          action:
+            type: queue
+            id: 1
+          match:
+            udp_dst: 6001
+            ipv4_dst: 198.51.100.7
+        - name: "flow_q0"
+          id: 1
+          action:
+            type: queue
+            id: 0
+          match:
+            udp_src: 4990
+            udp_dst: 4991
+            ipv4_src: 192.0.2.1
+            ipv4_dst: 192.0.2.2

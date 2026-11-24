@@ -24,7 +24,7 @@ install_pacman_deps() {
     mingw-w64-ucrt-x86_64-libusb \
     mingw-w64-ucrt-x86_64-zstd \
     mingw-w64-ucrt-x86_64-libxml2 \
-    mingw-w64-ucrt-x86_64-python3 \
+    mingw-w64-ucrt-x86_64-python \
     mingw-w64-ucrt-x86_64-python-pip \
     mingw-w64-ucrt-x86_64-python-setuptools \
     mingw-w64-ucrt-x86_64-cmake \

@@ -23,6 +23,8 @@ It is **portable**: Using a single cross-platform API, it provides access to IIO
   * Linux host (an :git+libiio:`IIO daemon <iiod>` is included as part of libiio), this would typically communicate to a libiio client over the network or USB
   * A deeply embedded, resource constrained system (like Arduino) managed separately as `tiny-iiod <https://github.com/analogdevicesinc/libtinyiiod>`_; this would typically communicate to a libiio client over the network or serial
 
+* The optional **DAQIRI** backend (Linux), which manages a device through an **iiod** server over the network like the remote backend, and can receive the samples of its buffers as UDP datagrams through NVIDIA `DAQIRI <https://github.com/NVIDIA/daqiri>`_. See :doc:`daqiri-backend`.
+
 It is **entirely user-mode**: No special privilege or elevation is required for the application to communicate with a device. One of the most powerful things about libiio is its `Remote Procedure Call <https://en.wikipedia.org/wiki/Remote_procedure_call>`_ style interface. Moving backends from USB to Networking to local embedded does not require any code changes. The users of libiio do not need to code any differently for the remote interaction, making it easy to move from remote (debug on PC over Ethernet) to local (deployed on embedded Linux).
 
 What platforms are supported?
@@ -181,6 +183,7 @@ Project Pages
    bindings
    tools/index
    iiod
+   daqiri-backend
    zephyr
    tls_userguide
    training

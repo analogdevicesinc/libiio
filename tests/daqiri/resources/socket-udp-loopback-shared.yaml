@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+#
+# SPDX-License-Identifier: MIT
+
+# DAQIRI socket engine for the rcvbuf_shared_port case of daqiri_udp_loopback:
+# two interfaces on the same local_addr, 127.0.0.1:25101, a connected to
+# 127.0.0.1:25102 and b to 127.0.0.1:25103 (the engine sets SO_REUSEADDR, so
+# both bind). DAQIRI keys its server sockets by local_addr, so it answers a's
+# connection for either: the backend must not size a's socket for a buffer
+# on b.
+daqiri:
+  cfg:
+    version: 1
+    stream_type: socket
+    master_core: 0
+    memory_regions:
+    - name: MR_A
+      kind: host
+      affinity: 0
+      num_bufs: 256
+      buf_size: 2048
+    - name: MR_B
+      kind: host
+      affinity: 0
+      num_bufs: 256
+      buf_size: 2048
+    interfaces:
+    - name: a
+      address: 127.0.0.1
+      socket_config:
+        mode: server
+        local_addr: 'udp://127.0.0.1:25101'
+        remote_addr: 'udp://127.0.0.1:25102'
+        max_payload_size: 1472
+      rx:
+        queues:
+        - name: rx_a
+          id: 0
+          cpu_core: 0
+          batch_size: 8
+          memory_regions:
+          - MR_A
+    - name: b
+      address: 127.0.0.1
+      socket_config:
+        mode: server
+        local_addr: 'udp://127.0.0.1:25101'
+        remote_addr: 'udp://127.0.0.1:25103'
+        max_payload_size: 1472
+      rx:
+        queues:
+        - name: rx_b
+          id: 0
+          cpu_core: 0
+          batch_size: 8
+          memory_regions:
+          - MR_B

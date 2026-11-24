@@ -10,5 +10,6 @@ Command Line Tools
    iio_rwdev
    iio_reg
    iio_stresstest
+   iio_daqiri_bench
 
 

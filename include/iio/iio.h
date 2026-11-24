@@ -658,6 +658,14 @@ __api __check_ret __cnst const char *iio_get_builtin_backend(unsigned int index)
  *   bus, address, and interface parts separated with a dot. For example
  *   <i>"usb:3.32.5"</i>. Where there is only one USB device attached, the shorthand
  *   <i>"usb:"</i> can be used.
+ * - DAQIRI backend, "daqiri:"\n Requires the address of a running IIO Daemon,
+ *   optionally followed by its port and by comma separated <i>key=value</i>
+ *   options. The context is managed over the network like an "ip:" one; the
+ *   samples of the buffers can be received as UDP datagrams through NVIDIA
+ *   DAQIRI. Only available on Linux, as a module, when the library is built with
+ *   WITH_DAQIRI_BACKEND. For example
+ *   <i>"daqiri:192.168.2.1,data=udp,yaml=/etc/daqiri/1g.yaml"</i>. The options
+ *   are listed on the DAQIRI backend page of the documentation.
  * - Serial backend, "serial:"\n Requires:
  *     - a port (/dev/ttyUSB0),
  *     - baud_rate (default <b>115200</b>)
