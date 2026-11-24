@@ -1,0 +1,18 @@
+Source: libiiopp
+Section: libdevel
+Priority: optional
+Maintainer: Analog Devices Maintainers <linux@analog.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.0
+Homepage: https://github.com/analogdevicesinc/libiio
+Rules-Requires-Root: no
+
+Package: libiiopp-dev
+Architecture: all
+Depends: libiio-dev, ${misc:Depends}
+Description: C++ bindings for libiio (development header)
+ Header-only C++ wrapper (iiopp.h) around the libiio C API for
+ interfacing with Linux IIO devices.
+ .
+ This package contains the C++ binding header. libiio-dev provides the
+ underlying C library and development files.

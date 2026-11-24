@@ -1,0 +1,5 @@
+python-libiio (@VERSION@) UNRELEASED; urgency=low
+
+  * CI release.
+
+ -- Analog Devices Maintainers <linux@analog.com>  @DATE@

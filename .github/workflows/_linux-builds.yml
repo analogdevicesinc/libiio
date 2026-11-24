@@ -23,12 +23,15 @@ jobs:
           - image: ubuntu:22.04
             artifact-name: Linux-Ubuntu-22.04
             deb: true
+            version-suffix: +Ubuntu22
           - image: ubuntu:24.04
             artifact-name: Linux-Ubuntu-24.04
             deb: true
+            version-suffix: +Ubuntu24
           - image: ubuntu:26.04
             artifact-name: Linux-Ubuntu-26.04
             deb: true
+            version-suffix: +Ubuntu26
           - image: fedora:42
             artifact-name: Linux-Fedora-42
           - image: fedora:44
@@ -36,9 +39,11 @@ jobs:
           - image: debian:bookworm
             artifact-name: Linux-Debian-12
             deb: true
+            version-suffix: +Debian12
           - image: debian:trixie
             artifact-name: Linux-Debian-13
             deb: true
+            version-suffix: +Debian13
           - image: opensuse/leap:15.6
             artifact-name: Linux-openSUSE-15.6
           - image: opensuse/leap:16.0
@@ -108,7 +113,27 @@ jobs:
         id: deb
         with:
           version: ${{ steps.version.outputs.version }}
+          ignore-path: bindings/*/packaging
 
+      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
+        if: matrix.deb
+        with:
+          version: ${{ steps.version.outputs.version }}
+          working-directory: bindings/python
+          version-suffix: ${{ matrix.version-suffix }}
+
+      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
+        if: matrix.deb
+        with:
+          version: ${{ steps.version.outputs.version }}
+          working-directory: bindings/cpp
+          version-suffix: ${{ matrix.version-suffix }}
+      - uses: analogdevicesinc/shared-actions/deb-generator-action@main
+        if: matrix.deb
+        with:
+          version: ${{ steps.version.outputs.version }}
+          working-directory: bindings/csharp
+          version-suffix: ${{ matrix.version-suffix }}
       - name: Kernel check
         if: matrix.artifact-name == 'Linux-Ubuntu-22.04' && github.event_name == 'pull_request'
         run: ./CI/azure/check_kernel.sh

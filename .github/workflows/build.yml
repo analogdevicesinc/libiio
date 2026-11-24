@@ -121,7 +121,7 @@ jobs:
       !cancelled() &&
       !contains(needs.*.result, 'failure') &&
       (needs.config.outputs.is-v0 == 'true' || needs.config.outputs.is-release == 'true')
-    needs: [config, linux, windows, macos, arm, build-pypi]
+    needs: [config, linux, arm]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     container:

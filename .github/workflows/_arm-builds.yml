@@ -80,10 +80,13 @@ jobs:
             -e GITHUB_WORKSPACE="${{ github.workspace }}" \
             -e VERSION="${{ steps.version.outputs.version }}" \
             -e WORKING_DIRECTORY="${{ github.workspace }}" \
-            -e IGNORE_PATH="shared-actions" \
+            -e IGNORE_PATH=$'shared-actions\nbindings/*/packaging' \
             "${{ matrix.image }}" sleep infinity
           docker exec builder bash -c "apt-get update && apt-get install -y curl"
           docker exec builder bash shared-actions/deb-generator-action/build-deb.sh
+          docker exec -e WORKING_DIRECTORY="${{ github.workspace }}/bindings/python" builder bash shared-actions/deb-generator-action/build-deb.sh
+          docker exec -e WORKING_DIRECTORY="${{ github.workspace }}/bindings/cpp" builder bash shared-actions/deb-generator-action/build-deb.sh
+          docker exec -e WORKING_DIRECTORY="${{ github.workspace }}/bindings/csharp" builder bash shared-actions/deb-generator-action/build-deb.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
@@ -143,10 +146,13 @@ jobs:
             -e GITHUB_WORKSPACE="${{ github.workspace }}" \
             -e VERSION="${{ steps.version.outputs.version }}" \
             -e WORKING_DIRECTORY="${{ github.workspace }}" \
-            -e IGNORE_PATH="shared-actions" \
+            -e IGNORE_PATH=$'shared-actions\nbindings/*/packaging' \
             "${{ matrix.image }}" sleep infinity
           docker exec builder bash -c "apt-get update && apt-get install -y curl"
           docker exec builder bash shared-actions/deb-generator-action/build-deb.sh
+          docker exec -e WORKING_DIRECTORY="${{ github.workspace }}/bindings/python" builder bash shared-actions/deb-generator-action/build-deb.sh
+          docker exec -e WORKING_DIRECTORY="${{ github.workspace }}/bindings/cpp" builder bash shared-actions/deb-generator-action/build-deb.sh
+          docker exec -e WORKING_DIRECTORY="${{ github.workspace }}/bindings/csharp" builder bash shared-actions/deb-generator-action/build-deb.sh
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7

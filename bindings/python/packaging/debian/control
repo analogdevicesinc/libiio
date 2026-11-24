@@ -1,0 +1,15 @@
+Source: python-libiio
+Section: python
+Priority: optional
+Maintainer: Analog Devices Maintainers <linux@analog.com>
+Build-Depends: debhelper-compat (= 13), dh-python, python3-all, python3-setuptools
+Standards-Version: 4.6.0
+Homepage: https://github.com/analogdevicesinc/libiio
+Rules-Requires-Root: no
+
+Package: python3-libiio
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, libiio0
+Description: Python 3 bindings for libiio
+ ctypes-based Python bindings for the libiio library for interfacing
+ with Linux IIO devices.

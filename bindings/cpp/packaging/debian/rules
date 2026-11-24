@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+# Header-only binding: there is nothing to configure/build. Override the
+# auto steps so debhelper does not try to drive the bundled CMakeLists
+# (which only builds the example executable).
+%:
+	dh $@
+
+override_dh_auto_configure:
+
+override_dh_auto_build:
+
+override_dh_auto_test:
+
+override_dh_auto_install:
+	install -D -m0644 iiopp.h debian/libiiopp-dev/usr/include/iiopp.h
