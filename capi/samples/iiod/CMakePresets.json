@@ -1,0 +1,52 @@
+{
+    "version": 7,
+    "cmakeMinimumRequired": {
+        "major": 3,
+        "minor": 27,
+        "patch": 0
+    },
+    "configurePresets": [
+        {
+            "name": "max32655fthr",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "USE_VENDOR_TOOLCHAIN": "OFF",
+                "PLATFORM": "maxim",
+                "BOARD": "max32655fthr",
+                "TARGET": "max32655"
+            }
+        },
+        {
+            "name": "apard32690",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "USE_VENDOR_TOOLCHAIN": "OFF",
+                "PLATFORM": "maxim",
+                "BOARD": "apard32690",
+                "TARGET": "max32690"
+            }
+        },
+        {
+            "name": "dk-b1-rtss-he",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "PLATFORM": "alif",
+                "BOARD": "dk-b1/rtss_he",
+                "TARGET": "dk-b1_rtss_he"
+            }
+        },
+        {
+            "name": "dk-e8-rtss-hp",
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "PLATFORM": "alif",
+                "BOARD": "dk-e8/rtss_hp",
+                "TARGET": "dk-e8_rtss_hp"
+            }
+        }
+    ]
+}

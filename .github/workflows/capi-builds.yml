@@ -1,0 +1,112 @@
+# Copyright (c) 2026 Analog Devices, Inc
+# SPDX-License-Identifier: MIT
+
+name: CAPI Builds
+
+on:
+  push:
+    paths:
+      - "capi/**"
+  pull_request:
+  schedule:
+    - cron: "0 0 * * *"
+      timezone: "America/New_York"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build CAPI (${{ matrix.os }}, ${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        # CAPI's SDK needs CMake 3.27 or newer: ubuntu-24.04, not 22.04
+        os: [ubuntu-24.04, macos-15, windows-2022]
+        platform: [maxim, alif]
+        include:
+          # A build is for a board: one of each platform
+          - platform: maxim
+            preset: max32655fthr
+          - platform: alif
+            preset: dk-b1-rtss-he
+          # Arm's toolchain for each host
+          - os: ubuntu-24.04
+            toolchain: x86_64-arm-none-eabi.tar.xz
+          - os: macos-15
+            toolchain: darwin-arm64-arm-none-eabi.tar.xz
+          - os: windows-2022
+            toolchain: mingw-w64-x86_64-arm-none-eabi.zip
+    defaults:
+      run:
+        shell: bash
+    env:
+      ARM_TOOLCHAIN: 14.3.rel1
+      CAPI_WORKSPACE: ${{ github.workspace }}/workspace
+      CAPI_DIR: ${{ github.workspace }}/workspace/capi
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          path: libiio
+          persist-credentials: false
+
+      - name: Install build tools
+        run: |
+          case "${RUNNER_OS}" in
+          Linux)
+            sudo apt-get update
+            sudo apt-get install -y --no-install-recommends ninja-build python3-venv
+            ;;
+          macOS) brew install ninja ;;
+          Windows) choco install -y ninja ;;
+          esac
+
+      - name: Install the Arm GNU Toolchain
+        run: |
+          file=arm-gnu-toolchain-${ARM_TOOLCHAIN}-${{ matrix.toolchain }}
+          cd "${RUNNER_TEMP}"
+          curl -fsSL -o "${file}" \
+            "https://developer.arm.com/-/media/Files/downloads/gnu/${ARM_TOOLCHAIN}/binrel/${file}"
+          case "${file}" in
+          *.zip) 7z x -y "${file}" > /dev/null ;;
+          *) tar xf "${file}" ;;
+          esac
+          bin=$(dirname "$(find "${PWD}" -path '*/bin/arm-none-eabi-gcc*' | head -1)")
+          [ "${RUNNER_OS}" = Windows ] && bin=$(cygpath -w "${bin}")
+          echo "${bin}" >> "${GITHUB_PATH}"
+
+      # The build clones the platform and the packages in the sample's
+      # module.yml into CAPI_WORKSPACE itself
+      - name: Get CAPI
+        run: |
+          arm-none-eabi-gcc --version | head -1
+          git clone --depth 1 https://github.com/analogdevicesinc/capi "${CAPI_DIR}"
+
+      # capi-maxim builds on the MSDK's CMSIS and peripheral drivers only
+      - name: Get the MSDK libraries
+        if: matrix.platform == 'maxim'
+        run: |
+          git clone --depth 1 --filter=blob:none --sparse \
+            https://github.com/analogdevicesinc/msdk "${CAPI_WORKSPACE}/msdk"
+          git -C "${CAPI_WORKSPACE}/msdk" sparse-checkout set Libraries/CMSIS Libraries/PeriphDrivers
+          echo "MAXIM_SDK_PATH=${CAPI_WORKSPACE}/msdk" >> "${GITHUB_ENV}"
+
+      # Compiler warnings are errors, as in the Linux builds
+      - name: Build
+        working-directory: libiio/capi/samples/iiod
+        run: |
+          cmake --preset ${{ matrix.preset }} -B build -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+          cmake --build build
+
+      - name: Archive Sample Build
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: capi-iiod-sample-${{ matrix.preset }}
+          path: |
+            libiio/capi/samples/iiod/build/*.elf
+            libiio/capi/samples/iiod/build/*.bin
+            libiio/capi/samples/iiod/build/*.hex

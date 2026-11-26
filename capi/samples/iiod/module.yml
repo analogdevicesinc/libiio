@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: MIT
+
+name: libiio_iiod_sample
+type: application
+version: "1.0.0"
+description: "IIOD on CAPI: one device served to libiio clients over the console UART"
+
+capi_version_requirement: ">=0.9.0"
+
+# Each key under depends.platform is a value of PLATFORM in a preset; a
+# build resolves only the platform its preset selects. libiio is this tree's
+# capi/ (CMakeLists.txt), not a package.
+depends:
+  platform:
+    maxim: {git: "https://github.com/analogdevicesinc/capi-maxim.git", checkout: main}
+    alif: {git: "https://github.com/analogdevicesinc/capi-alif.git", checkout: main}
+  packages:
+    # What the Alif platform is built on, at the versions its board files
+    # are made for.
+    - alif_ensemble-cmsis-dfp: {git: "https://github.com/alifsemi/alif_ensemble-cmsis-dfp.git", checkout: v2.2.1}
+    - CMSIS_6: {git: "https://github.com/ARM-software/CMSIS_6.git", checkout: v6.4.0}

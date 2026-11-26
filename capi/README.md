@@ -64,6 +64,23 @@ add_subdirectory("${LIBIIO_DIR}" "${CMAKE_BINARY_DIR}/libiio")
 target_link_libraries(<app> PRIVATE libiio::capi)
 ```
 
+## Sample
+
+`samples/iiod` is a CAPI application serving one device, `demo`, over the
+console UART; its attribute `value` keeps what is written to it. It builds this
+tree's `capi/` for the Maxim or Alif board its preset selects; CI builds it on
+Linux, macOS and Windows for a Maxim and an Alif board
+(`.github/workflows/capi-builds.yml`):
+
+```bash
+export CAPI_WORKSPACE=~/workspace CAPI_DIR=~/workspace/capi
+export MAXIM_SDK_PATH=~/workspace/msdk    # Maxim boards
+cd samples/iiod
+cmake --preset <max32655fthr | apard32690 | dk-b1-rtss-he | dk-e8-rtss-hp>
+cmake --build build/<preset> --target flash
+iio_attr -u serial:/dev/ttyACM0,115200 -d demo value 42
+```
+
 ## Directory structure
 
 ```
@@ -72,6 +89,7 @@ capi/
 ├── CMakeLists.txt          # libiio's core + this port, as libiio::capi
 ├── iiod/uart.c             # transport: capi_uart, interrupt-driven receive, one session per client
 ├── backend.c               # the "capi:" backend: context, attributes, buffers, registers
+├── samples/iiod/           # a CAPI application serving one device; built by CI
 └── include/
     ├── iiod_uart.h         # iiod_uart_run()
     ├── iio_device.h        # the device API backend.c serves; iio_capi_set_context_attrs()
