@@ -50,6 +50,8 @@ jobs:
             artifact-name: Linux-openSUSE-16.0
     container:
       image: ${{ matrix.image }}
+    env:
+      DEBIAN_FRONTEND: noninteractive
     steps:
       - name: Install dependencies
         run: |

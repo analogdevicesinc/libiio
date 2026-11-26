@@ -1,63 +1,23 @@
 #!/usr/bin/make -f
 %:
-	dh $@ --buildsystem=cmake --with python3, cli 
+	dh $@ --buildsystem=cmake --with python3,cli
 
 override_dh_auto_configure:
 	dh_auto_configure -- \
 		-DCPP_BINDINGS=ON \
+		-DCSHARP_BINDINGS=ON \
 		-DWITH_SERIAL_BACKEND=ON \
 		-DWITH_EMU_BACKEND=ON \
-		-DWITH_MAN=ON
-ource: libiio
-Section: libs
-Priority: optional
-Maintainer: Analog Devices Maintainers <linux@analog.com>
-Build-Depends: debhelper-compat (= 13), cmake, libxml2-dev, bison, flex, libzstd-dev
- libcdk5-dev, libaio-dev, libusb-1.0-0-dev,
- libserialport-dev, libavahi-client-dev,
- python3-all, python3-setuptools, dh-python, mono-mcs, cli-common-dev
-Standards-Version: 4.6.0
-Homepage: https://github.com/analogdevicesinc/libiio
-Rules-Requires-Root: no
+		-DWITH_MAN=ON \
+		-DUDEV_RULES_INSTALL_DIR=/usr/lib/udev/rules.d \
+		-DCMAKE_SKIP_RPATH=ON
 
-Package: libiio
-Architecture: @ARCHITECTURE@
-Depends: ${shlibs:Depends}, ${misc:Depends}
-Provides: libiio0 (= ${binary:Version}), libiio-dev (= ${binary:Version}),
- libiio-utils (= ${binary:Version}), iiod (= ${binary:Version})
-Conflicts: libiio0, libiio-dev, libiio-utils, iiod
-Replaces: libiio0, libiio-dev, libiio-utils, iiod
-Description: Library for interfacing with IIO devices
- libiio is used to interface to the Linux Industrial Input/Output (IIO)
- Subsystem. Includes library, development files, utilities, and daemon.
+override_dh_auto_install:
+	dh_auto_install
+	# pyproject.toml needs setuptools>=77, newer than most target distros; the binding is one pure-ctypes module
+	install -D -m0644 bindings/python/iio/__init__.py \
+		debian/tmp/usr/lib/python3/dist-packages/iio/__init__.py
 
-Package: python3-libiio
-Section: python
-Architecture: any
-Depends: ${python3:Depends}, ${misc:Depends}, libiio0
-Description: Python 3 bindings for libiio
- ctypes-based Python bindings for the libiio library for interfacing
- with Linux IIO devices.
- .
- This package contains the Python 3 bindings.
-
-Package: libiio-cpp
-Section: libdevel
-Architecture: any
-Depends: libiio-dev, ${misc:Depends}
-Description: C++ bindings for libiio (development header)
- Header-only C++ wrapper (iiopp.h) around the libiio C API for
- interfacing with Linux IIO devices.
- .
- This package contains the C++ binding header.
-
-Package: libiio-csharp
-Section: cli-mono
-Architecture: any
-Depends: ${cli:Depends}, ${misc:Depends}, libiio0
-Description: C# bindings for libiio
- CLI (Mono/.NET) bindings for the libiio library for interfacing with
- Linux IIO devices.
- .
- This package contains the libiio-sharp assembly, loaded against the
- native library at runtime via the bundled dllmap config.
+# libiio is resolved at runtime through libiio-sharp.dll.config, not via shlibs
+override_dh_clideps:
+	dh_clideps --exclude-moduleref=libiio
