@@ -2,7 +2,7 @@
 /*
  * libiio - Library for interfacing industrial I/O (IIO) devices
  *
- * Copyright (C) 2022 Analog Devices, Inc.
+ * Copyright (C) 2022-2026 Analog Devices, Inc.
  * Author: Paul Cercueil <paul.cercueil@analog.com>
  */
 #ifndef __IIO_LOCAL_H
@@ -43,6 +43,8 @@ int buffer_check_ready(
 
 struct iio_block_pdata *local_create_dmabuf(
 		struct iio_buffer_pdata *pdata, size_t size, void **data);
+struct iio_block_pdata *local_create_dmabuf_from_fd(
+		struct iio_buffer_pdata *pdata, int dmabuf_fd, size_t size);
 void local_free_dmabuf(struct iio_block_pdata *pdata);
 
 int local_enqueue_dmabuf(struct iio_block_pdata *pdata, size_t bytes_used, bool cyclic);

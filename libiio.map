@@ -248,6 +248,7 @@ local:
 
 LIBIIO_1.1 {
 global:
+	iio_buffer_stream_create_block_from_dmabuf;
 	iio_free;
 	iio_strndup;
 	iio_device_add_fwu;

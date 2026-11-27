@@ -46,6 +46,7 @@ from os import strerror as _strerror
 from os import path as _path
 from platform import system as _system
 import abc
+import errno as _errno
 
 if "Windows" in _system():
     from ctypes import get_last_error
@@ -831,6 +832,15 @@ _create_block.restype = _BlockPtr
 _create_block.argtypes = (_BufferStreamPtr, c_size_t)
 _create_block.errcheck = _check_ptr_err
 
+# iio_buffer_stream_create_block_from_dmabuf() was added in libiio 1.1
+if hasattr(_lib, "iio_buffer_stream_create_block_from_dmabuf"):
+    _create_block_from_dmabuf = _lib.iio_buffer_stream_create_block_from_dmabuf
+    _create_block_from_dmabuf.restype = _BlockPtr
+    _create_block_from_dmabuf.argtypes = (_BufferStreamPtr, c_int, c_size_t)
+    _create_block_from_dmabuf.errcheck = _check_ptr_err
+else:
+    _create_block_from_dmabuf = None
+
 _block_destroy = _lib.iio_block_destroy
 _block_destroy.argtypes = (_BlockPtr,)
 
@@ -1154,7 +1164,7 @@ class Channel(_IIO_Object):
 class Block(_IIO_Object):
     """Represents a contiguous block of samples."""
 
-    def __init__(self, buffer_stream, size, _block = None):
+    def __init__(self, buffer_stream, size, _block=None, dmabuf_fd=None):
         """
         Initialize a new instance of the Block class.
 
@@ -1163,6 +1173,9 @@ class Block(_IIO_Object):
             the samples will be enqueued to or dequeued from
         :param size: type=int
             The size of the block, in bytes
+        :param dmabuf_fd: type=int
+            Optional file descriptor of an existing DMABUF object to back the block.
+            The block then has no CPU mapping, so read() and write() raise an error.
         """
         self._block_created = _block is None
 
@@ -1170,7 +1183,17 @@ class Block(_IIO_Object):
             self._block = _block
         else:
             try:
-                self._block = _create_block(buffer_stream._buffer_stream, size)
+                if dmabuf_fd is not None:
+                    if _create_block_from_dmabuf is None:
+                        raise OSError(
+                            _errno.ENOSYS,
+                            "DMABUF-backed blocks require libiio 1.1 or newer",
+                        )
+                    self._block = _create_block_from_dmabuf(
+                        buffer_stream._buffer_stream, dmabuf_fd, size
+                    )
+                else:
+                    self._block = _create_block(buffer_stream._buffer_stream, size)
             except Exception:
                 self._block = None
                 raise
@@ -1388,14 +1411,20 @@ class BufferStream(_IIO_Object):
         """
         return self._parent
 
-    def create_block(self, size):
+    def create_block(self, size, dmabuf_fd=None):
         """
         Create a block associated with this buffer stream.
 
         :param size: type=int
             Block size in bytes.
+        :param dmabuf_fd: type=int
+            Optional file descriptor of an existing DMABUF object, e.g. one exported
+            by a GPU, to back the block. It is duplicated, so the caller keeps
+            ownership of it. The size must not exceed the size of the DMABUF object.
+            The block then has no CPU mapping: use it with enqueue() and dequeue()
+            only.
         """
-        return Block(self, size)
+        return Block(self, size, dmabuf_fd=dmabuf_fd)
 
 
 class Stream(_IIO_Object):

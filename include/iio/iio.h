@@ -1236,6 +1236,27 @@ __api const struct iio_channels_mask *iio_buffer_stream_get_channels_mask(
 __api __check_ret struct iio_block *iio_buffer_stream_create_block(
 		struct iio_buffer_stream *buf_stream, size_t size);
 
+/** @brief Create a data block backed by an existing DMABUF object
+ * @param buf_stream A pointer to an iio_buffer_stream structure
+ * @param dmabuf_fd File descriptor of a DMABUF object, e.g. one exported by a GPU
+ * @param size The size of the block, in bytes. It must not exceed the size of
+ *   the DMABUF object.
+ * @return On success, a pointer to an iio_block structure
+ * @return On failure, a pointer-encoded error is returned. -ENOSYS is returned
+ *   if the backend or the kernel driver cannot attach external DMABUF objects.
+ *
+ * <b>NOTE:</b> libiio duplicates @p dmabuf_fd, so the caller keeps ownership of
+ * its own descriptor and may close it at any time. The duplicate is the one
+ * returned by iio_block_get_dmabuf_fd, and is closed by iio_block_destroy.
+ *
+ * <b>NOTE:</b> Such a block has no CPU mapping: iio_block_start, iio_block_first
+ * and iio_block_end return a pointer-encoded -EACCES, iio_block_foreach_sample
+ * returns -EACCES, and CPU access cannot be enabled. The block can only be used
+ * with iio_block_enqueue and iio_block_dequeue. The memory is owned by whoever
+ * exported the DMABUF object and must outlive the block. */
+__api __check_ret struct iio_block *iio_buffer_stream_create_block_from_dmabuf(
+		struct iio_buffer_stream *buf_stream, int dmabuf_fd, size_t size);
+
 /** @brief Destroy the given block
  * @param block A pointer to an iio_block structure
  *
