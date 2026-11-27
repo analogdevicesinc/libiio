@@ -135,6 +135,12 @@
 <li><a class="reference internal" href="#_CPPv4N5iiopp6Device15find_event_attrE4cstr"><code class="docutils literal notranslate"><span class="pre">find_event_attr()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp6Device9reg_writeE8uint32_t8uint32_t"><code class="docutils literal notranslate"><span class="pre">reg_write()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp6Device8reg_readE8uint32_t"><code class="docutils literal notranslate"><span class="pre">reg_read()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp6Device9fwu_countEv"><code class="docutils literal notranslate"><span class="pre">fwu_count()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp6Device6fwu_idEj"><code class="docutils literal notranslate"><span class="pre">fwu_id()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp6Device9fwu_writeE4cstrPKv6size_t"><code class="docutils literal notranslate"><span class="pre">fwu_write()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4NK5iiopp6Device10fwu_statusE4cstrP8uint64_t"><code class="docutils literal notranslate"><span class="pre">fwu_status()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp6Device8fwu_waitE4cstri"><code class="docutils literal notranslate"><span class="pre">fwu_wait()</span></code></a></li>
+<li><a class="reference internal" href="#_CPPv4N5iiopp6Device10fwu_cancelE4cstr"><code class="docutils literal notranslate"><span class="pre">fwu_cancel()</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp6Device5attrsE"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp6Device11debug_attrsE"><code class="docutils literal notranslate"><span class="pre">debug_attrs</span></code></a></li>
 <li><a class="reference internal" href="#_CPPv4N5iiopp6Device11event_attrsE"><code class="docutils literal notranslate"><span class="pre">event_attrs</span></code></a></li>
@@ -210,6 +216,8 @@ Content on this topic
 <li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../../csharp/">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/context/">Context</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../csharp/firmwareupload/">FirmwareUpload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../csharp/fwustatus/">FwuStatus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/channel/">Channel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/buffer/">IOBuffer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/block/">Block</a></li>
@@ -467,6 +475,42 @@ Content on this topic
 <dl class="cpp function">
 <dt class="sig sig-object cpp" id="_CPPv4N5iiopp6Device8reg_readE8uint32_t">
 <span id="_CPPv3N5iiopp6Device8reg_readE8uint32_t"></span><span id="_CPPv2N5iiopp6Device8reg_readE8uint32_t"></span><span id="iiopp::Device::reg_read__uint32_t"></span><span class="target" id="classiiopp_1_1Device_1abae11a6c2bfa0138185cef8deda1e226"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">reg_read</span></span></span><span class="sig-paren">(</span><span class="n"><span class="pre">uint32_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">address</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp6Device8reg_readE8uint32_t" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp6Device9fwu_countEv">
+<span id="_CPPv3NK5iiopp6Device9fwu_countEv"></span><span id="_CPPv2NK5iiopp6Device9fwu_countEv"></span><span id="iiopp::Device::fwu_countC"></span><span class="target" id="classiiopp_1_1Device_1a5db25827923d0c4c6c69d2067ec7ba44"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fwu_count</span></span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp6Device9fwu_countEv" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp6Device6fwu_idEj">
+<span id="_CPPv3NK5iiopp6Device6fwu_idEj"></span><span id="_CPPv2NK5iiopp6Device6fwu_idEj"></span><span id="iiopp::Device::fwu_id__unsigned-iC"></span><span class="target" id="classiiopp_1_1Device_1ad259c8279d59a12ffaae1117f841c88b"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">optstr</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fwu_id</span></span></span><span class="sig-paren">(</span><span class="kt"><span class="pre">unsigned</span></span><span class="w"> </span><span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">idx</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp6Device6fwu_idEj" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp6Device9fwu_writeE4cstrPKv6size_t">
+<span id="_CPPv3N5iiopp6Device9fwu_writeE4cstrPKv6size_t"></span><span id="_CPPv2N5iiopp6Device9fwu_writeE4cstrPKv6size_t"></span><span id="iiopp::Device::fwu_write__cstr.voidCP.s"></span><span class="target" id="classiiopp_1_1Device_1ad9ebe90e9336fcf3b381bd1219bd7049"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fwu_write</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../cstr/#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fwu_id</span></span>, <span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="k"><span class="pre">const</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">data</span></span>, <span class="n"><span class="pre">size_t</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">len</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp6Device9fwu_writeE4cstrPKv6size_t" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4NK5iiopp6Device10fwu_statusE4cstrP8uint64_t">
+<span id="_CPPv3NK5iiopp6Device10fwu_statusE4cstrP8uint64_t"></span><span id="_CPPv2NK5iiopp6Device10fwu_statusE4cstrP8uint64_t"></span><span id="iiopp::Device::fwu_status__cstr.uint64_tPC"></span><span class="target" id="classiiopp_1_1Device_1a845aa007e89d9bbc6232faf6d2b19d88"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="n"><span class="pre">iio_fwu_status</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fwu_status</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../cstr/#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fwu_id</span></span>, <span class="n"><span class="pre">uint64_t</span></span><span class="w"> </span><span class="p"><span class="pre">*</span></span><span class="n sig-param"><span class="pre">remaining</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="k"><span class="pre">nullptr</span></span><span class="sig-paren">)</span><span class="w"> </span><span class="k"><span class="pre">const</span></span><a class="headerlink" href="#_CPPv4NK5iiopp6Device10fwu_statusE4cstrP8uint64_t" title="Link to this definition"></a><br /></dt>
+<dd></dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp6Device8fwu_waitE4cstri">
+<span id="_CPPv3N5iiopp6Device8fwu_waitE4cstri"></span><span id="_CPPv2N5iiopp6Device8fwu_waitE4cstri"></span><span id="iiopp::Device::fwu_wait__cstr.i"></span><span class="target" id="classiiopp_1_1Device_1ad03d10ce9042b59fbba25f738f7ba1bb"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">bool</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fwu_wait</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../cstr/#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fwu_id</span></span>, <span class="kt"><span class="pre">int</span></span><span class="w"> </span><span class="n sig-param"><span class="pre">timeout_ms</span></span><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="n"><span class="pre">IIO_TIMEOUT_INFINITE</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp6Device8fwu_waitE4cstri" title="Link to this definition"></a><br /></dt>
+<dd><p>Wait for a firmware upload to complete. </p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>true if the upload completed, false if it is still in progress (<code class="docutils literal notranslate"><span class="pre">timeout_ms</span></code> expired, or is IIO_TIMEOUT_NONBLOCK). Errors reported by the device are thrown. </p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="cpp function">
+<dt class="sig sig-object cpp" id="_CPPv4N5iiopp6Device10fwu_cancelE4cstr">
+<span id="_CPPv3N5iiopp6Device10fwu_cancelE4cstr"></span><span id="_CPPv2N5iiopp6Device10fwu_cancelE4cstr"></span><span id="iiopp::Device::fwu_cancel__cstr"></span><span class="target" id="classiiopp_1_1Device_1aa3e6dc4adaa290b5936202536fdd2683"></span><span class="k"><span class="pre">inline</span></span><span class="w"> </span><span class="kt"><span class="pre">void</span></span><span class="w"> </span><span class="sig-name descname"><span class="n"><span class="pre">fwu_cancel</span></span></span><span class="sig-paren">(</span><a class="reference internal" href="../cstr/#_CPPv4N5iiopp4cstrE" title="iiopp::cstr"><span class="n"><span class="pre">cstr</span></span></a><span class="w"> </span><span class="n sig-param"><span class="pre">fwu_id</span></span><span class="sig-paren">)</span><a class="headerlink" href="#_CPPv4N5iiopp6Device10fwu_cancelE4cstr" title="Link to this definition"></a><br /></dt>
 <dd></dd></dl>
 
 </div>

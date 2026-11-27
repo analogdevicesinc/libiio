@@ -108,6 +108,8 @@
 <li><a class="reference internal" href="#iio.Device.event_attrs"><code class="docutils literal notranslate"><span class="pre">Device.event_attrs</span></code></a></li>
 <li><a class="reference internal" href="#iio.Device.event_stream"><code class="docutils literal notranslate"><span class="pre">Device.event_stream()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Device.find_channel"><code class="docutils literal notranslate"><span class="pre">Device.find_channel()</span></code></a></li>
+<li><a class="reference internal" href="#iio.Device.firmware_uploads"><code class="docutils literal notranslate"><span class="pre">Device.firmware_uploads</span></code></a></li>
+<li><a class="reference internal" href="#iio.Device.fw_upload"><code class="docutils literal notranslate"><span class="pre">Device.fw_upload()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Device.get_buffer"><code class="docutils literal notranslate"><span class="pre">Device.get_buffer()</span></code></a></li>
 <li><a class="reference internal" href="#iio.Device.hwmon"><code class="docutils literal notranslate"><span class="pre">Device.hwmon</span></code></a></li>
 <li><a class="reference internal" href="#iio.Device.id"><code class="docutils literal notranslate"><span class="pre">Device.id</span></code></a></li>
@@ -190,6 +192,8 @@ Content on this topic
 <li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../../csharp/">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/context/">Context</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../csharp/firmwareupload/">FirmwareUpload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../../csharp/fwustatus/">FwuStatus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/channel/">Channel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/buffer/">IOBuffer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../../csharp/block/">Block</a></li>
@@ -334,6 +338,37 @@ Set to True to search for an output channel</p></li>
 </dl>
 <dl class="simple">
 <dt>returns: type=iio.Device or type=iio.Trigger</dt><dd><p>The IIO Device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="iio.Device.firmware_uploads">
+<span class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></span><span class="sig-name descname"><span class="pre">firmware_uploads</span></span><a class="headerlink" href="#iio.Device.firmware_uploads" title="Link to this definition"></a></dt>
+<dd><p>Firmware upload instances of this IIO device.
+type=dict of iio.FirmwareUpload</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="iio.Device.fw_upload">
+<span class="sig-name descname"><span class="pre">fw_upload</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">fwu_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">timeout_ms</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#iio.Device.fw_upload" title="Link to this definition"></a></dt>
+<dd><p>Upload a firmware image, and wait for the upload to complete.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>fwu_id</strong> – type=str
+The ID of the firmware upload instance.</p></li>
+<li><p><strong>data</strong> – type=bytes-like object
+The firmware image.</p></li>
+<li><p><strong>timeout_ms</strong> – type=int
+Maximum time to wait, in milliseconds. Wait until the upload
+completes if None.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="simple">
+<dt>returns: type=bool</dt><dd><p>True if the upload completed, False if it is still in progress
+after timeout_ms.</p>
 </dd>
 </dl>
 </dd></dl>

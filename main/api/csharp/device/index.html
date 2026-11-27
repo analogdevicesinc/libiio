@@ -15,7 +15,7 @@
     <script async="async" src="../../../_static/app.umd.js?v=2fe15c61"></script>
     <link rel="index" title="Index" href="../../../genindex/" />
     <link rel="search" title="Search" href="../../../search/" />
-    <link rel="next" title="Channel" href="../channel/" />
+    <link rel="next" title="FirmwareUpload" href="../firmwareupload/" />
     <link rel="prev" title="Context" href="../context/" />
    
   
@@ -111,6 +111,7 @@
 <li><a class="reference internal" href="#var-iio.Device.attrs"><code class="docutils literal notranslate"><span class="pre">attrs</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Device.debug_attrs"><code class="docutils literal notranslate"><span class="pre">debug_attrs</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Device.event_attrs"><code class="docutils literal notranslate"><span class="pre">event_attrs</span></code></a></li>
+<li><a class="reference internal" href="#var-iio.Device.firmware_uploads"><code class="docutils literal notranslate"><span class="pre">firmware_uploads</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Device.channels"><code class="docutils literal notranslate"><span class="pre">channels</span></code></a></li>
 <li><a class="reference internal" href="#var-iio.Device.buffers"><code class="docutils literal notranslate"><span class="pre">buffers</span></code></a></li>
 <li><a class="reference internal" href="#property-iio.Device.label"><code class="docutils literal notranslate"><span class="pre">label</span></code></a></li>
@@ -187,6 +188,8 @@ Content on this topic
 <li class="toctree-l2 current"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2" checked=""/><div class="collapse"><a class="reference internal" href="../">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul class="current">
 <li class="toctree-l3"><a class="reference internal" href="../context/">Context</a></li>
 <li class="toctree-l3 current"><a class="current reference internal" href="#">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../firmwareupload/">FirmwareUpload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../fwustatus/">FwuStatus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../channel/">Channel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../buffer/">IOBuffer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../block/">Block</a></li>
@@ -393,6 +396,12 @@ Content on this topic
 </dd></dl>
 
 <dl class="cs var">
+<dt class="sig sig-object cs" id="var-iio.Device.firmware_uploads">
+<span class="target" id="classiio_1_1Device_1a7575229f7201e0a2e026b6926fd6437f"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyDictionary</span><span class="pre">&lt;</span><span class="pre">string</span><span class="pre">,</span> <a class="reference internal" href="../firmwareupload/#class-iio.FirmwareUpload" title="class: iio.FirmwareUpload"><span class="pre">FirmwareUpload</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">firmware_uploads</span></span><a class="headerlink" href="#var-iio.Device.firmware_uploads" title="Link to this definition"></a></dt>
+<dd><p>A <code class="docutils literal notranslate"><span class="pre">Dictionary</span></code> of all the firmware upload instances that this device has. Key is the instance ID. </p>
+</dd></dl>
+
+<dl class="cs var">
 <dt class="sig sig-object cs" id="var-iio.Device.channels">
 <span class="target" id="classiio_1_1Device_1a55510004861ebd05057750f9ccbfa902"></span><span class="property"><span class="pre">readonly</span></span> <span class="pre">IReadOnlyList</span><span class="pre">&lt;</span><a class="reference internal" href="../channel/#class-iio.Channel" title="class: iio.Channel"><span class="pre">Channel</span></a><span class="pre">&gt;</span> <span class="sig-name descname"><span class="pre">channels</span></span><a class="headerlink" href="#var-iio.Device.channels" title="Link to this definition"></a></dt>
 <dd><p>A <code class="docutils literal notranslate"><span class="pre">list</span></code> of all the <a class="reference internal" href="../channel/#classiio_1_1Channel"><span class="std std-ref">iio.Channel</span></a> objects that this device possesses. </p>
@@ -429,7 +438,7 @@ Content on this topic
               <div class="related">
                 &nbsp;
     <a href="../context/" title="Previous document (Alt+Shift+LeftArrow)" class="prev">Context</a>
-    <a href="../channel/" title="Next document (Alt+Shift+RightArrow)" class="next">Channel</a>
+    <a href="../firmwareupload/" title="Next document (Alt+Shift+RightArrow)" class="next">FirmwareUpload</a>
               </div>
           
         </div>

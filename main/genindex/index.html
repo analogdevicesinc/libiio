@@ -157,6 +157,8 @@ Content on this topic
 <li class="toctree-l2"><input class="toctree-collapse" type="checkbox" name="toctree-collapse-3-2" id="toctree-collapse-3-2"/><div class="collapse"><a class="reference internal" href="../api/csharp/">C# Bindings</a><label for="toctree-collapse-3-2"><div class="icon"></div></label></div><ul>
 <li class="toctree-l3"><a class="reference internal" href="../api/csharp/context/">Context</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../api/csharp/device/">Device</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/firmwareupload/">FirmwareUpload</a></li>
+<li class="toctree-l3"><a class="reference internal" href="../api/csharp/fwustatus/">FwuStatus</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../api/csharp/channel/">Channel</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../api/csharp/buffer/">IOBuffer</a></li>
 <li class="toctree-l3"><a class="reference internal" href="../api/csharp/block/">Block</a></li>
@@ -396,7 +398,11 @@ Content on this topic
       </ul></li>
   </ul></td>
   <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="../api/python/device/#iio.Device.firmware_uploads">firmware_uploads (iio.Device property)</a>
+</li>
       <li><a href="../api/python/trigger/#iio.Trigger.frequency">frequency (iio.Trigger property)</a>
+</li>
+      <li><a href="../api/python/device/#iio.Device.fw_upload">fw_upload() (iio.Device method)</a>
 </li>
   </ul></td>
 </tr></table>
@@ -812,14 +818,14 @@ Content on this topic
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4N5iiopp4Attr8filenameEv">iiopp::Attr::filename (C++ function)</a>
 </li>
-  </ul></td>
-  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="../api/cpp/attr/#_CPPv4N5iiopp4Attr4nameEv">iiopp::Attr::name (C++ function)</a>
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4AttrcvbEv">iiopp::Attr::operator bool (C++ function)</a>
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4AttrcvdEv">iiopp::Attr::operator double (C++ function)</a>
 </li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4AttrcvPK8iio_attrEv">iiopp::Attr::operator iio_attr const* (C++ function)</a>
 </li>
       <li><a href="../api/cpp/attr/#_CPPv4NK5iiopp4AttrcvxEv">iiopp::Attr::operator long long (C++ function)</a>
@@ -1095,6 +1101,18 @@ Content on this topic
       <li><a href="../api/cpp/device/#_CPPv4N5iiopp6Device15find_debug_attrE4cstr">iiopp::Device::find_debug_attr (C++ function)</a>
 </li>
       <li><a href="../api/cpp/device/#_CPPv4N5iiopp6Device15find_event_attrE4cstr">iiopp::Device::find_event_attr (C++ function)</a>
+</li>
+      <li><a href="../api/cpp/device/#_CPPv4N5iiopp6Device10fwu_cancelE4cstr">iiopp::Device::fwu_cancel (C++ function)</a>
+</li>
+      <li><a href="../api/cpp/device/#_CPPv4NK5iiopp6Device9fwu_countEv">iiopp::Device::fwu_count (C++ function)</a>
+</li>
+      <li><a href="../api/cpp/device/#_CPPv4NK5iiopp6Device6fwu_idEj">iiopp::Device::fwu_id (C++ function)</a>
+</li>
+      <li><a href="../api/cpp/device/#_CPPv4NK5iiopp6Device10fwu_statusE4cstrP8uint64_t">iiopp::Device::fwu_status (C++ function)</a>
+</li>
+      <li><a href="../api/cpp/device/#_CPPv4N5iiopp6Device8fwu_waitE4cstri">iiopp::Device::fwu_wait (C++ function)</a>
+</li>
+      <li><a href="../api/cpp/device/#_CPPv4N5iiopp6Device9fwu_writeE4cstrPKv6size_t">iiopp::Device::fwu_write (C++ function)</a>
 </li>
       <li><a href="../api/cpp/device/#_CPPv4NK5iiopp6Device2idEv">iiopp::Device::id (C++ function)</a>
 </li>
