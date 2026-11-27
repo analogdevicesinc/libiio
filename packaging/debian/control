@@ -1,0 +1,53 @@
+Source: libiio
+Section: libs
+Priority: optional
+Maintainer: Analog Devices Maintainers <linux@analog.com>
+Build-Depends: debhelper-compat (= 13), cmake, libxml2-dev, bison, flex,
+ libcdk5-dev, libaio-dev, libusb-1.0-0-dev, libzstd-dev,
+ libserialport-dev, libavahi-client-dev,
+ dh-python, mono-mcs, cli-common-dev
+Standards-Version: 4.6.0
+Homepage: https://github.com/analogdevicesinc/libiio
+Rules-Requires-Root: no
+
+Package: libiio
+Architecture: @ARCHITECTURE@
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Provides: libiio0 (= ${binary:Version}), libiio-dev (= ${binary:Version}),
+ libiio-utils (= ${binary:Version}), iiod (= ${binary:Version})
+Conflicts: libiio0, libiio-dev, libiio-utils, iiod
+Replaces: libiio0, libiio-dev, libiio-utils, iiod
+Description: Library for interfacing with IIO devices
+ libiio is used to interface to the Linux Industrial Input/Output (IIO)
+ Subsystem. Includes library, development files, utilities, and daemon.
+
+Package: python3-libiio
+Section: python
+Architecture: all
+Depends: ${python3:Depends}, ${misc:Depends}, libiio (>= ${source:Version})
+Description: Python 3 bindings for libiio
+ ctypes-based Python bindings for the libiio library for interfacing
+ with Linux IIO devices.
+ .
+ This package contains the Python 3 bindings.
+
+Package: libiio-cpp
+Section: libdevel
+Architecture: all
+Depends: libiio (>= ${source:Version}), ${misc:Depends}
+Description: C++ bindings for libiio (development header)
+ Header-only C++ wrapper (iio.hpp) around the libiio C API for
+ interfacing with Linux IIO devices.
+ .
+ This package contains the C++ binding header.
+
+Package: libiio-csharp
+Section: cli-mono
+Architecture: all
+Depends: ${cli:Depends}, ${misc:Depends}, libiio (>= ${source:Version})
+Description: C# bindings for libiio
+ CLI (Mono/.NET) bindings for the libiio library for interfacing with
+ Linux IIO devices.
+ .
+ This package contains the libiio-sharp assembly, loaded against the
+ native library at runtime via the bundled dllmap config.

@@ -1,0 +1,7 @@
+usr/bin
+usr/sbin
+usr/include/iio/iio*.h
+usr/lib/*/libiio.so*
+usr/lib/*/pkgconfig/libiio.pc
+usr/lib/udev
+usr/share/man

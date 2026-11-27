@@ -1,0 +1,23 @@
+#!/usr/bin/make -f
+%:
+	dh $@ --buildsystem=cmake --with python3,cli
+
+override_dh_auto_configure:
+	dh_auto_configure -- \
+		-DCPP_BINDINGS=ON \
+		-DCSHARP_BINDINGS=ON \
+		-DWITH_SERIAL_BACKEND=ON \
+		-DWITH_EMU_BACKEND=ON \
+		-DWITH_MAN=ON \
+		-DUDEV_RULES_INSTALL_DIR=/usr/lib/udev/rules.d \
+		-DCMAKE_SKIP_RPATH=ON
+
+override_dh_auto_install:
+	dh_auto_install
+	# pyproject.toml needs setuptools>=77, newer than most target distros; the binding is one pure-ctypes module
+	install -D -m0644 bindings/python/iio/__init__.py \
+		debian/tmp/usr/lib/python3/dist-packages/iio/__init__.py
+
+# libiio is resolved at runtime through libiio-sharp.dll.config, not via shlibs
+override_dh_clideps:
+	dh_clideps --exclude-moduleref=libiio
