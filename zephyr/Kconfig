@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Analog Devices, Inc.
+# Copyright (c) 2025-2026 Analog Devices, Inc.
 # SPDX-License-Identifier: MIT
 
 menuconfig LIBIIO
@@ -23,6 +23,54 @@ config LIBIIO_LOG_MSG_SIZE
 	  logging subsystem. Increase this value if libiio log messages are
 	  being truncated.
 
+config LIBIIO_STREAMING
+	bool "libiio buffer streaming support"
+	imply LIBIIO_MULTITHREADING
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	select RTIO_CONSUME_SEM if MULTITHREADING
+	help
+	  Enable buffer and block operations so clients can stream samples
+	  from iio_device drivers. Block memory is reserved statically per
+	  device, sized by the buffer-block-count and buffer-block-size-max
+	  devicetree properties.
+
+if LIBIIO_STREAMING
+
+config LIBIIO_BUFFER_COUNT
+	int "Maximum number of buffers open at once"
+	default 2
+	help
+	  Buffers that can be open at once, across all devices and clients.
+	  Each device allows one.
+
+config LIBIIO_STREAM_DISARM_TIMEOUT_MS
+	int "How long a stop waits for the device to release its stream, in ms"
+	default 5000
+	help
+	  A cancelled stream is released no earlier than the device's next
+	  trigger, so this must cover one trigger period (watermark/ODR for a
+	  watermark-paced capture). Exceeding it logs a warning.
+
+config LIBIIO_STREAM_CAPTURE_TIMEOUT_MS
+	int "How long a dequeue waits for one capture, in milliseconds"
+	default 30000
+	range 1 3600000
+	help
+	  A capture that does not arrive in time fails the block with
+	  -ETIMEDOUT. Must exceed the device's trigger period. Without
+	  multithreading the wait polls every 5 ms, so the RTIO mempool must
+	  hold 5 ms of captures.
+
+config LIBIIO_MAX_SCAN_ELEMENTS
+	int "Maximum scan elements per buffer"
+	default 8
+	help
+	  Maximum number of channels a buffer can enable. A buffer whose
+	  channel mask enables more is refused.
+
+endif # LIBIIO_STREAMING
+
 config LIBIIO_MULTITHREADING
 	bool "libiio multi-threading support"
 	help
@@ -41,7 +89,9 @@ if LIBIIO_MULTITHREADING
 
 config LIBIIO_THREAD_POOL_SIZE
 	int "Maximum number of libiio internal threads"
-	default 6 if LIBIIO_IIOD_NETWORK
+	default 12 if LIBIIO_IIOD_NETWORK && LIBIIO_STREAMING
+	default 9 if LIBIIO_STREAMING
+	default 6 if LIBIIO_IIOD_NETWORK || LIBIIO_IIOD_USB
 	default 3
 	help
 	  Slots in the static libiio thread pool. Each costs
@@ -51,11 +101,17 @@ config LIBIIO_THREAD_POOL_SIZE
 	  since its read loop runs on the transport's own thread - plus 2 per
 	  iiod buffer, plus 1 per buffer stream and per event stream.
 
+	  An open buffer therefore costs three slots. Raise this with
+	  LIBIIO_BUFFER_COUNT. Running out fails the client request with
+	  -ENOMEM.
+
 config LIBIIO_THREAD_STACK_SIZE
 	int "Stack size for libiio internal threads"
-	default 4096
+	default 2048
 	help
-	  Stack size for each pool slot.
+	  Stack size for each pool slot. Pool threads run task bodies, not
+	  the iiod command dispatch, so they need less than the transport
+	  thread.
 
 config LIBIIO_THREAD_PRIORITY
 	int "Priority for libiio internal threads"
@@ -65,7 +121,8 @@ config LIBIIO_THREAD_PRIORITY
 
 config LIBIIO_MUTEX_POOL_SIZE
 	int "Maximum number of libiio mutexes"
-	default 48 if LIBIIO_IIOD_NETWORK
+	default 96 if LIBIIO_STREAMING
+	default 48 if LIBIIO_IIOD_NETWORK || LIBIIO_IIOD_USB
 	default 24
 	help
 	  Slots in the static iio_mutex pool. Three are held permanently by
@@ -75,14 +132,21 @@ config LIBIIO_MUTEX_POOL_SIZE
 	  entry, one for the stream, one per enqueue/dequeue task and one per
 	  block token.
 
+	  When streaming, a buffer costs roughly 3 + 3 * buffer-block-count.
+	  Raise this with buffer-block-count or LIBIIO_BUFFER_COUNT.
+
 config LIBIIO_COND_POOL_SIZE
 	int "Maximum number of libiio condition variables"
-	default 32 if LIBIIO_IIOD_NETWORK
+	default 64 if LIBIIO_STREAMING
+	default 32 if LIBIIO_IIOD_NETWORK || LIBIIO_IIOD_USB
 	default 16
 	help
 	  Slots in the static iio_cond pool. Condition variables pair with
 	  mutexes everywhere except the global tinyiiod locks and the
 	  per-buffer and per-stream locks, so this can be smaller than
+	  LIBIIO_MUTEX_POOL_SIZE.
+
+	  Streaming demand also scales with buffer-block-count; raise this with
 	  LIBIIO_MUTEX_POOL_SIZE.
 
 endif # LIBIIO_MULTITHREADING

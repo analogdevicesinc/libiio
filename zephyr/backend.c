@@ -12,6 +12,9 @@
 #include <errno.h>
 #include <string.h>
 #include <iio_device.h>
+#ifdef CONFIG_LIBIIO_STREAMING
+#include <iio_stream.h>
+#endif
 
 LOG_MODULE_REGISTER(libiio_backend, CONFIG_LIBIIO_LOG_LEVEL);
 
@@ -51,6 +54,58 @@ zephyr_get_trigger(const struct iio_device *dev)
 	return NULL;
 }
 
+/* A device with no scan elements gets no buffer. */
+static int zephyr_add_buffer(struct iio_device *iio_device)
+{
+	unsigned int i, nb_channels = iio_device_get_channels_count(iio_device);
+	const struct iio_channel *chn;
+	unsigned int nb_scans = 0;
+	struct iio_buffer *buf;
+	bool output = false;
+	int err;
+
+	for (i = 0; i < nb_channels; i++) {
+		chn = iio_device_get_channel(iio_device, i);
+
+		if (!iio_channel_is_scan_element(chn)) {
+			continue;
+		}
+
+		/* The first scan element decides the buffer's direction. */
+		if (nb_scans == 0) {
+			output = iio_channel_is_output(chn);
+		}
+
+		nb_scans++;
+	}
+
+	if (nb_scans == 0) {
+		return 0;
+	}
+
+	buf = iio_device_add_buffer(iio_device, 0);
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	iio_buffer_set_direction(buf, output ? "out" : "in");
+
+	for (i = 0; i < nb_channels; i++) {
+		chn = iio_device_get_channel(iio_device, i);
+
+		if (!iio_channel_is_scan_element(chn)) {
+			continue;
+		}
+
+		err = iio_buffer_add_scan_element(buf, chn, NULL);
+		if (err) {
+			return err;
+		}
+	}
+
+	return 0;
+}
+
 static struct iio_context *
 zephyr_create_context(const struct iio_context_params *params, const char *args)
 {
@@ -61,6 +116,7 @@ zephyr_create_context(const struct iio_context_params *params, const char *args)
 	const char *label = NULL;
 	char id[32];
 	int i = 0;
+	int err;
 
 	const char *description = "Zephyr " BACKEND_VERSION(BACKEND_VERSION_BUILD);
 
@@ -91,6 +147,12 @@ zephyr_create_context(const struct iio_context_params *params, const char *args)
 		iio_device_set_pdata(iio_device, (struct iio_device_pdata *) dev);
 		iio_device_add_channels(dev, iio_device);
 
+		err = zephyr_add_buffer(iio_device);
+		if (err) {
+			iio_context_destroy(ctx);
+			return iio_ptr(err);
+		}
+
 		i++;
 	}
 
@@ -102,6 +164,17 @@ static const struct iio_backend_ops zephyr_ops = {
 	.read_attr = zephyr_read_attr,
 	.write_attr = zephyr_write_attr,
 	.get_trigger = zephyr_get_trigger,
+#ifdef CONFIG_LIBIIO_STREAMING
+	.open_buffer = iio_stream_buffer_open,
+	.close_buffer = iio_stream_buffer_close,
+	.create_block = iio_stream_block_alloc,
+	.free_block = iio_stream_block_free,
+	.enable_buffer = iio_stream_buffer_enable,
+	.cancel_buffer = iio_stream_buffer_cancel,
+	.enqueue_block = iio_stream_block_enqueue,
+	.dequeue_block = iio_stream_block_dequeue,
+	/* No readbuf: it would bypass the block ops */
+#endif
 };
 
 const struct iio_backend iio_external_backend = {
